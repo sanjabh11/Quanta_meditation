@@ -1,0 +1,7 @@
+echo "# Quanta_meditation" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/sanjabh11/Quanta_meditation.git
+git push -u origin main
