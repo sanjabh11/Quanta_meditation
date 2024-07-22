@@ -1,0 +1,13 @@
+{
+  "name": "quanta_meditation",
+  "version": "1.0.0",
+  "description": "Meditation and Quantum Physics Website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "multer": "^1.4.2"
+  }
+}
