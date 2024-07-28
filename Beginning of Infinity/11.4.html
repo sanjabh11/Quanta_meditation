@@ -1,0 +1,166 @@
+<html><head><base href="https://websim.universe/%203d%20amimation%20-%20Spacetime,%20considered%20as%20successive%20moments."><title>Block Universe Visualizer</title>
+<style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background-color: #000000; color: #ffffff; }
+    #canvas { width: 100%; height: 100%; }
+    #info-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 300px;
+    }
+    #controls {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+    }
+    button {
+        background: #4a4a8a;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background: #6a6aaa;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="info-panel">
+    <h2>Block Universe Visualizer</h2>
+    <p>This visualization demonstrates the concept of spacetime as a static, four-dimensional "block universe".</p>
+    <p>Each layer represents a moment in time, stacked to form an unchanging whole where past, present, and future coexist.</p>
+    <p>Use controls to explore this representation of the simultaneous existence of all moments.</p>
+</div>
+<div id="controls">
+    <button id="toggleRotation">Toggle Rotation</button>
+    <button id="toggleSlice">Toggle Slice View</button>
+    <button id="toggleParticle">Toggle Particle</button>
+</div>
+
+<script>
+    let scene, camera, renderer, blockUniverse, sliceView, particle;
+    let rotating = true;
+    let showSlice = false;
+    let showParticle = false;
+    const totalLayers = 20;
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        createBlockUniverse();
+        createSliceView();
+        createParticle();
+
+        camera.position.set(5, 5, 10);
+        camera.lookAt(0, 0, 0);
+    }
+
+    function createBlockUniverse() {
+        blockUniverse = new THREE.Group();
+        
+        for (let i = 0; i < totalLayers; i++) {
+            const layerGeometry = new THREE.PlaneGeometry(4, 4);
+            const layerMaterial = new THREE.MeshBasicMaterial({
+                color: new THREE.Color().setHSL(i / totalLayers, 1, 0.5),
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            const layer = new THREE.Mesh(layerGeometry, layerMaterial);
+            layer.position.z = i * 0.2 - 2;
+            blockUniverse.add(layer);
+        }
+
+        scene.add(blockUniverse);
+    }
+
+    function createSliceView() {
+        const sliceGeometry = new THREE.PlaneGeometry(4, 4);
+        const sliceMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide
+        });
+        sliceView = new THREE.Mesh(sliceGeometry, sliceMaterial);
+        sliceView.visible = false;
+        scene.add(sliceView);
+    }
+
+    function createParticle() {
+        const particleGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const particleMaterial = new THREE.MeshBasicMaterial({color: 0xffff00});
+        particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        particle.visible = false;
+        scene.add(particle);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (rotating) {
+            blockUniverse.rotation.x += 0.005;
+            blockUniverse.rotation.y += 0.005;
+        }
+
+        if (showSlice) {
+            const time = Date.now() * 0.001;
+            sliceView.position.z = Math.sin(time) * 2;
+            sliceView.rotation.x = blockUniverse.rotation.x;
+            sliceView.rotation.y = blockUniverse.rotation.y;
+        }
+
+        if (showParticle) {
+            const time = Date.now() * 0.001;
+            particle.position.set(
+                Math.cos(time) * 1.5,
+                Math.sin(time * 1.5) * 1.5,
+                Math.sin(time) * 2
+            );
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    init();
+    animate();
+
+    document.getElementById('toggleRotation').addEventListener('click', () => {
+        rotating = !rotating;
+    });
+
+    document.getElementById('toggleSlice').addEventListener('click', () => {
+        showSlice = !showSlice;
+        sliceView.visible = showSlice;
+    });
+
+    document.getElementById('toggleParticle').addEventListener('click', () => {
+        showParticle = !showParticle;
+        particle.visible = showParticle;
+    });
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>

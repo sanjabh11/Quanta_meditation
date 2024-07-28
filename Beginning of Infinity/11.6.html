@@ -1,0 +1,184 @@
+<html><head><base href="https://websim.universe/%203d%20amimation%20-%20%20If%20the%20multiverse%20were%20a%20collection%20of%20interacting%20spacetimes,%20time%20would%20still%20be%20a%20sequence%20of%20moments."><title>Multiverse Spacetime Visualizer</title>
+<style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background-color: #000000; color: #ffffff; }
+    #canvas { width: 100%; height: 100%; }
+    #info-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 300px;
+    }
+    #controls {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+    }
+    button {
+        background: #4a4a8a;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background: #6a6aaa;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="info-panel">
+    <h2>Multiverse Spacetime Visualizer</h2>
+    <p>This visualization represents a multiverse as a collection of interacting spacetimes.</p>
+    <p>Each column represents a distinct universe's spacetime.</p>
+    <p>Horizontal slices represent "moments" across multiple universes.</p>
+    <p>Use controls to explore different aspects of this multiverse representation.</p>
+</div>
+<div id="controls">
+    <button id="toggleRotation">Toggle Rotation</button>
+    <button id="toggleMomentSlice">Toggle Moment Slice</button>
+    <button id="toggleInteractions">Toggle Interactions</button>
+</div>
+
+<script>
+    let scene, camera, renderer, multiverse, momentSlice, interactions;
+    let rotating = true;
+    let showMomentSlice = false;
+    let showInteractions = false;
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        createMultiverse();
+        createMomentSlice();
+        createInteractions();
+
+        camera.position.set(10, 10, 20);
+        camera.lookAt(0, 0, 0);
+    }
+
+    function createMultiverse() {
+        multiverse = new THREE.Group();
+        
+        const universeCount = 5;
+        const layerCount = 20;
+        
+        for (let u = 0; u < universeCount; u++) {
+            const universe = new THREE.Group();
+            
+            for (let l = 0; l < layerCount; l++) {
+                const layerGeometry = new THREE.PlaneGeometry(2, 2);
+                const layerMaterial = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color().setHSL(u / universeCount, 1, 0.5),
+                    transparent: true,
+                    opacity: 0.5,
+                    side: THREE.DoubleSide
+                });
+                const layer = new THREE.Mesh(layerGeometry, layerMaterial);
+                layer.position.y = l * 0.2 - 2;
+                universe.add(layer);
+            }
+            
+            universe.position.x = (u - (universeCount - 1) / 2) * 3;
+            multiverse.add(universe);
+        }
+        
+        scene.add(multiverse);
+    }
+
+    function createMomentSlice() {
+        const sliceGeometry = new THREE.PlaneGeometry(15, 15);
+        const sliceMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        momentSlice = new THREE.Mesh(sliceGeometry, sliceMaterial);
+        momentSlice.rotation.x = Math.PI / 2;
+        momentSlice.visible = false;
+        scene.add(momentSlice);
+    }
+
+    function createInteractions() {
+        interactions = new THREE.Group();
+        
+        const curveCount = 10;
+        for (let i = 0; i < curveCount; i++) {
+            const startUniverse = Math.floor(Math.random() * 5);
+            const endUniverse = (startUniverse + 1 + Math.floor(Math.random() * 3)) % 5;
+            
+            const curve = new THREE.CubicBezierCurve3(
+                new THREE.Vector3((startUniverse - 2) * 3, -2 + Math.random() * 4, 0),
+                new THREE.Vector3((startUniverse - 2) * 3, -2 + Math.random() * 4, 2),
+                new THREE.Vector3((endUniverse - 2) * 3, -2 + Math.random() * 4, 2),
+                new THREE.Vector3((endUniverse - 2) * 3, -2 + Math.random() * 4, 0)
+            );
+
+            const points = curve.getPoints(50);
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0xffff00 });
+
+            const interactionLine = new THREE.Line(geometry, material);
+            interactions.add(interactionLine);
+        }
+        
+        interactions.visible = false;
+        scene.add(interactions);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (rotating) {
+            multiverse.rotation.x += 0.005;
+            multiverse.rotation.z += 0.005;
+            momentSlice.rotation.z += 0.005;
+            interactions.rotation.x += 0.005;
+            interactions.rotation.z += 0.005;
+        }
+
+        momentSlice.visible = showMomentSlice;
+        interactions.visible = showInteractions;
+
+        renderer.render(scene, camera);
+    }
+
+    init();
+    animate();
+
+    document.getElementById('toggleRotation').addEventListener('click', () => {
+        rotating = !rotating;
+    });
+
+    document.getElementById('toggleMomentSlice').addEventListener('click', () => {
+        showMomentSlice = !showMomentSlice;
+    });
+
+    document.getElementById('toggleInteractions').addEventListener('click', () => {
+        showInteractions = !showInteractions;
+    });
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>
