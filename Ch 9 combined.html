@@ -1,0 +1,337 @@
+<html><head><base href="https://websim.universe/%203d%20interactive%20animation%20Create%20a%20mesmerizing%203D%20interactive%20animation%20that%20takes%20viewers%20on%20a%20journey%20through%20the%20quantum%20realm,%20exploring%20the%20fascinating%20concepts%20of%20quantum%20physics%20and%20computation."><title>Quantum Realm Explorer</title>
+<style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Arial', sans-serif; background-color: #000000; color: #ffffff; }
+    #canvas { width: 100%; height: 100%; }
+    #info-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 300px;
+        font-size: 14px;
+    }
+    #controls {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+    }
+    button, input[type="range"] {
+        background: #4a4a8a;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background: #6a6aaa;
+    }
+    .hotspot {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.5);
+        cursor: pointer;
+    }
+    .tooltip {
+        position: absolute;
+        background: rgba(0,0,0,0.8);
+        color: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="info-panel">
+    <h2>Quantum Realm Explorer</h2>
+    <p id="scene-description">Welcome to the Quantum Realm. Use the controls below to navigate through different quantum phenomena.</p>
+</div>
+<div id="controls">
+    <button id="nextScene">Next Scene</button>
+    <button id="toggleRotation">Toggle Rotation</button>
+    <input type="range" id="speedControl" min="0" max="100" value="50">
+</div>
+
+<script>
+    let scene, camera, renderer, currentScene = 0;
+    let rotating = true;
+    const scenes = ['mirrors', 'multiverse', 'interferometer', 'quantumChange'];
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.position.z = 5;
+
+        createScene(scenes[currentScene]);
+    }
+
+    function createScene(sceneName) {
+        scene.clear();
+        switch(sceneName) {
+            case 'mirrors':
+                createMirrorsScene();
+                break;
+            case 'multiverse':
+                createMultiverseScene();
+                break;
+            case 'interferometer':
+                createInterferometerScene();
+                break;
+            case 'quantumChange':
+                createQuantumChangeScene();
+                break;
+        }
+        updateInfoPanel(sceneName);
+    }
+
+    function createMirrorsScene() {
+        // Normal mirror
+        const normalMirror = new THREE.Mesh(
+            new THREE.PlaneGeometry(2, 2),
+            new THREE.MeshBasicMaterial({color: 0x888888, side: THREE.DoubleSide})
+        );
+        normalMirror.position.x = -2;
+        normalMirror.rotation.y = Math.PI / 4;
+        scene.add(normalMirror);
+
+        // Semi-silvered mirror
+        const semiMirror = new THREE.Mesh(
+            new THREE.PlaneGeometry(2, 2),
+            new THREE.MeshBasicMaterial({color: 0x888888, transparent: true, opacity: 0.5, side: THREE.DoubleSide})
+        );
+        semiMirror.position.x = 2;
+        semiMirror.rotation.y = Math.PI / 4;
+        scene.add(semiMirror);
+
+        // Photons
+        const photonGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const photonMaterial = new THREE.MeshBasicMaterial({color: 0xFFD700});
+        const normalPhoton = new THREE.Mesh(photonGeometry, photonMaterial);
+        const semiPhoton1 = new THREE.Mesh(photonGeometry, new THREE.MeshBasicMaterial({color: 0x0000FF}));
+        const semiPhoton2 = new THREE.Mesh(photonGeometry, new THREE.MeshBasicMaterial({color: 0xFF00FF}));
+
+        scene.add(normalPhoton, semiPhoton1, semiPhoton2);
+
+        scene.userData.animate = (time) => {
+            const t = (time % 3000) / 3000;
+            if (t < 0.5) {
+                normalPhoton.position.set(-3 + t * 2, -1 + t * 2, 0);
+                semiPhoton1.position.set(1 + t * 2, -1 + t * 2, 0);
+                semiPhoton2.position.set(1 + t * 2, -1 + t * 2, 0);
+            } else {
+                normalPhoton.position.set(-2 - (t - 0.5) * 2, t * 2, 0);
+                semiPhoton1.position.set(2 - (t - 0.5) * 2, t * 2, 0);
+                semiPhoton2.position.set(2 + (t - 0.5) * 2, t * 2, 0);
+            }
+        };
+    }
+
+    function createMultiverseScene() {
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({color: 0xFFFFFF, size: 0.1});
+
+        const starsVertices = [];
+        for (let i = 0; i < 1000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+            starsVertices.push(x, y, z);
+        }
+
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+
+        const branchGeometry = new THREE.BufferGeometry();
+        const branchMaterial = new THREE.LineBasicMaterial({color: 0x00FFFF});
+
+        const branchVertices = [];
+        function addBranch(x, y, z, length, angle, depth) {
+            if (depth === 0) return;
+
+            const endX = x + length * Math.cos(angle);
+            const endY = y + length * Math.sin(angle);
+
+            branchVertices.push(x, y, z, endX, endY, z);
+
+            addBranch(endX, endY, z, length * 0.8, angle + 0.5, depth - 1);
+            addBranch(endX, endY, z, length * 0.8, angle - 0.5, depth - 1);
+        }
+
+        addBranch(0, -5, 0, 2, Math.PI / 2, 7);
+
+        branchGeometry.setAttribute('position', new THREE.Float32BufferAttribute(branchVertices, 3));
+        const branchTree = new THREE.LineSegments(branchGeometry, branchMaterial);
+        scene.add(branchTree);
+
+        scene.userData.animate = (time) => {
+            branchTree.rotation.y = time * 0.0005;
+            starField.rotation.y = time * 0.0001;
+        };
+    }
+
+    function createInterferometerScene() {
+        // Create interferometer structure
+        const mirrorGeometry = new THREE.PlaneGeometry(2, 2);
+        const normalMirrorMaterial = new THREE.MeshBasicMaterial({color: 0x888888, side: THREE.DoubleSide});
+        const semiMirrorMaterial = new THREE.MeshBasicMaterial({color: 0x888888, transparent: true, opacity: 0.5, side: THREE.DoubleSide});
+
+        const topMirror = new THREE.Mesh(mirrorGeometry, normalMirrorMaterial);
+        topMirror.position.set(0, 2, 0);
+        topMirror.rotation.x = Math.PI / 2;
+
+        const bottomMirror = new THREE.Mesh(mirrorGeometry, semiMirrorMaterial);
+        bottomMirror.position.set(0, -2, 0);
+        bottomMirror.rotation.x = Math.PI / 2;
+
+        const leftMirror = new THREE.Mesh(mirrorGeometry, semiMirrorMaterial);
+        leftMirror.position.set(-2, 0, 0);
+        leftMirror.rotation.y = Math.PI / 2;
+
+        const rightMirror = new THREE.Mesh(mirrorGeometry, normalMirrorMaterial);
+        rightMirror.position.set(2, 0, 0);
+        rightMirror.rotation.y = Math.PI / 2;
+
+        scene.add(topMirror, bottomMirror, leftMirror, rightMirror);
+
+        // Create photon
+        const photonGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const photonMaterial = new THREE.MeshBasicMaterial({color: 0xFFD700});
+        const photon = new THREE.Mesh(photonGeometry, photonMaterial);
+        scene.add(photon);
+
+        scene.userData.animate = (time) => {
+            const t = (time % 4000) / 4000;
+            if (t < 0.25) {
+                photon.position.set(-2 + t * 16, -2, 0);
+            } else if (t < 0.5) {
+                photon.position.set(2, -2 + (t - 0.25) * 16, 0);
+            } else if (t < 0.75) {
+                photon.position.set(2 - (t - 0.5) * 16, 2, 0);
+            } else {
+                photon.position.set(-2, 2 - (t - 0.75) * 16, 0);
+            }
+        };
+    }
+
+    function createQuantumChangeScene() {
+        const planeGeometry = new THREE.PlaneGeometry(4, 0.1);
+        const blueMaterial = new THREE.MeshBasicMaterial({color: 0x0000FF, side: THREE.DoubleSide});
+        const redMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000, side: THREE.DoubleSide});
+
+        const planes = [];
+        for (let i = 0; i < 20; i++) {
+            const plane = new THREE.Mesh(planeGeometry, blueMaterial);
+            plane.position.y = (i - 10) * 0.15;
+            scene.add(plane);
+            planes.push(plane);
+        }
+
+        scene.userData.animate = (time) => {
+            const t = (Math.sin(time * 0.001) + 1) / 2;
+            planes.forEach((plane, index) => {
+                const threshold = index / planes.length;
+                if (t > threshold) {
+                    plane.material = redMaterial;
+                } else {
+                    plane.material = blueMaterial;
+                }
+            });
+        };
+    }
+
+    function updateInfoPanel(sceneName) {
+        const descriptions = {
+            'mirrors': "Observe the difference between a normal mirror (left) and a semi-silvered mirror (right). The photon splits when it hits the semi-silvered mirror.",
+            'multiverse': "Visualize the branching multiverse. Each branch represents a different possible outcome of a quantum event.",
+            'interferometer': "See how photons interfere in an interferometer. The paths converge, demonstrating quantum interference.",
+            'quantumChange': "Watch the continuous nature of quantum change. The transition from blue (0 state) to red (1 state) is smooth in the multiverse view."
+        };
+        document.getElementById('scene-description').textContent = descriptions[sceneName];
+    }
+
+    function animate(time) {
+        requestAnimationFrame(animate);
+
+        if (rotating) {
+            scene.rotation.y += 0.005;
+        }
+
+        if (scene.userData.animate) {
+            scene.userData.animate(time);
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    init();
+    animate();
+
+    document.getElementById('nextScene').addEventListener('click', () => {
+        currentScene = (currentScene + 1) % scenes.length;
+        createScene(scenes[currentScene]);
+    });
+
+    document.getElementById('toggleRotation').addEventListener('click', () => {
+        rotating = !rotating;
+    });
+
+    document.getElementById('speedControl').addEventListener('input', (event) => {
+        const speed = event.target.value / 50;
+        scene.userData.animate = (time) => scene.userData.animate(time * speed);
+    });
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Create hotspots
+    const hotspots = [
+        {x: 100, y: 100, text: "Normal mirror: Predictable reflection"},
+        {x: 200, y: 100, text: "Semi-silvered mirror: Quantum splitting"},
+        {x: 150, y: 200, text: "Multiverse branching: Multiple outcomes"},
+        {x: 250, y: 200, text: "Interferometer: Quantum interference"},
+        {x: 300, y: 300, text: "Continuous quantum change: Smooth state transition"}
+    ];
+
+    hotspots.forEach((hotspot, index) => {
+        const element = document.createElement('div');
+        element.className = 'hotspot';
+        element.style.left = hotspot.x + 'px';
+        element.style.top = hotspot.y + 'px';
+        document.body.appendChild(element);
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.textContent = hotspot.text;
+        document.body.appendChild(tooltip);
+
+        element.addEventListener('mouseover', () => {
+            tooltip.style.display = 'block';
+            tooltip.style.left = (hotspot.x + 25) + 'px';
+            tooltip.style.top = (hotspot.y + 25) + 'px';
+        });
+
+        element.addEventListener('mouseout', () => {
+            tooltip.style.display = 'none';
+        });
+    });
+</script></body>
+</html>
