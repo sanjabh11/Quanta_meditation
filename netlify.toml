@@ -3,10 +3,12 @@
   publish = "client/build"
   command = "npm run build"
 
-[build.environment]
-  NODE_VERSION = "14.17.0"
+[context.production]
+  publish = "output/"
+  command = "make publish"
+  environment = { NODE_VERSION = "14.15.3" }
 
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/blog/:splat"
   status = 200
