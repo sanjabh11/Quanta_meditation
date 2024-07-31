@@ -7,12 +7,6 @@
   NODE_VERSION = "14.17.0"
 
 [[redirects]]
-  from = "Quanta_meditation/*"
-  to = "/blog/:splat"
+  from = "/*"
+  to = "/index.html"
   status = 200
-
-# Uncomment the following line if you want to redirect to index.html
-# [[redirects]]
-#   from = "Quanta_meditation/*"
-#   to = "/index.html"
-#   status = 200
