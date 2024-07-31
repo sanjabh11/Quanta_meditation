@@ -1,5 +1,5 @@
 [build]
-  base = "/Quanta_meditation"
+  base = "Quanta_meditation/"
   publish = "client/build"
   command = "npm run build"
 
@@ -7,6 +7,7 @@
   NODE_VERSION = "14.17.0"
 
 [[redirects]]
-  from = "/Quanta_meditation"
-  to = "/index.html"
+  from = "Quanta_meditation/*"
+  to = "/blog/:splat"
+  #to = "/index.html"
   status = 200
