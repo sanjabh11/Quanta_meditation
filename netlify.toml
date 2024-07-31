@@ -9,5 +9,10 @@
 [[redirects]]
   from = "Quanta_meditation/*"
   to = "/blog/:splat"
-  #to = "/index.html"
   status = 200
+
+# Uncomment the following line if you want to redirect to index.html
+# [[redirects]]
+#   from = "Quanta_meditation/*"
+#   to = "/index.html"
+#   status = 200
