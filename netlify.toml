@@ -1,14 +1,12 @@
 [build]
-  base = "Quanta_meditation/"
+  base = "/"
   publish = "client/build"
   command = "npm run build"
 
-[context.production]
-  publish = "output/"
-  command = "make publish"
-  environment = { NODE_VERSION = "14.15.3" }
+[build.environment]
+  NODE_VERSION = "14.17.0"
 
 [[redirects]]
   from = "/*"
-  to = "/blog/:splat"
+  to = "/index.html"
   status = 200
