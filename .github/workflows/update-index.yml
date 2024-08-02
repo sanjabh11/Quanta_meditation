@@ -1,28 +1,30 @@
-   name: Update Index
+name: Update Index
 
-   on:
-     push:
-       branches: [main]
-       paths:
-         - 'Beginning of Infinity/**'
-         - 'Mindfullness/**'
-         - 'Quantum Physics Simulations/**'
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Beginning of Infinity/**'
+      - 'Mindfullness/**'
+      - 'Quantum Physics Simulations/**'
 
-   jobs:
-     update-index:
-       runs-on: ubuntu-latest
-       steps:
-       - uses: actions/checkout@v2
-       - name: Set up Python
-         uses: actions/setup-python@v2
-         with:
-           python-version: '3.x'
-       - name: Generate index.html
-         run: python generate_index.py
-       - name: Commit changes
-         run: |
-           git config --local user.email "action@github.com"
-           git config --local user.name "GitHub Action"
-           git add index.html
-           git commit -m "Update index.html" || echo "No changes to commit"
-           git push
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    - name: Generate index.html
+      run: python generate_index.py
+    - name: Commit changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add index.html
+        git commit -m "Update index.html" || echo "No changes to commit"
+        git push https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}.git
