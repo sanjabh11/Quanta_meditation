@@ -40,6 +40,8 @@ def generate_html():
 
   html_content += "</body></html>"
   
+  print(html_content)  # Debugging: Print the generated HTML content
+  
   with open('index.html', 'w') as f:
       f.write(html_content)
 
