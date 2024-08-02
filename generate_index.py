@@ -30,12 +30,15 @@ def generate_html():
   <h1>Welcome to Quantum Physics & Meditation</h1>
   """
 
-  for folder in folders:
-      html_content += f"<h2>{folder}</h2><ul>"
-      for file in os.listdir(folder):
-          if file.endswith('.html'):
-              html_content += f'<li><a href="{folder}/{file}">{file[:-5]}</a></li>'
-      html_content += "</ul>"
+     for folder in folders:
+       if os.path.exists(folder):
+           html_content += f"<h2>{folder}</h2><ul>"
+           for file in os.listdir(folder):
+               if file.endswith('.html'):
+                   html_content += f'<li><a href="{folder}/{file}">{file[:-5]}</a></li>'
+           html_content += "</ul>"
+       else:
+           html_content += f"<h2>{folder} (Folder not found)</h2>"
 
   html_content += "</body></html>"
   
