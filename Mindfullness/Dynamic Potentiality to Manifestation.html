@@ -1,0 +1,227 @@
+<html><head>
+<title>Dynamic Potentiality to Manifestation</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background-color: #000;
+        color: #fff;
+    }
+    #canvas {
+        width: 100%;
+        height: 100%;
+    }
+    #info-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.7);
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 300px;
+    }
+    #controls {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+    }
+    button {
+        background: #4CAF50;
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="info-panel">
+    <h2>Dynamic Potentiality to Manifestation</h2>
+    <p>Witness the journey from unmanifest Dynamic Potentiality to the manifestation of Dynamic Intelligent Energy as body and world.</p>
+    <p>Click and drag to rotate the view. Scroll to zoom.</p>
+</div>
+<div id="controls">
+    <button id="toggleManifestation">Actualize Manifestation</button>
+</div>
+
+<script>
+let scene, camera, renderer, dynamicPotentiality, intelligentEnergy, body, world;
+let mouseX = 0, mouseY = 0;
+let isManifesting = false;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // Dynamic Potentiality representation
+    const potentialityGeometry = new THREE.SphereGeometry(2, 64, 64);
+    const potentialityMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 1.0 }
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            void main() {
+                vUv = uv;
+                vNormal = normal;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float time;
+            varying vec2 vUv;
+            varying vec3 vNormal;
+            void main() {
+                vec3 light = normalize(vec3(1.0, 1.0, 1.0));
+                float intensity = pow(0.5 - dot(vNormal, light), 3.0);
+                vec3 color = mix(
+                    vec3(0.1, 0.2, 0.3),
+                    vec3(0.5, 0.8, 1.0),
+                    intensity + 0.5 * sin(30.0 * vUv.x + 20.0 * vUv.y - 5.0 * time)
+                );
+                gl_FragColor = vec4(color, 0.9);
+            }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+    dynamicPotentiality = new THREE.Mesh(potentialityGeometry, potentialityMaterial);
+    scene.add(dynamicPotentiality);
+
+    // Intelligent Energy representation
+    const energyGeometry = new THREE.BufferGeometry();
+    const particleCount = 10000;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 10;
+        positions[i + 1] = (Math.random() - 0.5) * 10;
+        positions[i + 2] = (Math.random() - 0.5) * 10;
+        colors[i] = Math.random();
+        colors[i + 1] = Math.random();
+        colors[i + 2] = Math.random();
+    }
+    energyGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    energyGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const energyMaterial = new THREE.PointsMaterial({size: 0.05, vertexColors: true});
+    intelligentEnergy = new THREE.Points(energyGeometry, energyMaterial);
+    intelligentEnergy.visible = false;
+    scene.add(intelligentEnergy);
+
+    // Body representation
+    const bodyGeometry = new THREE.TorusKnotGeometry(1, 0.3, 100, 16);
+    const bodyMaterial = new THREE.MeshPhongMaterial({color: 0xffaa00, shininess: 100});
+    body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.visible = false;
+    scene.add(body);
+
+    // World representation
+    const worldGeometry = new THREE.IcosahedronGeometry(1.5, 1);
+    const worldMaterial = new THREE.MeshPhongMaterial({color: 0x00aaff, shininess: 50});
+    world = new THREE.Mesh(worldGeometry, worldMaterial);
+    world.visible = false;
+    scene.add(world);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(10, 10, 10);
+    scene.add(pointLight);
+
+    camera.position.z = 10;
+
+    window.addEventListener('resize', onWindowResize, false);
+    document.addEventListener('mousemove', onDocumentMouseMove, false);
+    document.addEventListener('wheel', onDocumentWheel, false);
+    document.getElementById('toggleManifestation').addEventListener('click', toggleManifestation);
+
+    animate();
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onDocumentMouseMove(event) {
+    mouseX = (event.clientX - window.innerWidth / 2) / 100;
+    mouseY = (event.clientY - window.innerHeight / 2) / 100;
+}
+
+function onDocumentWheel(event) {
+    camera.position.z += event.deltaY * 0.01;
+    camera.position.z = Math.max(5, Math.min(camera.position.z, 15));
+}
+
+function toggleManifestation() {
+    isManifesting = !isManifesting;
+    if (isManifesting) {
+        gsap.to(dynamicPotentiality.scale, {duration: 2, x: 0.5, y: 0.5, z: 0.5, ease: "power2.inOut"});
+        gsap.to(intelligentEnergy.scale, {duration: 2, x: 1, y: 1, z: 1, ease: "power2.inOut"});
+        gsap.to(body.scale, {duration: 2, x: 1, y: 1, z: 1, ease: "elastic.out(1, 0.3)"});
+        gsap.to(world.scale, {duration: 2, x: 1, y: 1, z: 1, ease: "elastic.out(1, 0.3)"});
+        
+        intelligentEnergy.visible = true;
+        body.visible = true;
+        world.visible = true;
+        
+        document.getElementById('toggleManifestation').textContent = "Return to Potentiality";
+    } else {
+        gsap.to(dynamicPotentiality.scale, {duration: 2, x: 1, y: 1, z: 1, ease: "power2.inOut"});
+        gsap.to(intelligentEnergy.scale, {duration: 2, x: 0, y: 0, z: 0, ease: "power2.inOut"});
+        gsap.to(body.scale, {duration: 2, x: 0, y: 0, z: 0, ease: "power2.in"});
+        gsap.to(world.scale, {duration: 2, x: 0, y: 0, z: 0, ease: "power2.in"});
+        
+        setTimeout(() => {
+            intelligentEnergy.visible = false;
+            body.visible = false;
+            world.visible = false;
+        }, 2000);
+        
+        document.getElementById('toggleManifestation').textContent = "Actualize Manifestation";
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = performance.now() * 0.001;
+
+    dynamicPotentiality.material.uniforms.time.value = time;
+    dynamicPotentiality.rotation.y = time * 0.1;
+
+    if (isManifesting) {
+        intelligentEnergy.rotation.y += 0.002;
+        body.rotation.x += 0.01;
+        body.rotation.y += 0.02;
+        world.rotation.y += 0.005;
+    }
+
+    camera.position.x += (mouseX - camera.position.x) * 0.05;
+    camera.position.y += (-mouseY - camera.position.y) * 0.05;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body>
+</html>
