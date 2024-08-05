@@ -1,0 +1,306 @@
+<!DOCTYPE html><html><head> 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPT-6: Schrödinger Equation Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0a0a0a;
+    color: #00ff00;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  h1 {
+    text-align: center;
+    color: #ff00ff;
+    font-size: 2em;
+    margin-bottom: 20px;
+  }
+  .content {
+    display: flex;
+    flex: 1;
+  }
+  .explanation {
+    flex: 1;
+    padding-right: 20px;
+    overflow-y: auto;
+  }
+  .visualization {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #wave-function-plot {
+    width: 100%;
+    height: 400px;
+    margin-bottom: 20px;
+  }
+  #probability-density-plot {
+    width: 100%;
+    height: 300px;
+  }
+  .key-concept {
+    color: #00ffff;
+  }
+  .equation {
+    font-style: italic;
+    color: #ffff00;
+    text-align: center;
+    margin: 10px 0;
+  }
+  #controls {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+  }
+  button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>The Schrödinger Equation</h1>
+  <div class="content">
+    <div class="explanation">
+  <p style="color: lightblue;">The Schrödinger equation is a fundamental equation in quantum mechanics that describes how the quantum state of a physical system changes with time. It was formulated by Erwin Schrödinger in 1925 and is considered one of the most important equations in physics.</p>
+  
+  <p style="color: lightblue;">The time-dependent Schrödinger equation is:</p>
+  <p class="equation">iℏ ∂Ψ/∂t = ĤΨ</p>
+
+  <p style="color: lightblue;">Where:</p>
+  <ul style="color: lightblue;">
+    <li>i is the imaginary unit</li>
+    <li>ℏ is the reduced Planck's constant</li>
+    <li>Ψ (Psi) is the wave function</li>
+    <li>t is time</li>
+    <li>Ĥ is the Hamiltonian operator</li>
+  </ul>
+
+  <p style="color: yellow;">Key concepts:</p>
+  <ul style="color: lightblue;">
+    <li><span class="key-concept">Wave Function (Ψ)</span>: Describes the quantum state of a system. Its absolute square |Ψ|² gives the probability density of finding a particle at a certain position and time.</li>
+    <li><span class="key-concept">Hamiltonian (Ĥ)</span>: An operator corresponding to the total energy of the system. It typically includes kinetic and potential energy terms.</li>
+    <li><span class="key-concept">Superposition</span>: The wave function can be in multiple states simultaneously, a key principle of quantum mechanics.</li>
+    <li><span class="key-concept">Probability Interpretation</span>: The wave function is related to the probability of finding a particle in a certain state.</li>
+  </ul>
+
+  <p style="color: lightblue;">For a particle in one dimension, the Schrödinger equation takes the form:</p>
+  <p class="equation">iℏ ∂Ψ/∂t = -ℏ²/2m ∂²Ψ/∂x² + V(x)Ψ</p>
+
+  <p style="color: lightblue;">Where:</p>
+  <ul style="color: lightblue;">
+    <li>m is the mass of the particle</li>
+    <li>V(x) is the potential energy as a function of position</li>
+  </ul>
+
+  <p style="color: lightblue;">The visualization on the right shows a solution to the Schrödinger equation for a free particle (V(x) = 0). It displays the real and imaginary parts of the wave function, as well as the probability density |Ψ|².</p>
+
+  <p style="color: yellow;">Applications of the Schrödinger equation include:</p>
+  <ul style="color: lightblue;">
+    <li>Describing electron behavior in atoms and molecules</li>
+    <li>Understanding quantum tunneling</li>
+    <li>Explaining the behavior of particles in potential wells</li>
+    <li>Forming the basis for more advanced quantum mechanical calculations</li>
+  </ul>
+
+  <p style="color: lightblue;">The Schrödinger equation is a cornerstone of quantum mechanics and has led to numerous technological advancements, from the development of transistors to the ongoing research in quantum computing.</p>
+</div>
+    <div class="visualization">
+      <div id="wave-function-plot">
+  <svg width="100%" height="400" viewBox="0 0 800 400">
+    <defs>
+      <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#ff0000;stop-opacity:1"></stop>
+        <stop offset="50%" style="stop-color:#ff00ff;stop-opacity:1"></stop>
+        <stop offset="100%" style="stop-color:#0000ff;stop-opacity:1"></stop>
+      </linearGradient>
+    </defs>
+    <path id="wave-path" fill="none" stroke="url(#wave-gradient)" stroke-width="3">
+      <animate attributeName="d" dur="5s" repeatCount="indefinite" values="
+          M0,200 Q200,100 400,200 T800,200;
+          M0,200 Q200,300 400,200 T800,200;
+          M0,200 Q200,100 400,200 T800,200"></animate>
+    </path>
+    <text x="400" y="30" fill="#00ff00" font-size="24" text-anchor="middle">Animated Wave Function</text>
+    <text x="20" y="380" fill="#00ff00" font-size="18">Position</text>
+    <text x="10" y="200" fill="#00ff00" font-size="18" transform="rotate(-90 10,200)">Ψ(x,t)</text>
+  </svg>
+</div>
+      <div id="probability-density-plot"></div>
+      <div id="controls">
+  <button id="play-pause">Play/Pause</button>
+  <button id="reset">Reset</button>
+</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Constants
+const hbar = 1;
+const m = 1;
+const k = 2;
+const omega = Math.sqrt(k / m);
+const A = 1;
+
+// Generate x values
+const x = math.range(-10, 10, 0.1).toArray();
+
+// Time values
+let t = 0;
+const dt = 0.05;
+
+// Wave function
+function psi(x, t) {
+  return x.map(xi => {
+    const real = A * Math.cos(k * xi - omega * t);
+    const imag = A * Math.sin(k * xi - omega * t);
+    return {real, imag};
+  });
+}
+
+// Probability density
+function probabilityDensity(psi) {
+  return psi.map(p => p.real * p.real + p.imag * p.imag);
+}
+
+// Create wave function plot
+const realTrace = {
+  x: x,
+  y: psi(x, t).map(p => p.real),
+  mode: 'lines',
+  name: 'Real Part',
+  line: {color: '#ff0000'}
+};
+
+const imagTrace = {
+  x: x,
+  y: psi(x, t).map(p => p.imag),
+  mode: 'lines',
+  name: 'Imaginary Part',
+  line: {color: '#0000ff'}
+};
+
+const waveLayout = {
+  title: 'Wave Function',
+  xaxis: {title: 'Position'},
+  yaxis: {title: 'Ψ(x,t)', range: [-1.5, 1.5]},
+  plot_bgcolor: '#222',
+  paper_bgcolor: '#111',
+  font: {color: '#00ff00'},
+  showlegend: true
+};
+
+Plotly.newPlot('wave-function-plot', [realTrace, imagTrace], waveLayout);
+
+// Create probability density plot
+const probabilityTrace = {
+  x: x,
+  y: probabilityDensity(psi(x, t)),
+  mode: 'lines',
+  name: 'Probability Density',
+  line: {color: '#00ff00'}
+};
+
+const probabilityLayout = {
+  title: 'Probability Density',
+  xaxis: {title: 'Position'},
+  yaxis: {title: '|Ψ(x,t)|²', range: [0, 1.5]},
+  plot_bgcolor: '#222',
+  paper_bgcolor: '#111',
+  font: {color: '#00ff00'},
+  showlegend: false
+};
+
+Plotly.newPlot('probability-density-plot', [probabilityTrace], probabilityLayout);
+
+// Animation
+let animationId;
+let isPlaying = false;
+
+function animate() {
+  t += dt;
+  const newPsi = psi(x, t);
+  
+  Plotly.animate('wave-function-plot', {
+    data: [
+      {y: newPsi.map(p => p.real)},
+      {y: newPsi.map(p => p.imag)}
+    ]
+  }, {
+    transition: {duration: 0},
+    frame: {duration: 0, redraw: false}
+  });
+
+  Plotly.animate('probability-density-plot', {
+    data: [{y: probabilityDensity(newPsi)}]
+  }, {
+    transition: {duration: 0},
+    frame: {duration: 0, redraw: false}
+  });
+
+  animationId = requestAnimationFrame(animate);
+}
+
+// Controls
+const playPauseButton = document.getElementById('play-pause');
+const resetButton = document.getElementById('reset');
+
+function toggleAnimation() {
+  if (isPlaying) {
+    cancelAnimationFrame(animationId);
+    isPlaying = false;
+    playPauseButton.textContent = 'Play';
+  } else {
+    animate();
+    isPlaying = true;
+    playPauseButton.textContent = 'Pause';
+  }
+}
+
+function resetAnimation() {
+  cancelAnimationFrame(animationId);
+  isPlaying = false;
+  playPauseButton.textContent = 'Play';
+  t = 0;
+  const initialPsi = psi(x, t);
+  Plotly.react('wave-function-plot', [
+    {x: x, y: initialPsi.map(p => p.real), mode: 'lines', name: 'Real Part', line: {color: '#ff0000'}},
+    {x: x, y: initialPsi.map(p => p.imag), mode: 'lines', name: 'Imaginary Part', line: {color: '#0000ff'}}
+  ], waveLayout);
+  Plotly.react('probability-density-plot', [
+    {x: x, y: probabilityDensity(initialPsi), mode: 'lines', name: 'Probability Density', line: {color: '#00ff00'}}
+  ], probabilityLayout);
+}
+
+playPauseButton.addEventListener('click', toggleAnimation);
+resetButton.addEventListener('click', resetAnimation);
+
+// Initial state
+resetAnimation();
+</script>
+
+</body></html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html><html><head>
+<title>Cherenkov Effect Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: #fff;
+  }
+  #canvas-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  #info-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0,0,0,0.7);
+    padding: 15px;
+    border-radius: 10px;
+    max-width: 300px;
+    font-size: 14px;
+  }
+  #controls {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    gap: 10px;
+  }
+  button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="info-panel">
+  <h2>Cherenkov Effect Simulator</h2>
+  <p>Observe the Cherenkov effect as charged particles move faster than light through a medium, creating a characteristic blue glow.</p>
+  <h3>Key Concepts:</h3>
+  <ul>
+    <li>Particle Speed vs. Light Speed: In this medium, light travels at a reduced speed. When a charged particle exceeds this speed, it produces Cherenkov radiation.</li>
+    <li>Emission of Cherenkov Radiation: As the particle moves faster than light in the medium, it creates an electromagnetic shock wave, visible as a blue glow.</li>
+    <li>Cherenkov Cone: The angle of the light cone (θ) is related to the particle's speed (v) and the speed of light in the medium (c) by the formula: cos(θ) = c/v</li>
+    <li>Particle Speed Effect: As the particle's speed increases, the cone angle widens, and the intensity of the blue glow increases.</li>
+  </ul>
+  <p>Use the controls below to change the particle's speed and observe how it affects the Cherenkov radiation.</p>
+</div>
+<div id="controls">
+  <button id="slow-btn">Slow Particle</button>
+  <button id="fast-btn">Fast Particle</button>
+</div>
+
+<script>
+let scene, camera, renderer, particle, lightCone, medium, wavefront;
+let particleSpeed = 0.05;
+const lightSpeed = 0.03;
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  createMedium();
+  createParticle();
+  createLightCone();
+  createWavefront();
+
+  camera.position.z = 5;
+
+  window.addEventListener('resize', onWindowResize, false);
+
+  document.getElementById('slow-btn').addEventListener('click', () => setParticleSpeed(0.02));
+  document.getElementById('fast-btn').addEventListener('click', () => setParticleSpeed(0.05));
+
+  animate();
+}
+
+function createMedium() {
+  const geometry = new THREE.BoxGeometry(10, 10, 10);
+  const material = new THREE.MeshPhongMaterial({
+    color: 0x0077be,
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide
+  });
+  medium = new THREE.Mesh(geometry, material);
+  scene.add(medium);
+
+  const light = new THREE.PointLight(0xffffff, 1, 100);
+  light.position.set(0, 0, 10);
+  scene.add(light);
+}
+
+function createParticle() {
+  const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+  const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  particle = new THREE.Mesh(geometry, material);
+  particle.position.set(-5, 0, 0);
+  scene.add(particle);
+}
+
+function createLightCone() {
+  const geometry = new THREE.ConeGeometry(0.5, 1, 32);
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      varying vec2 vUv;
+      void main() {
+        float intensity = sin(vUv.y * 10.0 + time * 5.0) * 0.5 + 0.5;
+        vec3 color = mix(vec3(0.0, 0.5, 1.0), vec3(0.0, 0.0, 0.5), intensity);
+        gl_FragColor = vec4(color, 0.7);
+      }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  lightCone = new THREE.Mesh(geometry, material);
+  lightCone.rotation.z = Math.PI / 2;
+  lightCone.visible = false;
+  scene.add(lightCone);
+}
+
+function createWavefront() {
+  const geometry = new THREE.ConeGeometry(0.5, 1, 32, 1, true);
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 },
+      particlePosition: { value: new THREE.Vector3() }
+    },
+    vertexShader: `
+      uniform float time;
+      uniform vec3 particlePosition;
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        vec3 pos = position;
+        pos.x += particlePosition.x;
+        pos.y = pos.y * (1.0 + sin(time * 10.0 + position.x * 5.0) * 0.1);
+        pos.z = pos.z * (1.0 + cos(time * 10.0 + position.x * 5.0) * 0.1);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      varying vec2 vUv;
+      void main() {
+        float intensity = sin(vUv.y * 20.0 + time * 10.0) * 0.5 + 0.5;
+        vec3 color = mix(vec3(0.0, 0.7, 1.0), vec3(0.0, 0.2, 0.8), intensity);
+        gl_FragColor = vec4(color, 0.3);
+      }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  wavefront = new THREE.Mesh(geometry, material);
+  wavefront.rotation.z = -Math.PI / 2;
+  wavefront.scale.set(5, 5, 5);
+  wavefront.visible = false;
+  scene.add(wavefront);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function setParticleSpeed(speed) {
+  particleSpeed = speed;
+  lightCone.visible = particleSpeed > lightSpeed;
+  wavefront.visible = particleSpeed > lightSpeed;
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const time = performance.now() * 0.001;
+
+  particle.position.x += particleSpeed;
+  if (particle.position.x > 5) {
+    particle.position.x = -5;
+  }
+
+  lightCone.position.copy(particle.position);
+  lightCone.material.uniforms.time.value = time;
+
+  wavefront.material.uniforms.time.value = time;
+  wavefront.material.uniforms.particlePosition.value.copy(particle.position);
+
+  if (particleSpeed > lightSpeed) {
+    const scale = (particleSpeed - lightSpeed) * 10;
+    lightCone.scale.set(scale, scale, scale);
+    wavefront.scale.set(scale * 2, scale * 2, scale * 2);
+  }
+
+  renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body></html>

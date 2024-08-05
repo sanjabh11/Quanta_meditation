@@ -1,0 +1,310 @@
+<html><head>
+<title>Electrons, Positrons, and Magnetic Monopoles: A Unified Perspective</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: #fff;
+  }
+  #canvas-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  #info-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0,0,0,0.7);
+    padding: 15px;
+    border-radius: 10px;
+    max-width: 300px;
+    font-size: 14px;
+    overflow-y: auto;
+    max-height: 80%;
+  }
+  #controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button {
+    font-size: 16px;
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="info-panel">
+  <h2>Electrons, Positrons, and Magnetic Monopoles</h2>
+  <div id="explanation"></div>
+</div>
+<div id="controls">
+  <button id="toggle-projection">Toggle Projection</button>
+  <button id="rotate-sphere">Rotate Sphere</button>
+  <button id="reset">Reset</button>
+</div>
+
+<script>
+let scene, camera, renderer;
+let sphere, stereographicProjection, fieldLines;
+let currentProjection = 'sphere';
+let rotationAngle = 0;
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  createSphere();
+  createStereographicProjection();
+  createFieldLines();
+
+  camera.position.z = 5;
+
+  window.addEventListener('resize', onWindowResize, false);
+  document.getElementById('toggle-projection').addEventListener('click', toggleProjection);
+  document.getElementById('rotate-sphere').addEventListener('click', rotateSphere);
+  document.getElementById('reset').addEventListener('click', resetVisualization);
+
+  updateExplanation();
+  animate();
+}
+
+function createSphere() {
+  const geometry = new THREE.SphereGeometry(2, 32, 32);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x3366cc,
+    transparent: true,
+    opacity: 0.7,
+    wireframe: true
+  });
+  sphere = new THREE.Mesh(geometry, material);
+  scene.add(sphere);
+
+  // Add electron and positron representations
+  const electronGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+  const electronMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const electron = new THREE.Mesh(electronGeometry, electronMaterial);
+  electron.position.set(0, -2, 0);
+  sphere.add(electron);
+
+  const positronGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+  const positronMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const positron = new THREE.Mesh(positronGeometry, positronMaterial);
+  positron.position.set(0, 2, 0);
+  sphere.add(positron);
+}
+
+function createStereographicProjection() {
+  stereographicProjection = new THREE.Group();
+  scene.add(stereographicProjection);
+
+  const planeGeometry = new THREE.PlaneGeometry(8, 8);
+  const planeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x666666,
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide
+  });
+  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane.rotation.x = -Math.PI / 2;
+  plane.position.y = -2;
+  stereographicProjection.add(plane);
+
+  stereographicProjection.visible = false;
+}
+
+function createFieldLines() {
+  fieldLines = new THREE.Group();
+  scene.add(fieldLines);
+
+  const curveCount = 20;
+  const curveSegments = 50;
+
+  for (let i = 0; i < curveCount; i++) {
+    const angle = (i / curveCount) * Math.PI * 2;
+    const curve = new THREE.CubicBezierCurve3(
+      new THREE.Vector3(0, -2, 0),
+      new THREE.Vector3(Math.cos(angle), -0.5, Math.sin(angle)),
+      new THREE.Vector3(Math.cos(angle), 0.5, Math.sin(angle)),
+      new THREE.Vector3(0, 2, 0)
+    );
+
+    const points = curve.getPoints(curveSegments);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.5 });
+    const line = new THREE.Line(geometry, material);
+    fieldLines.add(line);
+  }
+}
+
+function toggleProjection() {
+  currentProjection = currentProjection === 'sphere' ? 'stereographic' : 'sphere';
+  sphere.visible = currentProjection === 'sphere';
+  stereographicProjection.visible = currentProjection === 'stereographic';
+  updateExplanation();
+}
+
+function rotateSphere() {
+  rotationAngle += Math.PI / 2;
+  gsap.to(sphere.rotation, { y: rotationAngle, duration: 1 });
+  gsap.to(fieldLines.rotation, { y: rotationAngle, duration: 1 });
+}
+
+function resetVisualization() {
+  rotationAngle = 0;
+  gsap.to(sphere.rotation, { x: 0, y: 0, z: 0, duration: 1 });
+  gsap.to(fieldLines.rotation, { x: 0, y: 0, z: 0, duration: 1 });
+}
+
+function updateExplanation() {
+  const explanationElement = document.getElementById('explanation');
+  if (currentProjection === 'sphere') {
+    explanationElement.innerHTML = `
+      <h3>Spherical Representation</h3>
+      <p>This visualization shows electrons (red) and positrons (green) on a sphere, representing the unified perspective of electric and magnetic charges.</p>
+      <p>The yellow lines represent the electromagnetic field lines connecting the charges.</p>
+      <p>Key concepts:</p>
+      <ul>
+        <li>Electrons and positrons can be viewed as opposite poles on the sphere.</li>
+        <li>The field lines demonstrate the continuous nature of the electromagnetic field.</li>
+      </ul>
+    `;
+  } else {
+    explanationElement.innerHTML = `
+      <h3>Stereographic Projection</h3>
+      <p>This view shows the stereographic projection of the sphere onto a plane.</p>
+      <p>In this representation, magnetic monopoles emerge as a natural consequence of the projection.</p>
+      <p>Key insights:</p>
+      <ul>
+        <li>The projection maps the sphere's poles to finite and infinite points on the plane.</li>
+        <li>This perspective blurs the distinction between electric and magnetic charges.</li>
+        <li>Einstein's geometric approach and Faraday's unification concept are combined in this view.</li>
+      </ul>
+    `;
+  }
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (currentProjection === 'stereographic') {
+    updateStereographicProjection();
+  }
+
+  renderer.render(scene, camera);
+}
+
+function updateStereographicProjection() {
+  stereographicProjection.clear();
+
+  const planeGeometry = new THREE.PlaneGeometry(8, 8);
+  const planeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x666666,
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide
+  });
+  const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane.rotation.x = -Math.PI / 2;
+  plane.position.y = -2;
+  stereographicProjection.add(plane);
+
+  const projectedPoints = [];
+  const sphereRadius = 2;
+
+  for (let i = 0; i < fieldLines.children.length; i++) {
+    const line = fieldLines.children[i];
+    const positions = line.geometry.attributes.position.array;
+    const projectedPositions = [];
+
+    for (let j = 0; j < positions.length; j += 3) {
+      const x = positions[j];
+      const y = positions[j + 1];
+      const z = positions[j + 2];
+
+      // Apply sphere rotation
+      const rotatedX = x * Math.cos(rotationAngle) - z * Math.sin(rotationAngle);
+      const rotatedZ = x * Math.sin(rotationAngle) + z * Math.cos(rotationAngle);
+
+      // Stereographic projection
+      const projectionFactor = sphereRadius / (sphereRadius - rotatedZ);
+      const projectedX = rotatedX * projectionFactor;
+      const projectedY = y * projectionFactor;
+
+      projectedPositions.push(projectedX, -2, projectedY);
+    }
+
+    const projectedGeometry = new THREE.BufferGeometry();
+    projectedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(projectedPositions, 3));
+    const projectedMaterial = new THREE.LineBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.5 });
+    const projectedLine = new THREE.Line(projectedGeometry, projectedMaterial);
+    stereographicProjection.add(projectedLine);
+  }
+
+  // Add projected electron and positron
+  const electronProjection = projectPoint(0, -2, 0);
+  const positronProjection = projectPoint(0, 2, 0);
+
+  const electronGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+  const electronMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const electron = new THREE.Mesh(electronGeometry, electronMaterial);
+  electron.position.set(electronProjection.x, -2, electronProjection.z);
+  stereographicProjection.add(electron);
+
+  const positronGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+  const positronMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const positron = new THREE.Mesh(positronGeometry, positronMaterial);
+  positron.position.set(positronProjection.x, -2, positronProjection.z);
+  stereographicProjection.add(positron);
+}
+
+function projectPoint(x, y, z) {
+  const sphereRadius = 2;
+  // Apply sphere rotation
+  const rotatedX = x * Math.cos(rotationAngle) - z * Math.sin(rotationAngle);
+  const rotatedZ = x * Math.sin(rotationAngle) + z * Math.cos(rotationAngle);
+
+  // Stereographic projection
+  const projectionFactor = sphereRadius / (sphereRadius - rotatedZ);
+  const projectedX = rotatedX * projectionFactor;
+  const projectedY = y * projectionFactor;
+
+  return { x: projectedX, z: projectedY };
+}
+
+init();
+</script>
+</body></html>
