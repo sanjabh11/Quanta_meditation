@@ -1,4 +1,4 @@
-<html><head>
+<!DOCTYPE html><html><head><base href=
 <title>Electrons, Positrons, and Magnetic Monopoles: A Unified Perspective</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
@@ -220,6 +220,14 @@ function onWindowResize() {
 function animate() {
   requestAnimationFrame(animate);
 
+  // Animate the sphere
+  sphere.rotation.y += 0.005;
+  sphere.rotation.x += 0.002;
+
+  // Animate field lines
+  fieldLines.rotation.y = sphere.rotation.y;
+  fieldLines.rotation.x = sphere.rotation.x;
+
   if (currentProjection === 'stereographic') {
     updateStereographicProjection();
   }
@@ -256,13 +264,14 @@ function updateStereographicProjection() {
       const z = positions[j + 2];
 
       // Apply sphere rotation
-      const rotatedX = x * Math.cos(rotationAngle) - z * Math.sin(rotationAngle);
-      const rotatedZ = x * Math.sin(rotationAngle) + z * Math.cos(rotationAngle);
+      const rotatedX = x * Math.cos(sphere.rotation.y) - z * Math.sin(sphere.rotation.y);
+      const rotatedY = y * Math.cos(sphere.rotation.x) - z * Math.sin(sphere.rotation.x);
+      const rotatedZ = x * Math.sin(sphere.rotation.y) + z * Math.cos(sphere.rotation.y);
 
       // Stereographic projection
       const projectionFactor = sphereRadius / (sphereRadius - rotatedZ);
       const projectedX = rotatedX * projectionFactor;
-      const projectedY = y * projectionFactor;
+      const projectedY = rotatedY * projectionFactor;
 
       projectedPositions.push(projectedX, -2, projectedY);
     }
@@ -294,13 +303,14 @@ function updateStereographicProjection() {
 function projectPoint(x, y, z) {
   const sphereRadius = 2;
   // Apply sphere rotation
-  const rotatedX = x * Math.cos(rotationAngle) - z * Math.sin(rotationAngle);
-  const rotatedZ = x * Math.sin(rotationAngle) + z * Math.cos(rotationAngle);
+  const rotatedX = x * Math.cos(sphere.rotation.y) - z * Math.sin(sphere.rotation.y);
+  const rotatedY = y * Math.cos(sphere.rotation.x) - z * Math.sin(sphere.rotation.x);
+  const rotatedZ = x * Math.sin(sphere.rotation.y) + z * Math.cos(sphere.rotation.y);
 
   // Stereographic projection
   const projectionFactor = sphereRadius / (sphereRadius - rotatedZ);
   const projectedX = rotatedX * projectionFactor;
-  const projectedY = y * projectionFactor;
+  const projectedY = rotatedY * projectionFactor;
 
   return { x: projectedX, z: projectedY };
 }
