@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Physics Simulations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #explanation {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #nextButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="explanation"></div>
+    <button id="nextButton">Next Simulation</button>
+    <script>
+        let currentSimulation = 0;
+        const simulations = [
+            "1. Wave Function Collapse",
+            "2. Holographic Principle",
+            "3. Quantum Vacuum Fluctuations",
+            "4. Event Horizon",
+            "5. Quantum Gravity",
+            "6. Quantum Superposition",
+            "7. Large-Scale Quantum Entanglement",
+            "8. Quantum Tunneling",
+            "9. Quantum Decoherence",
+            "10. Quantum Measurement Problem"
+        ];
+
+        const explanations = [
+            "Wave Function Collapse: This simulation shows the probabilistic nature of quantum mechanics. Wave functions represent possible states, and upon measurement, they collapse into definite states.",
+            "Holographic Principle: This demonstrates how 3D information might be encoded on a 2D surface, similar to how our universe might store information on its boundary.",
+            "Quantum Vacuum Fluctuations: Particles and antiparticles spontaneously appear and disappear in empty space, showcasing the dynamic nature of the quantum vacuum.",
+            "Event Horizon: This simulation shows particles being drawn into a black hole, with the event horizon marking the point of no return.",
+            "Quantum Gravity: This represents spacetime at the smallest scales, where quantum effects cause foam-like fluctuations in the fabric of space.",
+            "Quantum Superposition: Particles exist in multiple states simultaneously until measured, as demonstrated by the double-slit experiment.",
+            "Large-Scale Quantum Entanglement: Entangled particles maintain correlated states even at large distances, demonstrating quantum non-locality.",
+            "Quantum Tunneling: Particles can pass through barriers they classically shouldn't be able to, due to their wave-like nature in quantum mechanics.",
+            "Quantum Decoherence: This shows how quantum systems lose their coherence and quantum properties as they interact with the environment.",
+            "Quantum Measurement Problem: Different interpretations of quantum mechanics attempt to explain what happens during measurement, as shown here with Copenhagen, Many-Worlds, and Pilot Wave theories."
+        ];
+
+        let particles = [];
+        let waveFunctions = [];
+        let hologram = [];
+        let vacuumParticles = [];
+        let spacetimeFoam = [];
+        let entangledPairs = [];
+        let font;
+
+        function preload() {
+            font = loadFont('https://cdnjs.cloudflare.com/ajax/libs/topcoat/0.8.0/font/SourceSansPro-Regular.otf');
+        }
+
+        function setup() {
+            createCanvas(800, 600, WEBGL);
+            textFont(font);
+            textAlign(CENTER, CENTER);
+            colorMode(HSB);
+            
+            initializeSimulations();
+            updateExplanation();
+
+            document.getElementById('nextButton').addEventListener('click', () => {
+                currentSimulation = (currentSimulation + 1) % simulations.length;
+                initializeSimulations();
+                updateExplanation();
+            });
+        }
+
+        function draw() {
+            background(0);
+            orbitControl();
+
+            displaySimulationTitle();
+
+            switch(currentSimulation) {
+                case 0: drawWaveFunctionCollapse(); break;
+                case 1: drawHolographicPrinciple(); break;
+                case 2: drawQuantumVacuumFluctuations(); break;
+                case 3: drawEventHorizon(); break;
+                case 4: drawQuantumGravity(); break;
+                case 5: drawQuantumSuperposition(); break;
+                case 6: drawLargeScaleEntanglement(); break;
+                case 7: drawQuantumTunneling(); break;
+                case 8: drawQuantumDecoherence(); break;
+                case 9: drawQuantumMeasurementProblem(); break;
+            }
+        }
+
+        function displaySimulationTitle() {
+            push();
+            translate(0, -height/2 + 30, 0);
+            fill(255);
+            textSize(20);
+            text(simulations[currentSimulation], 0, 0);
+            pop();
+        }
+
+        function updateExplanation() {
+            document.getElementById('explanation').innerHTML = explanations[currentSimulation];
+        }
+
+        function initializeSimulations() {
+            switch(currentSimulation) {
+                case 0: initializeWaveFunctionCollapse(); break;
+                case 1: initializeHolographicPrinciple(); break;
+                case 2: initializeQuantumVacuumFluctuations(); break;
+                case 3: initializeEventHorizon(); break;
+                case 4: initializeQuantumGravity(); break;
+                case 5: initializeQuantumSuperposition(); break;
+                case 6: initializeLargeScaleEntanglement(); break;
+                case 7: initializeQuantumTunneling(); break;
+                case 8: initializeQuantumDecoherence(); break;
+                case 9: initializeQuantumMeasurementProblem(); break;
+            }
+        }
+
+        // Wave Function Collapse
+        function initializeWaveFunctionCollapse() {
+            waveFunctions = [];
+            for (let i = 0; i < 5; i++) {
+                waveFunctions.push({
+                    x: (i - 2) * 80,
+                    y: 0,
+                    phase: 0,
+                    measured: false,
+                    collapsedState: null
+                });
+            }
+        }
+
+        function drawWaveFunctionCollapse() {
+            for (let wf of waveFunctions) {
+                push();
+                translate(wf.x, wf.y, 0);
+                if (!wf.measured) {
+                    stroke(200, 255, 255);
+                    noFill();
+                    beginShape();
+                    for (let x = -40; x <= 40; x++) {
+                        let y = sin(x * 0.1 + wf.phase) * 30;
+                        vertex(x, y);
+                    }
+                    endShape();
+                    wf.phase += 0.1;
+                } else {
+                    fill(wf.collapsedState ? color(0, 255, 255) : color(120, 255, 255));
+                    sphere(10);
+                }
+                pop();
+            }
+            
+            if (mouseIsPressed && frameCount % 30 === 0) {
+                let unmeasuredWFs = waveFunctions.filter(wf => !wf.measured);
+                if (unmeasuredWFs.length > 0) {
+                    let wfToMeasure = random(unmeasuredWFs);
+                    wfToMeasure.measured = true;
+                    wfToMeasure.collapsedState = random() > 0.5;
+                }
+            }
+        }
+
+        // Holographic Principle
+        function initializeHolographicPrinciple() {
+            hologram = [];
+            for (let i = 0; i < 20; i++) {
+                for (let j = 0; j < 20; j++) {
+                    hologram.push({
+                        x: (i - 10) * 20,
+                        y: (j - 10) * 20,
+                        z: 0,
+                        info: random(255)
+                    });
+                }
+            }
+        }
+
+        function drawHolographicPrinciple() {
+            for (let pixel of hologram) {
+                push();
+                translate(pixel.x, pixel.y, pixel.z);
+                fill(pixel.info, 255, 255);
+                box(18);
+                pop();
+            }
+            
+            if (frameCount % 240 < 120) {
+                for (let pixel of hologram) {
+                    pixel.z = sin(frameCount * 0.1 + pixel.x * 0.1 + pixel.y * 0.1) * 100;
+                }
+            } else {
+                for (let pixel of hologram) {
+                    pixel.z = 0;
+                }
+            }
+        }
+
+        // Quantum Vacuum Fluctuations
+        function initializeQuantumVacuumFluctuations() {
+            vacuumParticles = [];
+        }
+
+        function drawQuantumVacuumFluctuations() {
+            if (random() < 0.5) {
+                let x = random(-200, 200);
+                let y = random(-200, 200);
+                let z = random(-200, 200);
+                vacuumParticles.push({x, y, z, lifetime: 60, type: 'particle'});
+                vacuumParticles.push({x, y, z, lifetime: 60, type: 'antiparticle'});
+            }
+            
+            for (let i = vacuumParticles.length - 1; i >= 0; i--) {
+                let p = vacuumParticles[i];
+                push();
+                translate(p.x, p.y, p.z);
+                fill(p.type === 'particle' ? color(0, 255, 255) : color(120, 255, 255));
+                sphere(5);
+                pop();
+                
+                p.lifetime--;
+                if (p.lifetime <= 0) {
+                    vacuumParticles.splice(i, 1);
+                }
+            }
+        }
+
+        // Event Horizon
+        function initializeEventHorizon() {
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: random(-300, 300),
+                    y: random(-300, 300),
+                    z: random(-300, 300),
+                    vx: random(-1, 1),
+                    vy: random(-1, 1),
+                    vz: random(-1, 1)
+                });
+            }
+        }
+
+        function drawEventHorizon() {
+            push();
+            fill(0);
+            sphere(50);
+            pop();
+            
+            for (let p of particles) {
+                let d = dist(0, 0, 0, p.x, p.y, p.z);
+                let force = 500 / (d * d);
+                let angle = atan2(p.y, p.x);
+                let phi = acos(p.z / d);
+                
+                p.vx -= force * cos(angle) * sin(phi);
+                p.vy -= force * sin(angle) * sin(phi);
+                p.vz -= force * cos(phi);
+                
+                p.x += p.vx;
+                p.y += p.vy;
+                p.z += p.vz;
+                
+                push();
+                translate(p.x, p.y, p.z);
+                fill(d < 100 ? color(255, 0, 0) : 255);
+                sphere(2);
+                pop();
+            }
+        }
+
+        // Quantum Gravity
+        function initializeQuantumGravity() {
+            spacetimeFoam = [];
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 10; j++) {
+                    for (let k = 0; k < 10; k++) {
+                        spacetimeFoam.push({
+                            x: (i - 5) * 40,
+                            y: (j - 5) * 40,
+                            z: (k - 5) * 40,
+                            displacement: 0
+                        });
+                    }
+                }
+            }
+        }
+
+        function drawQuantumGravity() {
+            for (let point of spacetimeFoam) {
+                push();
+                translate(point.x, point.y, point.z);
+                point.displacement = noise(point.x * 0.01, point.y * 0.01, point.z * 0.01, frameCount * 0.01) * 10;
+                fill(point.displacement * 25, 255, 255);
+                sphere(5);
+                pop();
+            }
+        }
+
+        // Quantum Superposition
+        function initializeQuantumSuperposition() {
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: random(-300, 300),
+                    y: random(-300, 0),
+                    vx: random(-1, 1),
+                    vy: random(0, 2),
+                    state: 'superposition'
+                });
+            }
+        }
+
+        function drawQuantumSuperposition() {
+            fill(200);
+            rect(-25, 0, 50, 200);
+            fill(0);
+            rect(-25, 75, 50, 25);
+            rect(-25, 125, 50, 25);
+            
+            for (let p of particles) {
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                if (p.y > 0 && p.y < 200 && abs(p.x) < 25) {
+                    p.state = 'interfering';
+                }
+                
+                push();
+                translate(p.x, p.y, 0);
+                fill(p.state === 'superposition' ? color(200, 255, 255) : color(0, 255, 255));
+                sphere(3);
+                pop();
+                
+                if (p.y > 300) p.y = -300;
+            }
+        }
+
+        // Large-Scale Quantum Entanglement
+        function initializeLargeScaleEntanglement() {
+            entangledPairs = [];
+            for (let i = 0; i < 5; i++) {
+                entangledPairs.push({
+                    x1: -200,
+                    y1: (i - 2) * 50,
+                    x2: 200,
+                    y2: (i - 2) * 50,
+                    state: null,
+                    measured: false
+                });
+            }
+        }
+
+        function drawLargeScaleEntanglement() {
+            for (let pair of entangledPairs) {
+                if (!pair.measured && random() < 0.01) {
+                    pair.state = random() > 0.5;
+                    pair.measured = true;
+                }
+                
+                push();
+                translate(pair.x1, pair.y1, 0);
+                fill(pair.measured ? (pair.state ? color(0, 255, 255) : color(120, 255, 255)) : color(200, 255, 255));
+                sphere(10);
+                pop();
+                
+                push();
+                translate(pair.x2, pair.y2, 0);
+                                fill(pair.measured ? (pair.state ? color(0, 255, 255) : color(120, 255, 255)) : color(200, 255, 255));
+                sphere(10);
+                pop();
+                
+                if (pair.measured) {
+                    stroke(255, 50);
+                    line(pair.x1, pair.y1, 0, pair.x2, pair.y2, 0);
+                }
+            }
+        }
+
+        // Quantum Tunneling
+        function initializeQuantumTunneling() {
+            particles = [];
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    x: random(-300, -50),
+                    y: random(-100, 100),
+                    vx: random(1, 3),
+                    tunneled: false
+                });
+            }
+        }
+
+        function drawQuantumTunneling() {
+            fill(200, 100, 100);
+            rect(-25, -150, 50, 300);
+            
+            for (let p of particles) {
+                p.x += p.vx;
+                
+                if (p.x > -25 && p.x < 25 && !p.tunneled) {
+                    if (random() < 0.05) {
+                        p.x = 25;
+                        p.tunneled = true;
+                    } else {
+                        p.vx *= -1;
+                    }
+                }
+                
+                push();
+                translate(p.x, p.y, 0);
+                fill(p.tunneled ? color(0, 255, 255) : color(200, 255, 255));
+                sphere(5);
+                pop();
+                
+                if (p.x > 300) p.x = -300;
+            }
+        }
+
+        // Quantum Decoherence
+        function initializeQuantumDecoherence() {
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: random(-300, 300),
+                    y: random(-300, 300),
+                    z: random(-300, 300),
+                    coherence: 1
+                });
+            }
+        }
+
+        function drawQuantumDecoherence() {
+            for (let p of particles) {
+                push();
+                translate(p.x, p.y, p.z);
+                
+                p.coherence = max(0, p.coherence - 0.001);
+                
+                fill(200 * (1 - p.coherence), 255, 255, 255 * p.coherence);
+                sphere(5 * p.coherence);
+                pop();
+            }
+        }
+
+        // Quantum Measurement Problem
+        function initializeQuantumMeasurementProblem() {
+            particles = [];
+            for (let i = 0; i < 3; i++) {
+                particles.push({
+                    x: (i - 1) * 100,
+                    y: 0,
+                    z: 0,
+                    state: 'superposition',
+                    interpretation: i // 0: Copenhagen, 1: Many-Worlds, 2: Pilot Wave
+                });
+            }
+        }
+
+        function drawQuantumMeasurementProblem() {
+            for (let p of particles) {
+                push();
+                translate(p.x, p.y, p.z);
+                
+                if (p.state === 'superposition') {
+                    for (let i = 0; i < 10; i++) {
+                        push();
+                        rotateY(i * TWO_PI / 10);
+                        translate(20, 0, 0);
+                        fill(i * 25, 255, 255, 100);
+                        sphere(5);
+                        pop();
+                    }
+                } else {
+                    fill(p.state ? color(0, 255, 255) : color(120, 255, 255));
+                    sphere(10);
+                }
+                
+                fill(255);
+                textSize(12);
+                text(['Copenhagen', 'Many-Worlds', 'Pilot Wave'][p.interpretation], 0, 30);
+                
+                pop();
+            }
+            
+            if (mouseIsPressed && frameCount % 30 === 0) {
+                for (let p of particles) {
+                    if (p.state === 'superposition') {
+                        p.state = random() > 0.5;
+                        if (p.interpretation === 1) {
+                            particles.push({...p, x: p.x + 20, state: !p.state});
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
