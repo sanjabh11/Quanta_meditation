@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Flow and Kurdyka-Łojasiewicz Inequality Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1a1a2e;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        #dashboard {
+            display: flex;
+            width: 1200px;
+            height: 700px;
+            background-color: #16213e;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        #animation {
+            width: 75%;
+            height: 100%;
+        }
+        #explanation {
+            width: 25%;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #0f3460;
+        }
+        #buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .concept-button {
+            margin: 3px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            background-color: #fffacd;
+            color: #333;
+            border: none;
+            border-radius: 15px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .concept-button:hover {
+            background-color: #fff5b1;
+            transform: scale(1.05);
+        }
+        #next-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        #next-button:hover {
+            background-color: #45a049;
+        }
+        #formula-explanation {
+            margin-top: 20px;
+            font-style: italic;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gradient Flow and Kurdyka-Łojasiewicz Inequality Dashboard</h1>
+    <div id="dashboard">
+        <div id="animation"></div>
+        <div id="explanation">
+            <h2 id="title">Gradient Flow</h2>
+            <p id="description">Gradient flow describes the evolution of a system along the direction of steepest descent of an energy functional.</p>
+            <p id="formula"></p>
+            <p id="formula-explanation"></p>
+        </div>
+        <button id="next-button" onclick="nextConcept()">Next</button>
+    </div>
+    <div id="buttons">
+        <button class="concept-button" onclick="switchConcept('gradientFlow')">Gradient Flow</button>
+        <button class="concept-button" onclick="switchConcept('kl')">Kurdyka-Łojasiewicz Inequality</button>
+        <button class="concept-button" onclick="switchConcept('energyFunctional')">Energy Functionals</button>
+        <button class="concept-button" onclick="switchConcept('descentSlope')">Descent Slope</button>
+        <button class="concept-button" onclick="switchConcept('evi')">Evolution Variational Inequality</button>
+        <button class="concept-button" onclick="switchConcept('metricSpaces')">Metric Spaces</button>
+        <button class="concept-button" onclick="switchConcept('semiconvexity')">Semiconvexity</button>
+        <button class="concept-button" onclick="switchConcept('subgradients')">Subgradients</button>
+        <button class="concept-button" onclick="switchConcept('lyapunov')">Lyapunov Functions</button>
+        <button class="concept-button" onclick="switchConcept('convergence')">Convergence Rates</button>
+    </div>
+
+    <script>
+        let concept = 'gradientFlow';
+        let time = 0;
+        let particles = [];
+        const concepts = ['gradientFlow', 'kl', 'energyFunctional', 'descentSlope', 'evi', 'metricSpaces', 'semiconvexity', 'subgradients', 'lyapunov', 'convergence'];
+
+        function setup() {
+            let canvas = createCanvas(900, 700, WEBGL);
+            canvas.parent('animation');
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    pos: createVector(random(-400, 400), random(-300, 300), random(-200, 200)),
+                    vel: createVector(0, 0, 0),
+                    color: color(random(100, 255), random(100, 255), random(100, 255))
+                });
+            }
+        }
+
+        function draw() {
+            background(26, 26, 46);
+            orbitControl(4, 4);
+            time += 0.01;
+
+            switch(concept) {
+                case 'gradientFlow':
+                    drawGradientFlow();
+                    break;
+                case 'kl':
+                    drawKL();
+                    break;
+                case 'energyFunctional':
+                    drawEnergyFunctional();
+                    break;
+                case 'descentSlope':
+                    drawDescentSlope();
+                    break;
+                case 'evi':
+                    drawEVI();
+                    break;
+                case 'metricSpaces':
+                    drawMetricSpaces();
+                    break;
+                case 'semiconvexity':
+                    drawSemiconvexity();
+                    break;
+                case 'subgradients':
+                    drawSubgradients();
+                    break;
+                case 'lyapunov':
+                    drawLyapunov();
+                    break;
+                case 'convergence':
+                    drawConvergence();
+                    break;
+            }
+        }
+
+        function drawGradientFlow() {
+            noFill();
+            for (let x = -400; x < 400; x += 20) {
+                beginShape();
+                for (let z = -400; z < 400; z += 20) {
+                    let y = 100 * sin(x/100 + time) * cos(z/100 + time) + 50 * sin(time);
+                    let col = color(map(y, -150, 150, 50, 200), map(y, -150, 150, 100, 255), 255);
+                    stroke(col);
+                    vertex(x, y, z);
+                }
+                endShape();
+            }
+
+            for (let p of particles) {
+                let x = p.pos.x;
+                let z = p.pos.z;
+                let y = 100 * sin(x/100 + time) * cos(z/100 + time) + 50 * sin(time);
+                let gradient = createVector(cos(x/100 + time) * cos(z/100 + time), 0, -sin(x/100 + time) * sin(z/100 + time));
+                gradient.normalize().mult(2);
+                p.vel.add(gradient);
+                p.vel.mult(0.95);
+                p.pos.add(p.vel);
+                push();
+                translate(p.pos.x, y, p.pos.z);
+                fill(p.color);
+                sphere(5);
+                pop();
+            }
+        }
+
+        function drawKL() {
+            for (let x = -400; x < 400; x += 20) {
+                for (let z = -400; z < 400; z += 20) {
+                    let y = 200 * exp(-(x*x + z*z) / 40000);
+                    let gradient = createVector(-x/10000, 0, -z/10000);
+                    push();
+                    translate(x, -y, z);
+                    let mag = gradient.mag() * 1000;
+                    fill(map(mag, 0, 255, 50, 200), map(mag, 0, 255, 100, 255), 255);
+                    box(10 + 10 * sin(time + x/100 + z/100));
+                    pop();
+                }
+            }
+        }
+
+        function drawEnergyFunctional() {
+            for (let x = -400; x < 400; x += 20) {
+                for (let z = -400; z < 400; z += 20) {
+                    let y = 100 * (sin(x/100 + time) + cos(z/100 + time)) + 50 * sin(time);
+                    push();
+                    translate(x, -y, z);
+                    let energy = map(y, -200, 200, 0, 1);
+                    fill(50 + 150 * energy, 100 + 155 * energy, 255);
+                    box(15);
+                    pop();
+                }
+            }
+        }
+
+        function drawDescentSlope() {
+            for (let x = -400; x < 400; x += 40) {
+                for (let z = -400; z < 400; z += 40) {
+                    let y = 100 * sin(x/100 + time) * cos(z/100 + time);
+                    let gradient = createVector(cos(x/100 + time) * cos(z/100 + time), 0, -sin(x/100 + time) * sin(z/100 + time));
+                    push();
+                    translate(x, -y, z);
+                    let mag = gradient.mag() * 100;
+                    stroke(50 + mag, 100 + mag, 255);
+                    line(0, 0, 0, gradient.x*50, -gradient.y*50, gradient.z*50);
+                    pop();
+                }
+            }
+        }
+
+        function drawEVI() {
+            let prevX, prevY, prevZ;
+            for (let t = 0; t < 1; t += 0.05) {
+                let x = 400 * (t - 0.5);
+                let y = -200 * Math.pow(t - 0.5, 2);
+                let z = 0;
+                push();
+                translate(x, y, z);
+                fill(50 + 150 * t, 100 + 155 * t, 255);
+                sphere(10);
+                pop();
+                if (t > 0) {
+                    stroke(50 + 150 * t, 100 + 155 * t, 255);
+                    line(x, y, z, prevX, prevY, prevZ);
+                }
+                prevX = x;
+                prevY = y;
+                prevZ = z;
+            }
+        }
+
+        function drawMetricSpaces() {
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    for (let k = 0; k < 5; k++) {
+                        push();
+                        translate(i*100-200, j*100-200, k*100-200);
+                        fill(50 + 30 * (i+j+k), 100 + 30 * (i+j+k), 255);
+                        sphere(10);
+                        pop();
+                    }
+                }
+            }
+            for (let i = 0; i < 10; i++) {
+                let start = createVector(random(-200, 200), random(-200, 200), random(-200, 200));
+                let end = createVector(random(-200, 200), random(-200, 200), random(-200, 200));
+                stroke(50, 100, 255);
+                line(start.x, start.y, start.z, end.x, end.y, end.z);
+            }
+        }
+
+        function drawSemiconvexity() {
+            for (let x = -400; x < 400; x += 20) {
+                beginShape();
+                for (let z = -400; z < 400; z += 20) {
+                    let y = 0.001 * (x*x + z*z) + 20 * sin(x/50 + time) * cos(z/50 + time);
+                    let col = color(50 + map(y, 0, 400, 0, 150), 100 + map(y, 0, 400, 0, 155), 255);
+                    stroke(col);
+                    vertex(x, -y, z);
+                }
+                endShape();
+            }
+        }
+
+        function drawSubgradients() {
+            for (let x = -400; x < 400; x += 80) {
+                for (let z = -400; z < 400; z += 80) {
+                    let y = abs(x) + abs(z);
+                    push();
+                    translate(x, -y/2, z);
+                    fill(50 + map(y, 0, 800, 0, 150), 100 + map(y, 0, 800, 0, 155), 255);
+                    sphere(10);
+                    for (let i = -1; i <= 1; i += 2) {
+                        for (let j = -1; j <= 1; j += 2) {
+                            stroke(50 + map(y, 0, 800, 0, 150), 100 + map(y, 0, 800, 0, 155), 255);
+                            line(0, 0, 0, i*20, -20, j*20);
+                        }
+                    }
+                    pop();
+                }
+            }
+        }
+
+        function drawLyapunov() {
+            for (let x = -400; x < 400; x += 20) {
+                for (let z = -400; z < 400; z += 20) {
+                    let r = sqrt(x*x + z*z);
+                    let y = 200 * exp(-r/100);
+                    push();
+                    translate(x, -y, z);
+                    let stability = map(y, 0, 200, 0, 1);
+                    fill(50 + 150 * (1-stability), 100 + 155 * (1-stability), 255);
+                    box(10);
+                    pop();
+                }
+            }
+        }
+
+        function drawConvergence() {
+            let prevX, prevY, prevZ;
+            for (let t = 0; t < 1; t += 0.05) {
+                let x = 400 * (t - 0.5);
+                let y = -300 * exp(-5*t);
+                let z = 0;
+                push();
+                translate(x, y, z);
+                let rate = map(t, 0, 1, 0, 1);
+                fill(50 + 150 * rate, 100 + 155 * rate, 255);
+                sphere(10);
+                pop();
+                if (t > 0) {
+                                        stroke(50 + 150 * rate, 100 + 155 * rate, 255);
+                    line(x, y, z, prevX, prevY, prevZ);
+                }
+                prevX = x;
+                prevY = y;
+                prevZ = z;
+            }
+        }
+
+        function switchConcept(newConcept) {
+            concept = newConcept;
+            switch(newConcept) {
+                case 'gradientFlow':
+                    updateExplanation('Gradient Flow', 'Gradient flow shows how a system evolves to minimize its energy. The colorful landscape represents the energy, and the particles move towards lower energy states.', '\\frac{dx}{dt} = -\\nabla E(x)', 'This equation describes how the system (x) changes over time (t) in the direction opposite to the gradient of the energy function (E).');
+                    break;
+                case 'kl':
+                    updateExplanation('Kurdyka-Łojasiewicz Inequality', 'The KL inequality bounds the gradient of a function near its critical points. The colors represent the magnitude of the gradient.', '|\\nabla (\\phi \\circ (f-f(x)))(x)| \\geq 1', 'This inequality provides a lower bound on the gradient of a function composed with φ, which helps in analyzing convergence properties.');
+                    break;
+                case 'energyFunctional':
+                    updateExplanation('Energy Functionals', 'Energy functionals describe the energy of a system. The colorful surface represents different energy levels.', 'E(x) : X \\to \\mathbb{R}', 'This notation defines E as a function that maps elements from space X to real numbers, representing the energy of the system.');
+                    break;
+                case 'descentSlope':
+                    updateExplanation('Descent Slope', 'The descent slope measures how quickly the energy decreases along a path. The colorful arrows show the direction and magnitude of steepest descent.', '|D^-E|(v) = \\limsup_{u \\to v} \\frac{(E(v)-E(u))^+}{d(u,v)}', 'This formula calculates the maximum rate of decrease of the energy E as we approach point v from nearby points u.');
+                    break;
+                case 'evi':
+                    updateExplanation('Evolution Variational Inequality', 'The EVI describes the behavior of gradient flows. The curved path shows the evolution of the system, with colors indicating time progression.', '\\frac{1}{2}\\frac{d}{dt}d^2(x(t),y) + \\frac{1}{2}|\\dot{x}|^2(t) \\leq E(y) - E(x(t))', 'This inequality relates the rate of change of the distance between x(t) and y, the speed of x(t), and the difference in energy between y and x(t).');
+                    break;
+                case 'metricSpaces':
+                    updateExplanation('Metric Spaces', 'Metric spaces provide the setting for studying gradient flows. The colored points represent different elements, with connections showing their relationships.', 'd(x,y) : X \\times X \\to \\mathbb{R}_+', 'This defines a distance function d that assigns a non-negative real number to any pair of points x and y in the space X.');
+                    break;
+                case 'semiconvexity':
+                    updateExplanation('Semiconvexity', 'Semiconvexity generalizes convexity and is important for gradient flows. The colorful surface shows a semiconvex function.', 'E(tx + (1-t)y) \\leq tE(x) + (1-t)E(y) + Ct(1-t)d^2(x,y)', 'This inequality defines semiconvexity, where the function E is bounded above by a convex combination plus an additional quadratic term.');
+                    break;
+                case 'subgradients':
+                    updateExplanation('Subgradients', 'Subgradients generalize gradients for non-smooth functions. The colored arrows show possible subgradients at different points.', '\\partial E(v) = \\{\\xi \\in X^* : E(w) \\geq E(v) + \\langle \\xi, w-v \\rangle \\forall w \\in X\\}', 'This set defines the subgradients of E at v as all ξ that satisfy the given inequality for all w in X.');
+                    break;
+                case 'lyapunov':
+                    updateExplanation('Lyapunov Functions', 'Lyapunov functions describe system stability. The colorful surface shows a Lyapunov function, with cooler colors indicating more stable regions.', 'V(x) : X \\to \\mathbb{R}_+, \\quad \\frac{d}{dt}V(x(t)) \\leq 0', 'This defines a Lyapunov function V as a non-negative function whose value decreases along trajectories of the system.');
+                    break;
+                case 'convergence':
+                    updateExplanation('Convergence Rates', 'Convergence rates show how quickly gradient flows approach equilibrium. The colored path demonstrates the speed of convergence over time.', 'd(x(t), x^*) \\leq Ce^{-\\lambda t}', 'This inequality bounds the distance between x(t) and the equilibrium point x* by an exponentially decreasing function of time.');
+                    break;
+            }
+        }
+
+        function updateExplanation(title, description, formula, formulaExplanation) {
+            document.getElementById('title').innerText = title;
+            document.getElementById('description').innerText = description;
+            document.getElementById('formula').innerHTML = '\$$' + formula + '\$$';
+            document.getElementById('formula-explanation').innerText = formulaExplanation;
+            MathJax.typeset();
+        }
+
+        function nextConcept() {
+            let currentIndex = concepts.indexOf(concept);
+            let nextIndex = (currentIndex + 1) % concepts.length;
+            switchConcept(concepts[nextIndex]);
+        }
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</body>
+</html>S
