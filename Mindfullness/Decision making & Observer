@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decision Making and Quantum State Disentanglement</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    #description {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 300px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+    #next-button {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="description"></div>
+  <button id="next-button">Next</button>
+  <script>
+    let observer;
+    let qubits = [];
+    let numQubits = 100;
+    let rotationAngle = 0;
+    let zoomScale = 1;
+    let scene = 0;
+    let fadeAmount = 0;
+    let disentanglementProgress = 0;
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight, WEBGL);
+      observer = new Observer(0, 0, 0);
+      generateQubits();
+      
+      document.getElementById('next-button').addEventListener('click', nextScene);
+      updateDescription();
+    }
+
+    function draw() {
+      background(0);
+      orbitControl();
+
+      push();
+      translate(0, 0, -500 * zoomScale);
+      rotateX(rotationAngle);
+      rotateY(rotationAngle);
+      observer.display();
+      drawQubits();
+      pop();
+
+      if (scene === 4) {
+        drawEntangledState();
+        drawDisentangledState();
+      }
+
+      switch (scene) {
+        case 1:
+          drawLightOfConsciousness();
+          break;
+        case 3:
+          drawApples();
+          break;
+      }
+
+      rotationAngle += 0.01;
+      zoomScale = map(sin(frameCount * 0.01), -1, 1, 0.5, 2);
+
+      if (scene >= 3) {
+        fadeAmount = min(fadeAmount + 0.01, 1);
+      }
+
+      if (scene === 2) {
+        disentanglementProgress = min(disentanglementProgress + 0.005, 1);
+      }
+    }
+
+    function nextScene() {
+      scene = (scene + 1) % 7;
+      fadeAmount = 0;
+      disentanglementProgress = 0;
+      updateDescription();
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+
+    function updateDescription() {
+      document.getElementById('description').innerHTML = getSceneDescription();
+    }
+
+    function getSceneDescription() {
+      switch (scene) {
+        case 0:
+          return "<h3>Step 1: The concept of decision making</h3><p>Decision making involves choosing a specific path or outcome from various possibilities. The decision making process can be visualized as a branching path, with the observer at the point of divergence.</p>";
+        case 1:
+          return "<h3>Step 2: The focusing of consciousness</h3><p>The observer's focus of consciousness plays a crucial role in the decision making process. The light of consciousness is depicted as a beam, illuminating the chosen path or outcome.</p>";
+        case 2:
+          return "<h3>Step 3: Disentanglement of the quantum state</h3><p>The act of decision making causes the entangled quantum state to disentangle. The entangled quantum state is visualized as a complex, interconnected network of qubits. As the observer makes a decision, the connections between the focused qubits and the rest of the network gradually fade. The focused qubits become brighter and more prominent, while the other qubits fade into the background.</p>";
+        case 3:
+          return "<h3>Step 4: Perception of actual forms (of red apples)</h3><p>As the quantum state disentangles, actual forms (red apples) are perceived by the observer. These perceived forms gradually take shape from a fading state to solidity.</p>";
+        case 4:
+          return "<h3>Step 5: Contrasting entangled and disentangled states</h3><p>In the entangled state, the forms of information are characterized by numerical quantities, represented by the color and size of each qubit. In the disentangled state, the perceived forms are characterized by qualitative properties, represented by unique shapes, colors, and textures.</p>";
+        case 5:
+          return "<h3>Step 6: The connection between decision making and disentanglement</h3><p>The act of decision making, through the focusing of consciousness, allows the quantum state to disentangle. This disentanglement leads to the perception of actual forms with distinct qualities.</p>";
+        case 6:
+          return "<h3>Step 7: Conclusion - the key concepts</h3><p>Decision making, the focusing of consciousness, and the disentanglement of the quantum state are interconnected. Disentanglement allows for the perception of actual forms characterized by qualities.</p>";
+      }
+    }
+
+    function generateQubits() {
+      for (let i = 0; i < numQubits; i++) {
+        let x = random(-300, 300);
+        let y = random(-300, 300);
+        let z = random(-300, 300);
+        qubits.push(new Qubit(x, y, z));
+      }
+    }
+
+    function drawQubits() {
+      for (let i = 0; i < qubits.length; i++) {
+        let disentangled = (scene >= 2);
+        qubits[i].display(disentangled);
+      }
+    }
+
+    function drawLightOfConsciousness() {
+      push();
+      translate(observer.pos.x, observer.pos.y, observer.pos.z);
+      rotateX(PI / 4);
+      noStroke();
+      fill(255, 255, 0, 100);
+      cylinder(10, 500);
+      pop();
+    }
+
+    function drawApples() {
+      push();
+      translate(200, 0, 0);
+      noStroke();
+      fill(255, 0, 0, 255 * fadeAmount);
+      sphere(50 * fadeAmount);
+      pop();
+
+      push();
+      translate(-200, 0, 0);
+      noStroke();
+      fill(255, 0, 0, 255 * fadeAmount);
+      sphere(50 * fadeAmount);
+      pop();
+    }
+
+    function drawEntangledState() {
+      push();
+      translate(-200, 0, 0);
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          let x = map(i, 0, 9, -100, 100);
+          let y = map(j, 0, 9, -100, 100);
+          let hue = map(i + j, 0, 18, 0, 360);
+          let size = map(i + j, 0, 18, 5, 20);
+          fill(hue, 100, 100);
+          noStroke();
+          ellipse(x, y, size, size);
+        }
+      }
+      pop();
+    }
+
+    function drawDisentangledState() {
+      push();
+      translate(200, 0, 0);
+      for (let i = 0; i < 5; i++) {
+        let x = random(-100, 100);
+        let y = random(-100, 100);
+        let hue = random(0, 360);
+        let size = random(20, 50);
+        fill(hue, 100, 100);
+        noStroke();
+        let shapeType = random(["ellipse", "rect", "triangle"]);
+        if (shapeType === "ellipse") {
+          ellipse(x, y, size, size);
+        } else if (shapeType === "rect") {
+          rect(x, y, size, size);
+        } else if (shapeType === "triangle") {
+          triangle(x, y, x + size / 2, y - size / 2, x + size, y);
+        }
+      }
+      pop();
+    }
+
+    class Observer {
+      constructor(x, y, z) {
+        this.pos = createVector(x, y, z);
+      }
+
+      display() {
+        push();
+        translate(this.pos.x, this.pos.y, this.pos.z);
+        
+        // Head
+        fill(255);
+        sphere(20);
+        
+        // Body
+        fill(255);
+        translate(0, 40, 0);
+        box(40, 60, 20);
+        
+        // Arms
+        push();
+        translate(-25, 0, 0);
+        rotateZ(PI/4);
+        box(10, 40, 10);
+        pop();
+        
+        push();
+        translate(25, 0, 0);
+        rotateZ(-PI/4);
+        box(10, 40, 10);
+        pop();
+        
+        // Legs
+        push();
+        translate(-10, 40, 0);
+        box(10, 40, 10);
+        pop();
+        
+        push();
+        translate(10, 40, 0);
+        box(10, 40, 10);
+        pop();
+        
+        pop();
+      }
+    }
+
+    class Qubit {
+      constructor(x, y, z) {
+        this.pos = createVector(x, y, z);
+      }
+
+      display(disentangled = false) {
+        push();
+        translate(this.pos.x, this.pos.y, this.pos.z);
+        noStroke();
+        if (disentangled) {
+          let fadeColor = lerpColor(color(173, 216, 230, 50), color(255, 255, 0), disentanglementProgress);
+          let fadeSize = lerp(5, 10, disentanglementProgress);
+          fill(fadeColor);
+          sphere(fadeSize);
+        } else {
+          fill(173, 216, 230, 50); // Light blue color for entangled qubits with low opacity
+          sphere(5);
+        }
+        pop();
+      }
+    }
+  </script>
+</body>
+</html>
