@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quantum Physics Playground</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info { position: absolute; top: 10px; width: 100%; text-align: center; color: white; pointer-events: none; }
+        #controls { position: absolute; bottom: 10px; left: 10px; color: white; }
+        #explanation { position: absolute; top: 50px; right: 10px; width: 300px; background-color: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; }
+        button { background-color: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 20px; text-align: center; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div id="info">Interactive Quantum Physics Playground</div>
+    <div id="controls">
+        <button id="particleBtn">Create Particle</button>
+        <button id="waveBtn">Create Wave</button>
+        <button id="entangleBtn">Entangle Particles</button>
+        <button id="tunnelBtn">Quantum Tunnel</button>
+        <button id="superpositionBtn">Superposition</button>
+    </div>
+    <div id="explanation">
+        <h3>Quantum Playground</h3>
+        <p id="explanationText">Welcome to the Quantum Physics Playground! Click the buttons below to interact with various quantum phenomena.</p>
+    </div>
+    <script>
+        let scene, camera, renderer, particles = [], waves = [], entangledPairs = [];
+        let raycaster, mouse;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            createStarfield();
+            setupEventListeners();
+
+            camera.position.z = 50;
+        }
+
+        function createStarfield() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starVertices = new Float32Array(3000);
+            for (let i = 0; i < starVertices.length; i += 3) {
+                starVertices[i] = Math.random() * 600 - 300;
+                starVertices[i+1] = Math.random() * 600 - 300;
+                starVertices[i+2] = Math.random() * 600 - 300;
+            }
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(starVertices, 3));
+            const starMaterial = new THREE.PointsMaterial({ color: 0xFFFFFF, size: 0.2, transparent: true, opacity: 0.8 });
+            const starfield = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starfield);
+        }
+
+        function createParticle(position) {
+            const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const material = new THREE.MeshBasicMaterial({ color: Math.random() * 0xFFFFFF });
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.copy(position);
+            scene.add(particle);
+            particles.push(particle);
+            updateExplanation("Particle created! In quantum mechanics, particles can exhibit wave-like properties.");
+        }
+
+        function createWave(position) {
+            const geometry = new THREE.BufferGeometry();
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(position.x - 10, position.y, position.z),
+                new THREE.Vector3(position.x, position.y + 5, position.z),
+                new THREE.Vector3(position.x + 10, position.y, position.z)
+            ]);
+            geometry.setFromPoints(curve.getPoints(50));
+            const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+            const wave = new THREE.Line(geometry, material);
+            scene.add(wave);
+            waves.push({ wave, curve, phase: 0 });
+            updateExplanation("Wave created! Quantum entities can behave as both particles and waves, known as wave-particle duality.");
+        }
+
+        function entangleParticles() {
+            if (particles.length < 2) {
+                updateExplanation("Not enough particles to entangle. Create at least two particles first.");
+                return;
+            }
+            const particle1 = particles[particles.length - 1];
+            const particle2 = particles[particles.length - 2];
+            const material = new THREE.LineBasicMaterial({ color: 0xff00ff });
+            const geometry = new THREE.BufferGeometry().setFromPoints([particle1.position, particle2.position]);
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            entangledPairs.push({ particle1, particle2, line });
+            updateExplanation("Particles entangled! Entangled particles have correlated properties, no matter the distance between them.");
+        }
+
+        function quantumTunnel() {
+            if (particles.length === 0) {
+                updateExplanation("No particles to tunnel. Create a particle first.");
+                return;
+            }
+            const particle = particles[particles.length - 1];
+            const tunnelDistance = 20;
+            const tunnelDirection = new THREE.Vector3(1, 0, 0).normalize();
+            const startPosition = particle.position.clone();
+            const endPosition = startPosition.clone().add(tunnelDirection.multiplyScalar(tunnelDistance));
+            
+            const tunnelGeometry = new THREE.CylinderGeometry(0.1, 0.1, tunnelDistance, 32);
+            const tunnelMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, transparent: true, opacity: 0.5 });
+            const tunnel = new THREE.Mesh(tunnelGeometry, tunnelMaterial);
+            tunnel.position.copy(startPosition.clone().add(endPosition).multiplyScalar(0.5));
+            tunnel.lookAt(endPosition);
+            tunnel.rotateX(Math.PI / 2);
+            scene.add(tunnel);
+
+            setTimeout(() => {
+                particle.position.copy(endPosition);
+                scene.remove(tunnel);
+            }, 1000);
+
+            updateExplanation("Quantum tunneling demonstrated! Particles can pass through potential barriers they classically shouldn't be able to.");
+        }
+
+        function createSuperposition() {
+            if (particles.length === 0) {
+                updateExplanation("No particles for superposition. Create a particle first.");
+                return;
+            }
+            const particle = particles[particles.length - 1];
+            const superpositionStates = [];
+            for (let i = 0; i < 5; i++) {
+                const clone = particle.clone();
+                clone.position.add(new THREE.Vector3(Math.random() * 4 - 2, Math.random() * 4 - 2, Math.random() * 4 - 2));
+                clone.material = new THREE.MeshBasicMaterial({ color: particle.material.color, transparent: true, opacity: 0.5 });
+                scene.add(clone);
+                superpositionStates.push(clone);
+            }
+            updateExplanation("Superposition created! In quantum mechanics, a particle can exist in multiple states simultaneously until observed.");
+            setTimeout(() => {
+                superpositionStates.forEach(state => scene.remove(state));
+                updateExplanation("Superposition collapsed! Upon measurement, the particle assumes one definite state.");
+            }, 3000);
+        }
+
+        function updateExplanation(text) {
+            document.getElementById('explanationText').innerText = text;
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function getIntersectionPoint() {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(scene.children[0]); // Intersect with starfield
+            if (intersects.length > 0) {
+                return intersects[0].point;
+            }
+            return new THREE.Vector3();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Animate waves
+            waves.forEach(waveObj => {
+                waveObj.phase += 0.1;
+                const points = waveObj.curve.getPoints(50);
+                for (let i = 0; i < points.length; i++) {
+                    points[i].y += Math.sin(i * 0.2 + waveObj.phase) * 0.2;
+                }
+                waveObj.wave.geometry.setFromPoints(points);
+            });
+
+            // Animate entangled particles
+            entangledPairs.forEach(pair => {
+                pair.line.geometry.setFromPoints([pair.particle1.position, pair.particle2.position]);
+            });
+
+            // Camera movement
+            const time = Date.now() * 0.0005;
+            camera.position.x = Math.cos(time) * 50;
+            camera.position.z = Math.sin(time) * 50;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('mousemove', onMouseMove, false);
+            document.getElementById('particleBtn').addEventListener('click', () => createParticle(getIntersectionPoint()));
+            document.getElementById('waveBtn').addEventListener('click', () => createWave(getIntersectionPoint()));
+            document.getElementById('entangleBtn').addEventListener('click', entangleParticles);
+            document.getElementById('tunnelBtn').addEventListener('click', quantumTunnel);
+            document.getElementById('superpositionBtn').addEventListener('click', createSuperposition);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+        animate();
+    </script>
+</body>
+</html>
