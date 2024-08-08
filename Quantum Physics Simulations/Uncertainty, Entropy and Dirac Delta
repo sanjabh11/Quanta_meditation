@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Uncertainty Principle Animation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            pointer-events: none;
+        }
+        #explanation {
+            position: absolute;
+            bottom: 70px;
+            left: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #nextButton {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Scene 1: Introduction to Uncertainty</div>
+    <div id="explanation"></div>
+    <button id="nextButton">Next</button>
+    <script>
+        let scene, camera, renderer, currentScene = 0;
+        const scenes = [
+            { 
+                name: "Introduction to Uncertainty", 
+                setup: setupIntroScene,
+                explanation: "The uncertainty principle is not exclusive to quantum mechanics. It has a classical counterpart rooted in thermodynamics!",
+                formula: ""
+            },
+            { 
+                name: "Quantum Uncertainty", 
+                setup: setupQuantumScene,
+                explanation: "In quantum mechanics, reducing uncertainty in position increases uncertainty in momentum, and vice versa.",
+                formula: "σx * σp ≥ ℏ / 2"
+            },
+            { 
+                name: "Classical Uncertainty", 
+                setup: setupClassicalScene,
+                explanation: "Classical mechanics has its own form of uncertainty, based on entropy and the Third Law of Thermodynamics.",
+                formula: "S ≥ 0"
+            },
+            { 
+                name: "Entropy and Dirac Delta", 
+                setup: setupEntropyScene,
+                explanation: "Perfect precision (zero uncertainty) leads to negative infinity entropy, violating the third law!",
+                formula: "S → -∞ (for perfect precision)"
+            },
+            { 
+                name: "Classical Uncertainty Bound", 
+                setup: setupBoundScene,
+                explanation: "There's a natural bound on how small uncertainties can get in classical mechanics.",
+                formula: "σq * σp ≥ W₀ / 2π"
+            },
+            { 
+                name: "Boltzmann's Entropy", 
+                setup: setupBoltzmannScene,
+                explanation: "Using Boltzmann's entropy formula and considering phase-space volume ensures non-negative entropy.",
+                formula: "S = k_B * log(W / W₀)"
+            }
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            camera.position.z = 5;
+
+            setupIntroScene();
+
+            document.getElementById('nextButton').addEventListener('click', nextScene);
+
+            updateExplanation();
+            animate();
+        }
+
+        function setupIntroScene() {
+            clearScene();
+            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+            const sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+
+            const quantumGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const quantumMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+            const quantumSphere = new THREE.Mesh(quantumGeometry, quantumMaterial);
+            quantumSphere.position.x = -1.5;
+            scene.add(quantumSphere);
+
+            const classicalGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const classicalMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+            const classicalCube = new THREE.Mesh(classicalGeometry, classicalMaterial);
+            classicalCube.position.x = 1.5;
+            scene.add(classicalCube);
+        }
+
+        function setupQuantumScene() {
+            clearScene();
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(1000 * 3);
+            const colors = new Float32Array(1000 * 3);
+
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i] = Math.random() * 4 - 2;
+                positions[i + 1] = Math.random() * 4 - 2;
+                positions[i + 2] = Math.random() * 4 - 2;
+
+                colors[i] = Math.random();
+                colors[i + 1] = Math.random();
+                colors[i + 2] = Math.random();
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({ size: 0.05, vertexColors: true });
+            const particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+        }
+
+        function setupClassicalScene() {
+            clearScene();
+            const geometry = new THREE.TorusGeometry(1, 0.4, 16, 100);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+            const torus = new THREE.Mesh(geometry, material);
+            scene.add(torus);
+        }
+
+        function setupEntropyScene() {
+            clearScene();
+            const geometry = new THREE.ConeGeometry(1, 2, 32);
+            const material = new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true });
+            const cone = new THREE.Mesh(geometry, material);
+            scene.add(cone);
+        }
+
+        function setupBoundScene() {
+            clearScene();
+            const curve = new THREE.EllipseCurve(
+                0,  0,            // ax, aY
+                1.5, 1,           // xRadius, yRadius
+                0,  2 * Math.PI,  // aStartAngle, aEndAngle
+                false,            // aClockwise
+                0                 // aRotation
+            );
+
+            const points = curve.getPoints(50);
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+            const ellipse = new THREE.Line(geometry, material);
+            scene.add(ellipse);
+        }
+
+        function setupBoltzmannScene() {
+            clearScene();
+            const geometry = new THREE.BoxGeometry(2, 2, 2);
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+            scene.add(line);
+
+            const particleGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            for (let i = 0; i < 20; i++) {
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                particle.position.set(
+                    Math.random() * 2 - 1,
+                    Math.random() * 2 - 1,
+                    Math.random() * 2 - 1
+                );
+                scene.add(particle);
+            }
+        }
+
+        function clearScene() {
+            while(scene.children.length > 0){ 
+                scene.remove(scene.children[0]); 
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (scene.children.length > 0) {
+                scene.children.forEach(child => {
+                    child.rotation.x += 0.01;
+                    child.rotation.y += 0.01;
+                });
+            }
+            renderer.render(scene, camera);
+        }
+
+        function nextScene() {
+            currentScene = (currentScene + 1) % scenes.length;
+            scenes[currentScene].setup();
+            updateExplanation();
+        }
+
+        function updateExplanation() {
+            const scene = scenes[currentScene];
+            document.getElementById('info').textContent = `Scene ${currentScene + 1}: ${scene.name}`;
+            document.getElementById('explanation').innerHTML = `
+                <p>${scene.explanation}</p>
+                ${scene.formula ? `<p><strong>Formula:</strong> ${scene.formula}</p>` : ''}
+            `;
+        }
+
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+    </script>
+</body>
+</html>
