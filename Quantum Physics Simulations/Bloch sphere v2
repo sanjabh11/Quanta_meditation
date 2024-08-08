@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum States Visualization and Presentation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; background-color: #f0f0f0; }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #stateDisplay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #conceptDisplay {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            background-color: rgba(255,255,255,0.9);
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #presentation {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        #recordingCanvas {
+            display: none;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls"></div>
+    <div id="stateDisplay"></div>
+    <div id="conceptDisplay"></div>
+    <div id="presentation"></div>
+    <canvas id="recordingCanvas"></canvas>
+
+    <script>
+        let qubitState;
+        let angle = 0;
+        let currentConcept = 0;
+        let sphereRotation = 0;
+        let isPaused = false;
+        let mediaRecorder;
+        let recordedChunks = [];
+        let isRecording = false;
+        let downloadButton;
+        let conceptInterval;
+        let recordingCanvas;
+        let recordingContext;
+        let animator;
+        let concepts = [
+            { 
+                name: "Initial State |0⟩", 
+                state: [1, 0, 0], 
+                color: [255, 0, 0],
+                description: "The qubit is in the |0⟩ state, pointing to the north pole of the Bloch sphere. This represents a definite state where the qubit has a 100% probability of being measured in the |0⟩ state."
+            },
+            { 
+                name: "State |1⟩", 
+                state: [0, 0, 1], 
+                color: [0, 0, 255],
+                description: "The qubit is in the |1⟩ state, pointing to the south pole of the Bloch sphere. This represents a definite state where the qubit has a 100% probability of being measured in the |1⟩ state."
+            },
+            { 
+                name: "Superposition (|0⟩ + |1⟩)/√2", 
+                state: [1/Math.sqrt(2), 0, 1/Math.sqrt(2)], 
+                color: [255, 165, 0],
+                description: "The qubit is in an equal superposition of |0⟩ and |1⟩, pointing along the x-axis. When measured, it has a 50% chance of being found in either the |0⟩ or |1⟩ state."
+            },
+            { 
+                name: "Superposition (|0⟩ - |1⟩)/√2", 
+                state: [1/Math.sqrt(2), 0, -1/Math.sqrt(2)], 
+                color: [0, 255, 0],
+                description: "The qubit is in an equal superposition with a phase difference, pointing along the negative x-axis. This state behaves differently from (|0⟩ + |1⟩)/√2 when interacting with other qubits."
+            },
+            { 
+                name: "Y-axis state (|0⟩ + i|1⟩)/√2", 
+                state: [1/Math.sqrt(2), 1/Math.sqrt(2), 0], 
+                color: [255, 0, 255],
+                description: "The qubit state has an imaginary component, pointing along the positive y-axis. This state is crucial for certain quantum algorithms and demonstrates the complex nature of qubit states."
+            },
+            { 
+                name: "Y-axis state (|0⟩ - i|1⟩)/√2", 
+                state: [1/Math.sqrt(2), -1/Math.sqrt(2), 0], 
+                color: [0, 255, 255],
+                description: "The qubit state has a negative imaginary component, pointing along the negative y-axis. This state, along with (|0⟩ + i|1⟩)/√2, forms another basis for qubit states."
+            },
+            { 
+                name: "Arbitrary state α|0⟩ + β|1⟩", 
+                state: [1/Math.sqrt(3), 1/Math.sqrt(3), 1/Math.sqrt(3)], 
+                color: [255, 255, 0],
+                description: "An arbitrary qubit state, pointing to any location on the Bloch sphere. This represents the general case where a qubit can be in any superposition of |0⟩ and |1⟩ states."
+            }
+        ];
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight - 180, WEBGL);
+            qubitState = createVector(1, 0, 0);
+            createControls();
+            animateQuantumConcepts();
+            updatePresentation();
+            setupRecordingCanvas();
+            startRecording();
+
+            // Create a smooth animator for state transitions
+            animator = new StateAnimator(qubitState, 1000); // 1000ms animation duration
+        }
+
+        function draw() {
+            background(240);
+            orbitControl();
+
+            push();
+            rotateY(sphereRotation);
+            if (!isPaused) sphereRotation += 0.005;
+
+            // Draw Bloch sphere
+            noFill();
+            stroke(100);
+            sphere(150);
+
+            // Draw axes
+            drawAxis(200, 0, 0, 'X', color(255, 0, 0));
+            drawAxis(0, 200, 0, 'Y', color(0, 255, 0));
+            drawAxis(0, 0, 200, 'Z', color(0, 0, 255));
+
+            // Update qubit state if animating
+            if (animator.isAnimating()) {
+                qubitState = animator.update();
+            }
+
+            // Draw qubit state vector
+            strokeWeight(8);
+            stroke(concepts[currentConcept].color);
+            line(0, 0, 0, qubitState.x * 150, qubitState.y * 150, qubitState.z * 150);
+
+            // Draw blinking sphere at the end of the state vector
+            let blinkRate = (sin(frameCount * 0.1) + 1) / 2;
+            fill(concepts[currentConcept].color[0], concepts[currentConcept].color[1], concepts[currentConcept].color[2], 255 * blinkRate);
+            noStroke();
+            translate(qubitState.x * 150, qubitState.y * 150, qubitState.z * 150);
+            sphere(7);
+
+            pop();
+
+            displayState();
+            updateRecordingCanvas();
+        }
+
+        function drawAxis(x, y, z, label, axisColor) {
+            strokeWeight(2);
+            stroke(axisColor);
+            line(-x, -y, -z, x, y, z);
+            push();
+            translate(x, y, z);
+            fill(axisColor);
+            noStroke();
+            textSize(16);
+            text(label, 5, 5);
+            pop();
+        }
+
+        function createControls() {
+            const controlsDiv = select('#controls');
+            const gates = ['X', 'Y', 'Z', 'H', 'RX', 'RY', 'RZ'];
+            gates.forEach(gate => {
+                const button = createButton(`Apply ${gate}`);
+                button.parent(controlsDiv);
+                button.mousePressed(() => applyGate(gate));
+            });
+
+            const screenshotButton = createButton('Screenshot');
+            screenshotButton.parent(controlsDiv);
+            screenshotButton.mousePressed(takeScreenshot);
+
+            downloadButton = createButton('Download Video');
+            downloadButton.parent(controlsDiv);
+            downloadButton.mousePressed(downloadVideo);
+            downloadButton.attribute('disabled', '');
+
+            const pauseButton = createButton('Pause/Resume');
+            pauseButton.parent(controlsDiv);
+            pauseButton.mousePressed(togglePause);
+        }
+
+        function applyGate(gate) {
+            let rotationAngle;
+            if (gate.startsWith('R')) {
+                rotationAngle = parseFloat(prompt(`Enter angle for ${gate} rotation (in radians):`, "0"));
+                if (isNaN(rotationAngle)) return;
+            }
+
+            const newState = math.complex(qubitState.x, qubitState.y);
+            let matrix;
+
+            switch(gate) {
+                case 'X':
+                    matrix = [[0, 1], [1, 0]];
+                    break;
+                case 'Y':
+                    matrix = [[0, math.complex(0, -1)], [math.complex(0, 1), 0]];
+                    break;
+                case 'Z':
+                    matrix = [[1, 0], [0, -1]];
+                    break;
+                case 'H':
+                    matrix = [[1/Math.sqrt(2), 1/Math.sqrt(2)], [1/Math.sqrt(2), -1/Math.sqrt(2)]];
+                    break;
+                case 'RX':
+                    matrix = [
+                        [math.cos(rotationAngle/2), math.complex(0, -Math.sin(rotationAngle/2))],
+                        [math.complex(0, -Math.sin(rotationAngle/2)), math.cos(rotationAngle/2)]
+                    ];
+                    break;
+                case 'RY':
+                    matrix = [
+                        [math.cos(rotationAngle/2), -Math.sin(rotationAngle/2)],
+                        [Math.sin(rotationAngle/2), math.cos(rotationAngle/2)]
+                    ];
+                    break;
+                case 'RZ':
+                    matrix = [
+                        [math.exp(math.complex(0, -rotationAngle/2)), 0],
+                        [0, math.exp(math.complex(0, rotationAngle/2))]
+                    ];
+                    break;
+            }
+
+            const result = math.multiply(matrix, [newState, math.complex(qubitState.z, 0)]);
+            const newX = math.re(result[0]);
+            const newY = math.im(result[0]);
+            const newZ = math.re(result[1]);
+
+            const targetState = createVector(newX, newY, newZ).normalize();
+            animator.animateTo(targetState);
+        }
+
+        function displayState() {
+            const stateDisplayDiv = select('#stateDisplay');
+            const theta = Math.acos(qubitState.z);
+            const phi = Math.atan2(qubitState.y, qubitState.x);
+            
+            const alpha = Math.cos(theta/2);
+            const betaReal = Math.sin(theta/2) * Math.cos(phi);
+            const betaImag = Math.sin(theta/2) * Math.sin(phi);
+
+            stateDisplayDiv.html(`
+                <h3>Quantum State:</h3>
+                |ψ⟩ = ${alpha.toFixed(3)}|0⟩ + (${betaReal.toFixed(3)} + ${betaImag.toFixed(3)}i)|1⟩<br><br>
+                Bloch Sphere Coordinates:<br>
+                θ = ${(theta * 180 / Math.PI).toFixed(2)}°<br>
+                φ = ${(phi * 180 / Math.PI).toFixed(2)}°
+            `);
+        }
+
+        function animateQuantumConcepts() {
+            conceptInterval = setInterval(() => {
+                if (!isPaused) {
+                    currentConcept = (currentConcept + 1) % concepts.length;
+                    const newState = concepts[currentConcept].state;
+                    animator.animateTo(createVector(newState[0], newState[1], newState[2]));
+                    select('#conceptDisplay').html(concepts[currentConcept].name);
+                    updatePresentation();
+
+                    if (currentConcept === concepts.length - 1) {
+                        clearInterval(conceptInterval);
+                        stopRecording();
+                    }
+                }
+            }, 5000);
+        }
+
+        function updatePresentation() {
+            const presentationDiv = select('#presentation');
+            presentationDiv.html(`
+                <h2>${concepts[currentConcept].name}</h2>
+                <p>${concepts[currentConcept].description}</p>
+            `);
+        }
+
+        function takeScreenshot() {
+            saveCanvas('quantum_state_' + currentConcept, 'png');
+        }
+
+        function setupRecordingCanvas() {
+            recordingCanvas = document.getElementById('recordingCanvas');
+            recordingCanvas.width = windowWidth;
+            recordingCanvas.height = windowHeight;
+            recordingContext = recordingCanvas.getContext('2d');
+        }
+
+        function updateRecordingCanvas() {
+            recordingContext.clearRect(0, 0, recordingCanvas.width, recordingCanvas.height);
+            
+            // Draw the Web
+// Draw the WebGL canvas
+            recordingContext.drawImage(document.getElementById('defaultCanvas0'), 0, 0);
+            
+            // Draw the presentation div
+            const presentationDiv = document.getElementById('presentation');
+            html2canvas(presentationDiv, recordingContext, 0, windowHeight - 180);
+        }
+
+        function startRecording() {
+            const stream = recordingCanvas.captureStream(30);
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    recordedChunks.push(e.data);
+                }
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            isRecording = false;
+
+            setTimeout(() => {
+                downloadButton.removeAttribute('disabled');
+            }, 100);
+        }
+
+        function downloadVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.style = 'display: none';
+            a.href = url;
+            a.download = 'quantum_animation.webm';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight - 180);
+            setupRecordingCanvas();
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            select('#conceptDisplay').html(isPaused ? "PAUSED: " + concepts[currentConcept].name : concepts[currentConcept].name);
+        }
+
+        // Helper function to convert HTML to canvas
+        function html2canvas(element, ctx, x, y) {
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(x, y, element.offsetWidth, element.offsetHeight);
+
+            ctx.font = 'bold 24px Arial';
+            ctx.fillStyle = 'white';
+            ctx.fillText(element.querySelector('h2').innerText, x + 10, y + 30);
+
+            ctx.font = '16px Arial';
+            const description = element.querySelector('p').innerText;
+            const words = description.split(' ');
+            let line = '';
+            let lineY = y + 60;
+
+            for (let word of words) {
+                const testLine = line + word + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+
+                if (testWidth > element.offsetWidth - 20 && line !== '') {
+                    ctx.fillText(line, x + 10, lineY);
+                    line = word + ' ';
+                    lineY += 20;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x + 10, lineY);
+        }
+
+        class StateAnimator {
+            constructor(initialState, duration) {
+                this.currentState = initialState.copy();
+                this.targetState = initialState.copy();
+                this.startState = initialState.copy();
+                this.duration = duration;
+                this.startTime = 0;
+                this.animating = false;
+            }
+
+            animateTo(newState) {
+                this.startState = this.currentState.copy();
+                this.targetState = newState.copy();
+                this.startTime = millis();
+                this.animating = true;
+            }
+
+            update() {
+                if (!this.animating) return this.currentState;
+
+                const t = (millis() - this.startTime) / this.duration;
+                if (t >= 1) {
+                    this.currentState = this.targetState.copy();
+                    this.animating = false;
+                } else {
+                    this.currentState = p5.Vector.lerp(this.startState, this.targetState, this.easeInOutCubic(t));
+                }
+
+                return this.currentState;
+            }
+
+            isAnimating() {
+                return this.animating;
+            }
+
+            easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+        }
+    </script>
+</body>
+</html>
