@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observer's Holographic World and the Void</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #222;
+      color: white;
+    }
+    canvas {
+      border: 1px solid white;
+    }
+    .info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: sans-serif;
+    }
+    #description {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      width: 760px;
+      color: white;
+      font-family: sans-serif;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="info">
+  <p><strong>Observer's Holographic World and the Void</strong></p>
+  <p>Use the buttons to navigate through the scenes.</p>
+</div>
+<div id="description"></div>
+<script>
+let scene = 0;
+let buttonNext, buttonPrev;
+let rotationAngle = 0;
+let descriptionDiv;
+
+function setup() {
+  createCanvas(800, 480, WEBGL);
+  
+  buttonNext = createButton('Next');
+  buttonNext.position(700, 550);
+  buttonNext.mousePressed(nextScene);
+  
+  buttonPrev = createButton('Previous');
+  buttonPrev.position(600, 550);
+  buttonPrev.mousePressed(prevScene);
+  
+  descriptionDiv = select('#description');
+}
+
+function draw() {
+  background(200, 200, 255);
+  
+  // Rotate the 3D objects
+  rotateX(rotationAngle);
+  rotateY(rotationAngle * 0.7);
+  rotateZ(rotationAngle * 0.3);
+  
+  switch(scene) {
+    case 0:
+      observerHolographicWorldScene();
+      break;
+    case 1:
+      observerAcceleratedMotionScene();
+      break;
+    case 2:
+      observerFreeFallScene();
+      break;
+    case 3:
+      holographicWorldDisappearanceScene();
+      break;
+    case 4:
+      voidScene();
+      break;
+    case 5:
+      voidPropertiesScene();
+      break;
+    case 6:
+      accelerationAndHolographicWorldScene();
+      break;
+    case 7:
+      consciousnessScene();
+      break;
+  }
+  
+  rotationAngle += 0.01;
+  
+  // Display the text descriptions
+  displayDescription();
+}
+
+function nextScene() {
+  if (scene < 7) scene++;
+}
+
+function prevScene() {
+  if (scene > 0) scene--;
+}
+  function drawObserver(x, y, z) {
+  push();
+  translate(x, y, z);
+  
+  // Head
+  fill(255);
+  sphere(20);
+  
+  // Body
+  fill(255);
+  box(40, 60, 20);
+  
+  // Arms
+  fill(255);
+  push();
+  translate(-25, 0, 0);
+  box(10, 40, 10);
+  pop();
+  
+  push();
+  translate(25, 0, 0);
+  box(10, 40, 10);
+  pop();
+  
+  // Legs
+  fill(255);
+  push();
+  translate(-10, 40, 0);
+  box(10, 40, 10);
+  pop();
+  
+  push();
+  translate(10, 40, 0);
+  box(10, 40, 10);
+  pop();
+  
+  pop();
+}
+
+function observerHolographicWorldScene() {
+  // Observer
+   
+drawObserver(-100, 0, 0);
+  // Holographic screen
+  push();
+  translate(100, 0, 0);
+  fill(0, 255, 0);
+  plane(200, 200);
+  pop();
+  
+  // Qubits of information
+  push();
+  translate(100, 0, 0);
+  fill(255, 0, 0);
+  for (let i = 0; i < 10; i++) {
+    let x = random(-90, 90);
+    let y = random(-90, 90);
+    ellipse(x, y, 10, 10);
+  }
+  pop();
+}
+
+function observerAcceleratedMotionScene() {
+ // Observer
+drawObserver(-100, 0, 0);
+  
+  // Accelerated motion
+  push();
+  translate(-100, 0, 0);
+  stroke(255);
+  noFill();
+  curve(-200, -100, -100, 0, 0, 100, 100, 200);
+  pop();
+  
+  // Event horizon
+  push();
+  translate(100, 0, 0);
+  fill(255, 0, 0);
+  plane(200, 200);
+  pop();
+}
+
+function observerFreeFallScene() {
+  background(200, 200, 255);
+  
+  // Observer
+drawObserver(-100, 0, 0);
+  
+  // Free-fall motion
+  push();
+  translate(-100, 0, 0);
+  stroke(255);
+  noFill();
+  line(-100, -100, -100, 100);
+  pop();
+}
+
+function holographicWorldDisappearanceScene() {
+  background(200, 200, 255);
+  
+  // Disappearing qubits of information
+  push();
+  translate(100, 0, 0);
+  for (let i = 0; i < 10; i++) {
+    let x = random(-90, 90);
+    let y = random(-90, 90);
+    let alpha = map(sin(frameCount * 0.1 + i), -1, 1, 0, 255);
+    let c = color(255, 255, 0);
+    let targetColor = color(255, 0, 0);
+    let interpolatedColor = lerpColor(c, targetColor, i / 10);
+    fill(interpolatedColor, alpha);
+    ellipse(x, y, 10, 10);
+  }
+  pop();
+}
+
+function voidScene() {
+  background(200, 200, 255);
+  
+  // Void
+  push();
+  translate(0, 0, 0);
+  fill(0);
+  sphere(200);
+  pop();
+  
+  // Void label
+  push();
+  translate(0, 0, 0);
+  fill(255);
+  text("Void", 0, 0);
+  pop();
+}
+
+function voidPropertiesScene() {
+ background(106, 90, 205);
+  
+  // Timeless, unchanging, and motionless
+  push();
+  translate(-250, -150, 0);
+  fill(255);
+  text("Timeless", 0, 0);
+  text("Unchanging", 0, 20);
+  text("Motionless", 0, 40);
+  pop();
+  
+  // Unlimited and without boundaries
+  push();
+  translate(250, -150, 0);
+  fill(255);
+  text("Unlimited", 0, 0);
+  text("Without Boundaries", 0, 20);
+  pop();
+  
+  // Undivided and undifferentiated consciousness
+  push();
+  translate(0, 250, 0);
+  fill(255);
+  text("Undivided", 0, 0);
+  text("Undifferentiated Consciousness", 0, 20);
+  pop();
+  
+  // Bigger rotating concentric circles
+  push();
+  translate(0, 0, 0);
+  rotateX(frameCount * 0.01);
+  rotateY(frameCount * 0.02);
+  noFill();
+  stroke(255, 150);
+  strokeWeight(2);
+  for (let i = 0; i < 10; i++) {
+    let radius = map(i, 0, 9, 100, 400);
+    ellipse(0, 0, radius, radius);
+  }
+  pop();
+}
+
+function accelerationAndHolographicWorldScene() {
+  // Observer
+drawObserver(-100, 0, 0);
+  
+  // Accelerated motion
+  push();
+  translate(-100, 0, 0);
+  stroke(255);
+  noFill();
+  curve(-200, -100, -100, 0, 0, 100, 100, 200);
+  pop();
+  
+  // Event horizon and holographic world
+  push();
+  translate(100, 0, 0);
+  fill(0, 255, 0);
+  plane(200, 200);
+  pop();
+  
+  // Accelerated motion label
+  push();
+  translate(-100, -50, 0);
+  fill(255);
+  text("Accelerated Motion", 0, 0);
+  pop();
+}
+
+function consciousnessScene() {
+  // Differentiated consciousness
+  push();
+  translate(-100, 0, 0);
+  fill(255);
+  sphere(50);
+  pop();
+  
+  // Undifferentiated consciousness (void)
+  push();
+  translate(100, 0, 0);
+  fill(0);
+  sphere(100);
+  pop();
+}
+
+function displayDescription() {
+  let description = '';
+  switch(scene) {
+    case 0:
+      description = "<strong>Observer's Holographic World</strong><br>The observer's holographic world arises due to their accelerated motion relative to the void. The event horizon encodes qubits of information, creating the observer's holographic screen.";
+      break;
+    case 1:
+      description = "<strong>Observer's Accelerated Motion</strong><br>The observer's accelerated motion relative to the void gives rise to their event horizon and holographic world.";
+      break;
+    case 2:
+      description = "<strong>Observer Entering Free-Fall</strong><br>As the observer's accelerated motion comes to an end, they enter an ultimate state of free-fall, where the event horizon disappears.";
+      break;
+    case 3:
+      description = "<strong>Disappearance of the Observer's Holographic World</strong><br>As the observer enters free-fall, the qubits of information on the event horizon disappear, and the observer's holographic world vanishes from existence from their own point of view.";
+      break;
+    case 4:
+      description = "<strong>The Void</strong><br>The void is the nothingness that remains when the observer's holographic world disappears. It is the source of the observer's consciousness.";
+      break;
+    case 5:
+      description = "<strong>Properties of the Void</strong><br>The void is timeless, unchanging, motionless, unlimited, without boundaries, undivided, and can be understood as undifferentiated consciousness.";
+      break;
+    case 6:
+      description = "<strong>Accelerated Motion and the Holographic World</strong><br>The observer's holographic world appears to come into existence due to their accelerated motion relative to the motionless void. The bounding surface of the event horizon arises from the point of view of the accelerating observer.";
+      break;
+    case 7:
+      description = "<strong>The Nature of Consciousness</strong><br>The observer's differentiated state of consciousness arises at the central point of view of their own holographic world. The void, as the source of the observer's perceiving consciousness, is undifferentiated consciousness.";
+      break;
+  }
+  descriptionDiv.html(description);
+}
+</script>
+</body>
+</html>
