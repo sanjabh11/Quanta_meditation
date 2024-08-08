@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Quantum Visualization with p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #controls {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            background-color: rgba(255,255,255,0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #stateDisplay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(255,255,255,0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #conceptDisplay {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            background-color: rgba(255,255,255,0.7);
+            padding: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls"></div>
+    <div id="stateDisplay"></div>
+    <div id="conceptDisplay"></div>
+
+    <script>
+        let qubitState;
+        let angle = 0;
+        let currentConcept = 0;
+        let sphereRotation = 0;
+        let concepts = [
+            { name: "Initial State |0⟩", state: [1, 0, 0], color: [255, 0, 0] },
+            { name: "State |1⟩", state: [0, 0, 1], color: [0, 0, 255] },
+            { name: "Superposition (|0⟩ + |1⟩)/√2", state: [1/Math.sqrt(2), 0, 1/Math.sqrt(2)], color: [255, 165, 0] },
+            { name: "Superposition (|0⟩ - |1⟩)/√2", state: [1/Math.sqrt(2), 0, -1/Math.sqrt(2)], color: [0, 255, 0] },
+            { name: "Y-axis state (|0⟩ + i|1⟩)/√2", state: [1/Math.sqrt(2), 1/Math.sqrt(2), 0], color: [255, 0, 255] },
+            { name: "Y-axis state (|0⟩ - i|1⟩)/√2", state: [1/Math.sqrt(2), -1/Math.sqrt(2), 0], color: [0, 255, 255] },
+            { name: "Arbitrary state α|0⟩ + β|1⟩", state: [1/Math.sqrt(3), 1/Math.sqrt(3), 1/Math.sqrt(3)], color: [255, 255, 0] },
+            { name: "Bell state (|00⟩ + |11⟩)/√2", state: [1/Math.sqrt(2), 0, 1/Math.sqrt(2)], color: [128, 0, 128] },
+            { name: "GHZ state (|000⟩ + |111⟩)/√2", state: [1/Math.sqrt(2), 0, 1/Math.sqrt(2)], color: [255, 192, 203] },
+            { name: "W state (|001⟩ + |010⟩ + |100⟩)/√3", state: [1/Math.sqrt(3), 1/Math.sqrt(3), 1/Math.sqrt(3)], color: [165, 42, 42] }
+        ];
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            qubitState = createVector(1, 0, 0);
+            createControls();
+            animateQuantumConcepts();
+        }
+
+        function draw() {
+            background(0);
+            orbitControl();
+
+            push();
+            rotateY(sphereRotation);
+            sphereRotation += 0.005;
+
+            // Draw Bloch sphere
+            noFill();
+            stroke(100);
+            sphere(200);
+
+            // Draw axes
+            strokeWeight(2);
+            stroke(255, 0, 0, 100);
+            line(-250, 0, 0, 250, 0, 0);
+            stroke(0, 255, 0, 100);
+            line(0, -250, 0, 0, 250, 0);
+            stroke(0, 0, 255, 100);
+            line(0, 0, -250, 0, 0, 250);
+
+            // Draw qubit state vector
+            strokeWeight(8);
+            stroke(concepts[currentConcept].color);
+            line(0, 0, 0, qubitState.x * 200, qubitState.y * 200, qubitState.z * 200);
+
+            // Draw blinking sphere at the end of the state vector
+            let blinkRate = (sin(frameCount * 0.1) + 1) / 2;
+            fill(concepts[currentConcept].color[0], concepts[currentConcept].color[1], concepts[currentConcept].color[2], 255 * blinkRate);
+            noStroke();
+            translate(qubitState.x * 200, qubitState.y * 200, qubitState.z * 200);
+            sphere(10);
+
+            pop();
+
+            displayState();
+        }
+
+        function createControls() {
+            const controlsDiv = select('#controls');
+            const gates = ['X', 'Y', 'Z', 'H', 'RX', 'RY', 'RZ'];
+            gates.forEach(gate => {
+                const button = createButton(`Apply ${gate}`);
+                button.parent(controlsDiv);
+                button.mousePressed(() => applyGate(gate));
+            });
+        }
+
+        function applyGate(gate) {
+            let rotationAngle;
+            if (gate.startsWith('R')) {
+                rotationAngle = parseFloat(prompt(`Enter angle for ${gate} rotation (in radians):`, "0"));
+                if (isNaN(rotationAngle)) return;
+            }
+
+            switch(gate) {
+                case 'X':
+                    qubitState.set(qubitState.x, -qubitState.z, qubitState.y);
+                    break;
+                case 'Y':
+                    qubitState.set(qubitState.z, qubitState.y, -qubitState.x);
+                    break;
+                case 'Z':
+                    qubitState.set(-qubitState.y, qubitState.x, qubitState.z);
+                    break;
+                case 'H':
+                    qubitState.set(
+                        (qubitState.x + qubitState.z) / Math.sqrt(2),
+                        qubitState.y,
+                        (qubitState.x - qubitState.z) / Math.sqrt(2)
+                    );
+                    break;
+                case 'RX':
+                    qubitState.set(
+                        qubitState.x,
+                        qubitState.y * cos(rotationAngle) - qubitState.z * sin(rotationAngle),
+                        qubitState.y * sin(rotationAngle) + qubitState.z * cos(rotationAngle)
+                    );
+                    break;
+                case 'RY':
+                    qubitState.set(
+                        qubitState.x * cos(rotationAngle) + qubitState.z * sin(rotationAngle),
+                        qubitState.y,
+                        -qubitState.x * sin(rotationAngle) + qubitState.z * cos(rotationAngle)
+                    );
+                    break;
+                case 'RZ':
+                    qubitState.set(
+                        qubitState.x * cos(rotationAngle) - qubitState.y * sin(rotationAngle),
+                        qubitState.x * sin(rotationAngle) + qubitState.y * cos(rotationAngle),
+                        qubitState.z
+                    );
+                    break;
+            }
+            qubitState.normalize();
+        }
+
+        function displayState() {
+            const stateDisplayDiv = select('#stateDisplay');
+            const theta = Math.acos(qubitState.z);
+            const phi = Math.atan2(qubitState.y, qubitState.x);
+            
+            const alpha = Math.cos(theta/2);
+            const betaReal = Math.sin(theta/2) * Math.cos(phi);
+            const betaImag = Math.sin(theta/2) * Math.sin(phi);
+
+            stateDisplayDiv.html(`Quantum State:<br>
+                |0⟩: ${alpha.toFixed(3)}<br>
+                |1⟩: ${betaReal.toFixed(3)} + ${betaImag.toFixed(3)}i
+            `);
+        }
+
+        function animateQuantumConcepts() {
+            setInterval(() => {
+                currentConcept = (currentConcept + 1) % concepts.length;
+                const newState = concepts[currentConcept].state;
+                qubitState.set(newState[0], newState[1], newState[2]);
+                select('#conceptDisplay').html(concepts[currentConcept].name);
+            }, 3000);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>
