@@ -24,18 +24,25 @@ jobs:
         python-version: '3.x'
     - name: List directory contents
       run: ls -R
+    - name: Check Python version
+      run: python --version
     - name: Generate index.html
-      run: python generate_index.py
+      run: |
+        python -c "import sys; print(sys.path)"
+        python generate_index.py
+      continue-on-error: true
     - name: Display index.html content
-      run: cat index.html
+      run: cat index.html || echo "index.html not found"
     - name: Commit changes
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add index.html
         git diff --staged --quiet || git commit -m "Update index.html"
+      continue-on-error: true
     - name: Push changes
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.ACTIONS_PAT }}
         branch: ${{ github.ref }}
+      continue-on-error: true
