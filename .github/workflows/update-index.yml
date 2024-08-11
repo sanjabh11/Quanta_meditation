@@ -7,6 +7,7 @@ on:
       - 'Beginning of Infinity/**'
       - 'Mindfullness/**'
       - 'Quantum Physics Simulations/**'
+  workflow_dispatch:
 
 jobs:
   update-index:
@@ -15,18 +16,26 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
+    - name: List directory contents
+      run: ls -R
     - name: Generate index.html
       run: python generate_index.py
+    - name: Display index.html content
+      run: cat index.html
     - name: Commit changes
-      env:
-        GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add index.html
-        git commit -m "Update index.html" || echo "No changes to commit"
-        git push
+        git diff --staged --quiet || git commit -m "Update index.html"
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.ACTIONS_PAT }}
+        branch: ${{ github.ref }}
