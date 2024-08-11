@@ -27,7 +27,7 @@ def add_files_from_dir(dir_path):
       if level > 0:
           content += f"{indent}<li class='folder'>{subdir}/</li>\n{indent}<ul>\n"
       for file in sorted(files):
-          if file.endswith(('.html', '.htm')):
+          if file != 'README.md':  # Exclude README.md files
               file_path = os.path.join(root, file).replace(dir_path, '').lstrip(os.sep).replace('\\', '/')
               content += f"{indent}<li><a href='{os.path.join(dir_path, file_path)}'>{file}</a></li>\n"
       if level > 0:
