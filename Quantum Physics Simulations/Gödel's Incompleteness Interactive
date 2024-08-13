@@ -1,0 +1,361 @@
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gödel's Incompleteness Theorems</title>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0a0a0a;
+    color: #00ff00;
+    height: 100%;
+    display: flex;
+  }
+  .container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+  .sidebar {
+    width: 0;
+    background-color: #001a33;
+    transition: width 0.3s;
+    overflow-x: hidden;
+    padding-top: 20px;
+  }
+  .sidebar.show {
+    width: 300px;
+  }
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    transition: margin-left 0.3s;
+  }
+  h1 {
+    text-align: center;
+    color: #ff00ff;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+  }
+  .visualization {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #godel-visualization {
+    width: 100%;
+    height: 60vh;
+    margin-bottom: 20px;
+  }
+  .explanation {
+    color: #00ffff;
+    padding: 0 20px;
+    overflow-y: auto;
+    height: 100%;
+  }
+  .key-concept {
+    color: #ffff00;
+    font-weight: bold;
+  }
+  .equation {
+    font-style: italic;
+    color: #ff00ff;
+    text-align: center;
+    margin: 10px 0;
+  }
+  #controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  #toggle-explanation {
+    background-color: #008CBA;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="sidebar" id="sidebar">
+    <div class="explanation">
+      <h2>Gödel's Incompleteness Theorems</h2>
+      <p>Proved by Kurt Gödel in 1931, these theorems demonstrate the limitations of consistent formal systems.</p>
+      
+      <h3><span class="key-concept">First Incompleteness Theorem:</span></h3>
+      <p>Any consistent formal system F within which a certain amount of elementary arithmetic can be carried out is incomplete; i.e., there are statements of the language of F which can neither be proved nor disproved in F.</p>
+
+      <h3><span class="key-concept">Second Incompleteness Theorem:</span></h3>
+      <p>For any consistent formal system F within which a certain amount of elementary arithmetic can be carried out, the consistency of F cannot be proved in F itself.</p>
+
+      <h3>Key concepts:</h3>
+      <ul>
+        <li><span class="key-concept">Formal System:</span> A system of abstract thought based on the model of mathematics.</li>
+        <li><span class="key-concept">Consistency:</span> A logical system is consistent if there are no contradictions derivable within the system.</li>
+        <li><span class="key-concept">Completeness:</span> A formal system is complete if every statement in the system can be either proved or disproved.</li>
+        <li><span class="key-concept">Gödel Numbering:</span> A method of encoding formal language statements as natural numbers.</li>
+      </ul>
+
+      <h3>Implications:</h3>
+      <ul>
+        <li>There are true mathematical statements that cannot be proved within the system.</li>
+        <li>The consistency of sufficiently complex formal systems cannot be proved within those systems.</li>
+        <li>There is no algorithm that can solve all mathematical questions.</li>
+      </ul>
+
+      <h3>Visualization Explanation:</h3>
+      <ul>
+        <li>The outer circle: The universe of all mathematical statements</li>
+        <li>The inner circle: Statements provable within a formal system</li>
+        <li>The gap between circles: True but unprovable statements</li>
+        <li>The self-referential arrow: The statement "This statement is unprovable"</li>
+      </ul>
+
+      <p>Gödel's theorems have profound implications for mathematics, logic, computer science, and philosophy. They show that no matter how powerful our logical systems become, there will always be limitations to what we can prove within them.</p>
+    </div>
+  </div>
+  <div class="main-content">
+    <h1>Gödel's Incompleteness Theorems Visualization</h1>
+    <div class="visualization">
+      <div id="godel-visualization"></div>
+    </div>
+    <div id="controls">
+      <button id="animate">Animate</button>
+      <button id="reset">Reset</button>
+      <button id="highlight-gap">Highlight Gap</button>
+      <button id="show-godel-statement">Show Gödel Statement</button>
+    </div>
+  </div>
+</div>
+<button id="toggle-explanation">Toggle Explanation</button>
+
+<script>
+// Set up SVG
+const container = document.getElementById('godel-visualization');
+const width = container.clientWidth;
+const height = container.clientHeight;
+const svg = d3.select("#godel-visualization")
+  .append("svg")
+  .attr("width", width)
+  .attr("height", height);
+
+// Create gradient for background
+const gradient = svg.append("defs")
+  .append("radialGradient")
+  .attr("id", "background-gradient")
+  .attr("cx", "50%")
+  .attr("cy", "50%")
+  .attr("r", "50%");
+
+gradient.append("stop")
+  .attr("offset", "0%")
+  .attr("stop-color", "#001a00");
+
+gradient.append("stop")
+  .attr("offset", "100%")
+  .attr("stop-color", "#000000");
+
+// Add background
+svg.append("rect")
+  .attr("width", width)
+  .attr("height", height)
+  .attr("fill", "url(#background-gradient)");
+
+// Add outer circle (universe of statements)
+const outerCircle = svg.append("circle")
+  .attr("cx", width / 2)
+  .attr("cy", height / 2)
+  .attr("r", Math.min(width, height) * 0.4)
+  .attr("fill", "none")
+  .attr("stroke", "#00ff00")
+  .attr("stroke-width", 2);
+
+// Add inner circle (provable statements)
+const innerCircle = svg.append("circle")
+  .attr("cx", width / 2)
+  .attr("cy", height / 2)
+  .attr("r", Math.min(width, height) * 0.3)
+  .attr("fill", "none")
+  .attr("stroke", "#ff00ff")
+  .attr("stroke-width", 2);
+
+// Add self-referential arrow
+const arrow = svg.append("path")
+  .attr("d", `M${width/2},${height/2} C${width/3},${height/3} ${width*2/3},${height/3} ${width/2},${height/2}`)
+  .attr("fill", "none")
+  .attr("stroke", "#ffff00")
+  .attr("stroke-width", 2)
+  .attr("marker-end", "url(#arrowhead)")
+  .style("opacity", 0);
+
+// Add arrowhead
+svg.append("defs").append("marker")
+  .attr("id", "arrowhead")
+  .attr("viewBox", "0 -5 10 10")
+  .attr("refX", 8)
+  .attr("refY", 0)
+  .attr("markerWidth", 6)
+  .attr("markerHeight", 6)
+  .attr("orient", "auto")
+  .append("path")
+  .attr("d", "M0,-5L10,0L0,5")
+  .attr("fill", "#ffff00");
+
+// Add labels
+const outerLabel = svg.append("text")
+  .attr("x", width / 2)
+  .attr("y", 30)
+  .attr("text-anchor", "middle")
+  .attr("fill", "#00ff00")
+  .text("All Statements");
+
+const innerLabel = svg.append("text")
+  .attr("x", width / 2)
+  .attr("y", height - 20)
+  .attr("text-anchor", "middle")
+  .attr("fill", "#ff00ff")
+  .text("Provable Statements");
+
+const godelLabel = svg.append("text")
+  .attr("x", width / 2)
+  .attr("y", height / 2)
+  .attr("text-anchor", "middle")
+  .attr("fill", "#ffff00")
+  .text("Gödel Statement")
+  .style("opacity", 0);
+
+// Animation function
+function animateVisualization() {
+  outerCircle.transition()
+    .duration(2000)
+    .attr("r", Math.min(width, height) * (0.35 + Math.random() * 0.1));
+
+  innerCircle.transition()
+    .duration(2000)
+    .attr("r", Math.min(width, height) * (0.25 + Math.random() * 0.1));
+}
+
+// Reset function
+function resetVisualization() {
+  outerCircle.transition()
+    .duration(1000)
+    .attr("r", Math.min(width, height) * 0.4);
+
+  innerCircle.transition()
+    .duration(1000)
+    .attr("r", Math.min(width, height) * 0.3);
+
+  svg.select(".highlight-gap").remove();
+  arrow.style("opacity", 0);
+  godelLabel.style("opacity", 0);
+}
+
+// Highlight gap function
+function highlightGap() {
+  svg.select(".highlight-gap").remove();
+  
+  const gapHighlight = svg.append("path")
+    .attr("class", "highlight-gap")
+    .attr("d", d3.arc()({
+      innerRadius: parseFloat(innerCircle.attr("r")),
+      outerRadius: parseFloat(outerCircle.attr("r")),
+      startAngle: 0,
+      endAngle: Math.PI * 2
+    }))
+    .attr("transform", `translate(${width/2},${height/2})`)
+    .attr("fill", "rgba(255, 255, 0, 0.2)")
+    .style("opacity", 0);
+
+  gapHighlight.transition()
+    .duration(1000)
+    .style("opacity", 1);
+}
+
+// Show Gödel statement function
+function showGodelStatement() {
+  arrow.style("opacity", 1);
+  godelLabel.style("opacity", 1);
+}
+
+// Event listeners for buttons
+document.getElementById("animate").addEventListener("click", animateVisualization);
+document.getElementById("reset").addEventListener("click", resetVisualization);
+document.getElementById("highlight-gap").addEventListener("click", highlightGap);
+document.getElementById("show-godel-statement").addEventListener("click", showGodelStatement);
+
+// Explanation toggle
+const toggleExplanationButton = document.getElementById('toggle-explanation');
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.querySelector('.main-content');
+
+function toggleExplanation() {
+  sidebar.classList.toggle('show');
+  mainContent.style.marginLeft = sidebar.classList.contains('show') ? '300px' : '0';
+  toggleExplanationButton.textContent = sidebar.classList.contains('show') ? 'Hide Explanation' : 'Show Explanation';
+}
+
+toggleExplanationButton.addEventListener('click', toggleExplanation);
+
+// Resize visualization on window resize
+window.addEventListener('resize', function() {
+  const newWidth = container.clientWidth;
+  const newHeight = container.clientHeight;
+
+  svg.attr("width", newWidth)
+     .attr("height", newHeight);
+
+  // Update positions of elements based on new dimensions
+  svg.select("rect")
+     .attr("width", newWidth)
+     .attr("height", newHeight);
+
+  outerCircle
+     .attr("cx", newWidth / 2)
+     .attr("cy", newHeight / 2)
+     .attr("r", Math.min(newWidth, newHeight) * 0.4);
+
+  innerCircle
+     .attr("cx", newWidth / 2)
+     .attr("cy", newHeight / 2)
+     .attr("r", Math.min(newWidth, newHeight) * 0.3);
+
+  arrow
+     .attr("d", `M${newWidth/2},${newHeight/2} C${newWidth/3},${newHeight/3} ${newWidth*2/3},${newHeight/3} ${newWidth/2},${newHeight/2}`);
+
+  outerLabel
+     .attr("x", newWidth / 2)
+     .attr("y", 30);
+
+  innerLabel
+     .attr("x", newWidth / 2)
+     .attr("y", newHeight - 20);
+
+  godelLabel
+     .attr("x", newWidth / 2)
+     .attr("y", newHeight / 2);
+});
+</script>
+
+</body></html>
