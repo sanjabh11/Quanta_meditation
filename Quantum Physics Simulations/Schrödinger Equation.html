@@ -1,7 +1,7 @@
-<!DOCTYPE html><html><head> 
+<html><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Schrödinger Equation Visualizations</title>
+<title>GPT-6: Schrödinger Equation Visualization (Mobile Optimized with Side Panel)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <style>
@@ -12,30 +12,35 @@
     background-color: #0a0a0a;
     color: #00ff00;
     height: 100%;
-    display: flex;
-    flex-direction: column;
+    overflow: hidden;
   }
   .container {
     display: flex;
-    flex-direction: column;
     height: 100%;
-    padding: 20px;
+  }
+  .sidebar {
+    width: 0;
+    background-color: #111;
+    transition: width 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .sidebar.open {
+    width: 300px;
+  }
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
     box-sizing: border-box;
+    overflow-y: auto;
   }
   h1 {
     text-align: center;
     color: #ff00ff;
-    font-size: 2em;
-    margin-bottom: 20px;
-  }
-  .content {
-    display: flex;
-    flex: 1;
-  }
-  .explanation {
-    flex: 1;
-    padding-right: 20px;
-    overflow-y: auto;
+    font-size: 1.5em;
+    margin-bottom: 10px;
   }
   .visualization {
     flex: 1;
@@ -43,14 +48,10 @@
     flex-direction: column;
     align-items: center;
   }
-  #wave-function-plot {
+  #wave-function-plot, #probability-density-plot {
     width: 100%;
-    height: 400px;
-    margin-bottom: 20px;
-  }
-  #probability-density-plot {
-    width: 100%;
-    height: 300px;
+    height: 40vh;
+    margin-bottom: 10px;
   }
   .key-concept {
     color: #00ffff;
@@ -64,96 +65,92 @@
   #controls {
     display: flex;
     justify-content: space-around;
-    margin-top: 20px;
+    margin-top: 10px;
   }
   button {
     background-color: #4CAF50;
     border: none;
     color: white;
-    padding: 15px 32px;
+    padding: 10px 20px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 16px;
+    font-size: 14px;
     margin: 4px 2px;
     cursor: pointer;
+  }
+  #toggle-explanation {
+    background-color: #008CBA;
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    z-index: 1000;
+  }
+  .explanation {
+    padding: 20px;
+    color: #00ff00;
   }
 </style>
 </head>
 <body>
+<button id="toggle-explanation">Toggle Explanation</button>
 <div class="container">
-  <h1>The Schrödinger Equation</h1>
-  <div class="content">
+  <div class="sidebar" id="sidebar">
     <div class="explanation">
-  <p style="color: lightblue;">The Schrödinger equation is a fundamental equation in quantum mechanics that describes how the quantum state of a physical system changes with time. It was formulated by Erwin Schrödinger in 1925 and is considered one of the most important equations in physics.</p>
-  
-  <p style="color: lightblue;">The time-dependent Schrödinger equation is:</p>
-  <p class="equation">iℏ ∂Ψ/∂t = ĤΨ</p>
+      <h2>The Schrödinger Equation</h2>
+      <p>The Schrödinger equation is a fundamental equation in quantum mechanics that describes how the quantum state of a physical system changes with time. It was formulated by Erwin Schrödinger in 1925 and is considered one of the most important equations in physics.</p>
+      
+      <p>The time-dependent Schrödinger equation is:</p>
+      <p class="equation">iℏ ∂Ψ/∂t = ĤΨ</p>
 
-  <p style="color: lightblue;">Where:</p>
-  <ul style="color: lightblue;">
-    <li>i is the imaginary unit</li>
-    <li>ℏ is the reduced Planck's constant</li>
-    <li>Ψ (Psi) is the wave function</li>
-    <li>t is time</li>
-    <li>Ĥ is the Hamiltonian operator</li>
-  </ul>
+      <p>Where:</p>
+      <ul>
+        <li>i is the imaginary unit</li>
+        <li>ℏ is the reduced Planck's constant</li>
+        <li>Ψ (Psi) is the wave function</li>
+        <li>t is time</li>
+        <li>Ĥ is the Hamiltonian operator</li>
+      </ul>
 
-  <p style="color: yellow;">Key concepts:</p>
-  <ul style="color: lightblue;">
-    <li><span class="key-concept">Wave Function (Ψ)</span>: Describes the quantum state of a system. Its absolute square |Ψ|² gives the probability density of finding a particle at a certain position and time.</li>
-    <li><span class="key-concept">Hamiltonian (Ĥ)</span>: An operator corresponding to the total energy of the system. It typically includes kinetic and potential energy terms.</li>
-    <li><span class="key-concept">Superposition</span>: The wave function can be in multiple states simultaneously, a key principle of quantum mechanics.</li>
-    <li><span class="key-concept">Probability Interpretation</span>: The wave function is related to the probability of finding a particle in a certain state.</li>
-  </ul>
+      <p>Key concepts:</p>
+      <ul>
+        <li><span class="key-concept">Wave Function (Ψ)</span>: Describes the quantum state of a system. Its absolute square |Ψ|² gives the probability density of finding a particle at a certain position and time.</li>
+        <li><span class="key-concept">Hamiltonian (Ĥ)</span>: An operator corresponding to the total energy of the system. It typically includes kinetic and potential energy terms.</li>
+        <li><span class="key-concept">Superposition</span>: The wave function can be in multiple states simultaneously, a key principle of quantum mechanics.</li>
+        <li><span class="key-concept">Probability Interpretation</span>: The wave function is related to the probability of finding a particle in a certain state.</li>
+      </ul>
 
-  <p style="color: lightblue;">For a particle in one dimension, the Schrödinger equation takes the form:</p>
-  <p class="equation">iℏ ∂Ψ/∂t = -ℏ²/2m ∂²Ψ/∂x² + V(x)Ψ</p>
+      <p>For a particle in one dimension, the Schrödinger equation takes the form:</p>
+      <p class="equation">iℏ ∂Ψ/∂t = -ℏ²/2m ∂²Ψ/∂x² + V(x)Ψ</p>
 
-  <p style="color: lightblue;">Where:</p>
-  <ul style="color: lightblue;">
-    <li>m is the mass of the particle</li>
-    <li>V(x) is the potential energy as a function of position</li>
-  </ul>
+      <p>Where:</p>
+      <ul>
+        <li>m is the mass of the particle</li>
+        <li>V(x) is the potential energy as a function of position</li>
+      </ul>
 
-  <p style="color: lightblue;">The visualization on the right shows a solution to the Schrödinger equation for a free particle (V(x) = 0). It displays the real and imaginary parts of the wave function, as well as the probability density |Ψ|².</p>
+      <p>The visualization shows a solution to the Schrödinger equation for a free particle (V(x) = 0). It displays the real and imaginary parts of the wave function, as well as the probability density |Ψ|².</p>
 
-  <p style="color: yellow;">Applications of the Schrödinger equation include:</p>
-  <ul style="color: lightblue;">
-    <li>Describing electron behavior in atoms and molecules</li>
-    <li>Understanding quantum tunneling</li>
-    <li>Explaining the behavior of particles in potential wells</li>
-    <li>Forming the basis for more advanced quantum mechanical calculations</li>
-  </ul>
+      <p>Applications of the Schrödinger equation include:</p>
+      <ul>
+        <li>Describing electron behavior in atoms and molecules</li>
+        <li>Understanding quantum tunneling</li>
+        <li>Explaining the behavior of particles in potential wells</li>
+        <li>Forming the basis for more advanced quantum mechanical calculations</li>
+      </ul>
 
-  <p style="color: lightblue;">The Schrödinger equation is a cornerstone of quantum mechanics and has led to numerous technological advancements, from the development of transistors to the ongoing research in quantum computing.</p>
-</div>
+      <p>The Schrödinger equation is a cornerstone of quantum mechanics and has led to numerous technological advancements, from the development of transistors to the ongoing research in quantum computing.</p>
+    </div>
+  </div>
+  <div class="main-content">
+    <h1>The Schrödinger Equation Visualization</h1>
     <div class="visualization">
-      <div id="wave-function-plot">
-  <svg width="100%" height="400" viewBox="0 0 800 400">
-    <defs>
-      <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" style="stop-color:#ff0000;stop-opacity:1"></stop>
-        <stop offset="50%" style="stop-color:#ff00ff;stop-opacity:1"></stop>
-        <stop offset="100%" style="stop-color:#0000ff;stop-opacity:1"></stop>
-      </linearGradient>
-    </defs>
-    <path id="wave-path" fill="none" stroke="url(#wave-gradient)" stroke-width="3">
-      <animate attributeName="d" dur="5s" repeatCount="indefinite" values="
-          M0,200 Q200,100 400,200 T800,200;
-          M0,200 Q200,300 400,200 T800,200;
-          M0,200 Q200,100 400,200 T800,200"></animate>
-    </path>
-    <text x="400" y="30" fill="#00ff00" font-size="24" text-anchor="middle">Animated Wave Function</text>
-    <text x="20" y="380" fill="#00ff00" font-size="18">Position</text>
-    <text x="10" y="200" fill="#00ff00" font-size="18" transform="rotate(-90 10,200)">Ψ(x,t)</text>
-  </svg>
-</div>
+      <div id="wave-function-plot"></div>
       <div id="probability-density-plot"></div>
       <div id="controls">
-  <button id="play-pause">Play/Pause</button>
-  <button id="reset">Reset</button>
-</div>
+        <button id="play-pause">Play</button>
+        <button id="reset">Reset</button>
+      </div>
     </div>
   </div>
 </div>
@@ -268,6 +265,8 @@ function animate() {
 // Controls
 const playPauseButton = document.getElementById('play-pause');
 const resetButton = document.getElementById('reset');
+const toggleExplanationButton = document.getElementById('toggle-explanation');
+const sidebar = document.getElementById('sidebar');
 
 function toggleAnimation() {
   if (isPlaying) {
@@ -296,11 +295,22 @@ function resetAnimation() {
   ], probabilityLayout);
 }
 
+function toggleExplanation() {
+  sidebar.classList.toggle('open');
+}
+
 playPauseButton.addEventListener('click', toggleAnimation);
 resetButton.addEventListener('click', resetAnimation);
+toggleExplanationButton.addEventListener('click', toggleExplanation);
 
 // Initial state
 resetAnimation();
+
+// Resize plots on window resize
+window.addEventListener('resize', function() {
+  Plotly.Plots.resize('wave-function-plot');
+  Plotly.Plots.resize('probability-density-plot');
+});
 </script>
 
 </body></html>
