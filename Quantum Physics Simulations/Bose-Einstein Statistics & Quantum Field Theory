@@ -1,0 +1,255 @@
+<!DOCTYPE html><html><head> 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bose-Einstein Statistics & Quantum Field Theory</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+    #sidebar {
+        padding: 20px;
+        background-color: #1e1e1e;
+        color: #e0e0e0;
+        overflow-y: auto;
+    }
+    #main {
+        flex-grow: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    #visualization {
+        width: 100%;
+        height: 60vh;
+        background-color: #2c2c2c;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255,255,255,0.1);
+        margin-bottom: 20px;
+    }
+    #controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    #toggle-explanation {
+        margin-top: 20px;
+    }
+    #explanation {
+        margin-top: 20px;
+        display: none;
+    }
+    .formula {
+        font-family: "Times New Roman", Times, serif;
+        font-style: italic;
+        font-size: 18px;
+        margin: 10px 0;
+        color: #ffd700;
+    }
+    @media (min-width: 768px) {
+        .container {
+            flex-direction: row;
+        }
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+        }
+        #main {
+            height: 100vh;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div id="sidebar">
+        <h2>Bose-Einstein Statistics &amp; Quantum Field Theory</h2>
+        <button id="toggle-explanation">Toggle Explanation</button>
+        <div id="explanation">
+            <p>This visualization demonstrates key concepts of Bose-Einstein statistics and Quantum Field Theory (QFT).</p>
+            <p><strong>Key Concepts:</strong></p>
+            <ul>
+                <li>Bose-Einstein statistics describe the behavior of bosons.</li>
+                <li>Bosons can occupy the same quantum state, unlike fermions.</li>
+                <li>QFT treats particles as excitations of underlying fields.</li>
+                <li>Quantum fields permeate all of space and can fluctuate.</li>
+            </ul>
+            <p><strong>In the Animation:</strong></p>
+            <ul>
+                <li>The grid represents a quantum field.</li>
+                <li>Colored circles represent bosons (e.g., photons).</li>
+                <li>Darker areas represent lower energy states.</li>
+                <li>Brighter areas represent higher energy states or excitations.</li>
+                <li>Particles can occupy the same state (overlap).</li>
+                <li>Field fluctuations create and annihilate virtual particles.</li>
+            </ul>
+            <p class="formula">n<sub>i</sub> = 1 / (e<sup>(ε<sub>i</sub>-μ)/kT</sup> - 1)</p>
+            <p>This is the Bose-Einstein distribution formula. It gives the average number of bosons (n<sub>i</sub>) in a state i with energy ε<sub>i</sub>, where μ is the chemical potential, k is Boltzmann's constant, and T is temperature.</p>
+        </div>
+    </div>
+    <div id="main">
+        <div id="visualization" style="width: 100%; height: calc(100vh - 80px);"></div>
+        <div id="controls" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; background-color: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px;">
+    <button id="add-boson">Add Boson</button>
+    <button id="toggle-field">Toggle Field</button>
+    <button id="toggle-fluctuations">Toggle Fluctuations</button>
+    <button id="reset">Reset</button>
+</div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<script>
+let bosons = [];
+let field = [];
+let cellSize = 20;
+let cols, rows;
+let showField = true;
+let showFluctuations = true;
+
+function setup() {
+    let canvas = createCanvas(select('#visualization').width, select('#visualization').height);
+    canvas.parent('visualization');
+    cols = floor(width / cellSize);
+    rows = floor(height / cellSize);
+    initField();
+    reset();
+}
+
+function draw() {
+    background(30);
+    
+    if (showField) {
+        drawField();
+    }
+    
+    if (showFluctuations) {
+        updateField();
+    }
+    
+    bosons.forEach(boson => {
+        boson.update();
+        boson.display();
+    });
+}
+
+function initField() {
+    for (let i = 0; i < cols; i++) {
+        field[i] = [];
+        for (let j = 0; j < rows; j++) {
+            field[i][j] = noise(i * 0.1, j * 0.1) * 255;
+        }
+    }
+}
+
+function drawField() {
+    for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+            let x = i * cellSize;
+            let y = j * cellSize;
+            let brightness = field[i][j];
+            fill(brightness, brightness, brightness, 100);
+            noStroke();
+            rect(x, y, cellSize, cellSize);
+        }
+    }
+}
+
+function updateField() {
+    for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+            field[i][j] += random(-10, 10);
+            field[i][j] = constrain(field[i][j], 0, 255);
+        }
+    }
+}
+
+class Boson {
+    constructor(x, y) {
+        this.pos = createVector(x, y);
+        this.vel = p5.Vector.random2D().mult(2);
+        this.color = color(random(100, 255), random(100, 255), random(100, 255));
+        this.size = random(10, 30);
+    }
+
+    update() {
+        this.pos.add(this.vel);
+        if (this.pos.x < 0 || this.pos.x > width) this.vel.x *= -1;
+        if (this.pos.y < 0 || this.pos.y > height) this.vel.y *= -1;
+        
+        // Attract to lower energy states
+        let col = floor(this.pos.x / cellSize);
+        let row = floor(this.pos.y / cellSize);
+        if (col >= 0 && col < cols && row >= 0 && row < rows) {
+            let attraction = map(field[col][row], 0, 255, 0.1, -0.1);
+            this.vel.add(createVector(attraction, attraction));
+        }
+    }
+
+    display() {
+        noStroke();
+        fill(this.color);
+        ellipse(this.pos.x, this.pos.y, this.size);
+    }
+}
+
+function reset() {
+    bosons = [];
+    for (let i = 0; i < 10; i++) {
+        addBoson();
+    }
+    initField();
+}
+
+function addBoson() {
+    bosons.push(new Boson(random(width), random(height)));
+}
+
+function windowResized() {
+    resizeCanvas(select('#visualization').width, select('#visualization').height);
+    cols = floor(width / cellSize);
+    rows = floor(height / cellSize);
+    initField();
+}
+
+document.getElementById('add-boson').addEventListener('click', addBoson);
+
+document.getElementById('toggle-field').addEventListener('click', function() {
+    showField = !showField;
+});
+
+document.getElementById('toggle-fluctuations').addEventListener('click', function() {
+    showFluctuations = !showFluctuations;
+});
+
+document.getElementById('reset').addEventListener('click', reset);
+
+document.getElementById('toggle-explanation').addEventListener('click', function() {
+    let explanation = document.getElementById('explanation');
+    explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+});
+</script>
+
+</body></html>
