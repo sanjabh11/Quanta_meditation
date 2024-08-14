@@ -1,0 +1,304 @@
+<!DOCTYPE html><html><head><base href=
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Higgs Boson & Higgs Field Visualization</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+    #sidebar {
+        padding: 20px;
+        background-color: #1e1e1e;
+        color: #e0e0e0;
+        overflow-y: auto;
+    }
+    #main {
+        flex-grow: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    #visualization {
+        width: 100%;
+        height: 60vh;
+        background-color: #2c2c2c;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255,255,255,0.1);
+        margin-bottom: 20px;
+    }
+    #controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    #toggle-explanation {
+        margin-top: 20px;
+    }
+    #explanation {
+        margin-top: 20px;
+        display: none;
+    }
+    .formula {
+        font-family: "Times New Roman", Times, serif;
+        font-style: italic;
+        font-size: 18px;
+        margin: 10px 0;
+        color: #ffd700;
+    }
+    @media (min-width: 768px) {
+        .container {
+            flex-direction: row;
+        }
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+        }
+        #main {
+            height: 100vh;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div id="sidebar">
+        <h2>Higgs Boson &amp; Higgs Field</h2>
+        <button id="toggle-explanation">Toggle Explanation</button>
+        <div id="explanation">
+            <p>The Higgs field is an invisible energy field that permeates all of space. The Higgs boson is the particle associated with this field.</p>
+            <p><strong>Key Concepts:</strong></p>
+            <ul>
+                <li>The Higgs field gives mass to fundamental particles.</li>
+                <li>Particles interact differently with the Higgs field, resulting in different masses.</li>
+                <li>The Higgs boson is an excitation of the Higgs field.</li>
+            </ul>
+            <p><strong>In the Animation:</strong></p>
+            <ul>
+                <li>The grid represents the Higgs field.</li>
+                <li>Colored particles represent different fundamental particles.</li>
+                <li>Larger particles have more mass and interact more strongly with the field.</li>
+                <li>The wavy motion of the field represents quantum fluctuations.</li>
+                <li>Higgs bosons appear as temporary bright spots in the field.</li>
+            </ul>
+            <p class="formula">E² = (pc)² + (mc²)²</p>
+            <p>This formula relates a particle's energy (E), momentum (p), and mass (m), showing how mass contributes to a particle's total energy.</p>
+        </div>
+    </div>
+    <div id="main">
+        <div id="visualization" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></div>
+        <div id="controls">
+            <button id="add-particle">Add Particle</button>
+            <button id="toggle-field">Toggle Higgs Field</button>
+            <button id="create-boson">Create Higgs Boson</button>
+            <button id="reset">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<script>
+let particles = [];
+let showField = true;
+let fieldStrength = 0.02;
+let fieldPoints = [];
+let higgsBoson = null;
+let particleTypes = [
+    { name: "Electron", mass: 1, color: [173, 216, 230] },
+    { name: "Muon", mass: 3, color: [255, 192, 203] },
+    { name: "Top Quark", mass: 10, color: [255, 165, 0] }
+];
+
+function setup() {
+    let canvas = createCanvas(select('#visualization').width, select('#visualization').height);
+    canvas.parent('visualization');
+    initFieldPoints();
+    reset();
+}
+
+function draw() {
+    background(30);
+    
+    if (showField) {
+        drawHiggsField();
+    }
+    
+    particles.forEach(particle => {
+        particle.update();
+        particle.display();
+    });
+
+    if (higgsBoson) {
+        higgsBoson.update();
+        higgsBoson.display();
+        if (higgsBoson.lifetime <= 0) {
+            higgsBoson = null;
+        }
+    }
+}
+
+function initFieldPoints() {
+    let res = 20;
+    for (let x = 0; x < width; x += res) {
+        for (let y = 0; y < height; y += res) {
+            fieldPoints.push({
+                x: x,
+                y: y,
+                angle: 0
+            });
+        }
+    }
+}
+
+function drawHiggsField() {
+    stroke(100, 100, 255, 50);
+    strokeWeight(2);
+    fieldPoints.forEach(point => {
+        point.angle = noise(point.x * 0.01, point.y * 0.01, frameCount * 0.01) * TWO_PI;
+        push();
+        translate(point.x, point.y);
+        rotate(point.angle);
+        line(0, 0, 15, 0);
+        pop();
+    });
+}
+
+class Particle {
+    constructor(x, y, type) {
+        this.pos = createVector(x, y);
+        this.vel = p5.Vector.random2D().mult(1);
+        this.acc = createVector();
+        this.type = type;
+        this.size = map(type.mass, 1, 10, 10, 30);
+        this.color = color(type.color);
+    }
+
+    update() {
+        if (showField) {
+            let angle = noise(this.pos.x * 0.01, this.pos.y * 0.01, frameCount * 0.01) * TWO_PI;
+            let force = p5.Vector.fromAngle(angle);
+            force.mult(fieldStrength * this.type.mass);
+            this.acc.add(force);
+        }
+        
+        this.vel.add(this.acc);
+        this.vel.limit(3);  // Limit velocity for more controlled movement
+        this.pos.add(this.vel);
+        this.acc.mult(0);
+        
+        // Wrap around screen edges
+        this.pos.x = (this.pos.x + width) % width;
+        this.pos.y = (this.pos.y + height) % height;
+    }
+
+    display() {
+        noStroke();
+        fill(this.color);
+        ellipse(this.pos.x, this.pos.y, this.size);
+        
+        // Display particle name
+        fill(255);
+        textAlign(CENTER, CENTER);
+        textSize(10);
+        text(this.type.name, this.pos.x, this.pos.y + this.size/2 + 10);
+    }
+}
+
+class HiggsBoson {
+    constructor(x, y) {
+        this.pos = createVector(x, y);
+        this.lifetime = 60;  // Frames the boson will exist
+        this.size = 40;
+    }
+
+    update() {
+        this.lifetime--;
+    }
+
+    display() {
+        noStroke();
+        let alpha = map(this.lifetime, 60, 0, 255, 0);
+        fill(255, 215, 0, alpha);  // Gold color
+        ellipse(this.pos.x, this.pos.y, this.size);
+        
+        // Radiating effect
+        for (let i = 0; i < 8; i++) {
+            let angle = i * PI / 4;
+            let x = this.pos.x + cos(angle) * this.size;
+            let y = this.pos.y + sin(angle) * this.size;
+            stroke(255, 215, 0, alpha / 2);
+            line(this.pos.x, this.pos.y, x, y);
+        }
+
+        // Display "Higgs Boson" text
+        noStroke();
+        fill(255, alpha);
+        textAlign(CENTER, CENTER);
+        textSize(12);
+        text("Higgs Boson", this.pos.x, this.pos.y + this.size/2 + 15);
+    }
+}
+
+function reset() {
+    particles = [];
+    for (let i = 0; i < 5; i++) {
+        addParticle();
+    }
+    higgsBoson = null;
+}
+
+function addParticle() {
+    let x = random(width);
+    let y = random(height);
+    let type = random(particleTypes);
+    particles.push(new Particle(x, y, type));
+}
+
+function createHiggsBoson() {
+    higgsBoson = new HiggsBoson(random(width), random(height));
+}
+
+function windowResized() {
+    resizeCanvas(select('#visualization').width, select('#visualization').height);
+    initFieldPoints();
+}
+
+document.getElementById('add-particle').addEventListener('click', addParticle);
+
+document.getElementById('toggle-field').addEventListener('click', function() {
+    showField = !showField;
+});
+
+document.getElementById('create-boson').addEventListener('click', createHiggsBoson);
+
+document.getElementById('reset').addEventListener('click', reset);
+
+document.getElementById('toggle-explanation').addEventListener('click', function() {
+    let explanation = document.getElementById('explanation');
+    explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+});
+</script>
+
+</body></html>
