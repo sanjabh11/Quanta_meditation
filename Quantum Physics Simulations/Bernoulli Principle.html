@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bernoulli's Principle Interactive Visualization</title>
+    <title>Bernoulli Principle Interactive Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
         body, html {
             margin: 0;
@@ -15,44 +16,37 @@
             background-color: #0a0a1e;
             color: #e0f0ff;
         }
-        #container {
-            position: relative;
+        .container {
+            display: flex;
             width: 100%;
             height: 100%;
         }
-        #fluidCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        #sidebar {
+            width: 300px;
+            background-color: rgba(10, 10, 30, 0.8);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        #main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #visualization {
+            flex-grow: 1;
         }
         #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
             background-color: rgba(10, 10, 30, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 10;
-        }
-        .slider-container {
-            margin-bottom: 10px;
-        }
-        label {
-            display: inline-block;
-            width: 100px;
-            color: #87CEFA;
-        }
-        input[type="range"] {
-            width: 200px;
-            vertical-align: middle;
         }
         button {
             background-color: #4a90e2;
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 15px;
+            margin: 0 5px;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s;
@@ -60,25 +54,24 @@
         button:hover {
             background-color: #357abd;
         }
-        #explanation {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 300px;
-            background-color: rgba(10, 10, 30, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
-            z-index: 10;
-        }
-        h3 {
+        h2 {
             color: #4a90e2;
-            margin-top: 0;
+            text-align: center;
         }
-        #pressureIndicator {
+        .formula {
+            font-style: italic;
+            text-align: center;
+            font-size: 1.2em;
+            margin: 15px 0;
+            color: #ffd700;
+        }
+        #explanation {
+            margin-top: 20px;
+        }
+        #stats {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 10px;
+            left: 310px;
             background-color: rgba(10, 10, 30, 0.8);
             padding: 10px;
             border-radius: 5px;
@@ -86,173 +79,335 @@
     </style>
 </head>
 <body>
-    <div id="container">
-        <canvas id="fluidCanvas"></canvas>
-        <div id="controls">
-            <div class="slider-container">
-                <label for="fluidSpeed">Fluid Speed:</label>
-                <input type="range" id="fluidSpeed" min="0" max="100" value="50">
+    <div class="container">
+        <div id="sidebar">
+            <h2>Bernoulli Principle</h2>
+            <button id="toggle-explanation">Toggle Explanation</button>
+            <div id="explanation">
+                <p>The Bernoulli Principle states that an increase in the speed of a fluid occurs simultaneously with a decrease in pressure or a decrease in the fluid's potential energy.</p>
+                <p class="formula">p + ½ρv² + ρgh = constant</p>
+                <p>Where:</p>
+                <ul>
+                    <li>p is pressure</li>
+                    <li>ρ (rho) is density</li>
+                    <li>v is velocity</li>
+                    <li>g is gravitational acceleration</li>
+                    <li>h is height</li>
+                </ul>
+                <p><strong>In the Animation:</strong></p>
+                <ul>
+                    <li>Particles represent fluid (air or water)</li>
+                    <li>The shape represents an airfoil or constriction</li>
+                    <li>Particle color indicates pressure (red: high, blue: low)</li>
+                    <li>Particle speed is shown by its movement</li>
+                    <li>Streamlines visualize the flow pattern</li>
+                </ul>
             </div>
-            <div class="slider-container">
-                <label for="tubeWidth">Tube Width:</label>
-                <input type="range" id="tubeWidth" min="20" max="100" value="60">
+        </div>
+        <div id="main">
+            <div id="visualization"></div>
+            <div id="controls">
+                <button id="toggle-flow">Toggle Flow</button>
+                <button id="change-shape">Change Shape</button>
+                <button id="add-obstacle">Add Obstacle</button>
+                <button id="toggle-streamlines">Toggle Streamlines</button>
+                <button id="reset">Reset</button>
             </div>
-            <button id="toggleExplanation">More Info</button>
         </div>
-        <div id="explanation">
-            <h3>Bernoulli's Principle</h3>
-            <p>Bernoulli's principle states that an increase in the speed of a fluid occurs simultaneously with a decrease in pressure or a decrease in the fluid's potential energy.</p>
-            <p>In this visualization:</p>
-            <ul>
-                <li>Observe how particles move faster in the narrow section.</li>
-                <li>The color gradient indicates pressure: blue for high, red for low.</li>
-                <li>Adjust the sliders to see how speed and tube width affect the flow.</li>
-            </ul>
-            <p>This principle explains phenomena like lift in airplane wings and the curve of a baseball.</p>
-        </div>
-        <div id="pressureIndicator">
-            Pressure: <span id="pressureValue">Medium</span>
-        </div>
+    </div>
+    <div id="stats">
+        Average Velocity: <span id="avg-velocity">0</span><br>
+        Average Pressure: <span id="avg-pressure">0</span>
     </div>
 
     <script>
-        const canvas = document.getElementById('fluidCanvas');
-        const ctx = canvas.getContext('2d');
-        const fluidSpeedInput = document.getElementById('fluidSpeed');
-        const tubeWidthInput = document.getElementById('tubeWidth');
-        const toggleExplanationBtn = document.getElementById('toggleExplanation');
-        const explanationDiv = document.getElementById('explanation');
-        const pressureValue = document.getElementById('pressureValue');
-
         let particles = [];
-        let fluidSpeed = 2;
-        let tubeWidth = 60;
+        let flowOn = true;
+        let shape;
+        let obstacles = [];
+        let showStreamlines = false;
+        let streamlines = [];
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        function setup() {
+            let canvas = createCanvas(windowWidth - 300, windowHeight);
+            canvas.parent('visualization');
+            shape = new Shape();
+            for (let i = 0; i < 2000; i++) {
+                particles.push(new Particle());
+            }
+            generateStreamlines();
+            noStroke();
         }
 
-        function createParticle() {
-            return {
-                x: 0,
-                y: Math.random() * canvas.height,
-                speed: Math.random() * 0.5 + 0.5,
-                color: getRandomColor()
-            };
-        }
-
-        function getRandomColor() {
-            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        function drawTube() {
-            const narrowWidth = tubeWidth / 2;
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-            gradient.addColorStop(0, 'rgba(0, 0, 255, 0.3)');
-            gradient.addColorStop(0.4, 'rgba(0, 255, 0, 0.3)');
-            gradient.addColorStop(0.6, 'rgba(255, 0, 0, 0.3)');
-            gradient.addColorStop(1, 'rgba(0, 0, 255, 0.3)');
-
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(canvas.width * 0.3, 0);
-            ctx.quadraticCurveTo(canvas.width * 0.4, 0, canvas.width * 0.5, canvas.height / 2 - narrowWidth / 2);
-            ctx.lineTo(canvas.width * 0.7, canvas.height / 2 - narrowWidth / 2);
-            ctx.quadraticCurveTo(canvas.width * 0.8, canvas.height / 2, canvas.width, canvas.height / 2);
-            ctx.quadraticCurveTo(canvas.width * 0.8, canvas.height / 2, canvas.width * 0.7, canvas.height / 2 + narrowWidth / 2);
-            ctx.lineTo(canvas.width * 0.5, canvas.height / 2 + narrowWidth / 2);
-            ctx.quadraticCurveTo(canvas.width * 0.4, canvas.height, canvas.width * 0.3, canvas.height);
-            ctx.lineTo(0, canvas.height);
-            ctx.closePath();
-            ctx.fillStyle = gradient;
-            ctx.fill();
-            ctx.strokeStyle = '#4a90e2';
-            ctx.stroke();
-        }
-
-        function updateParticle(particle) {
-            particle.x += particle.speed * fluidSpeed;
+        function draw() {
+            background(10, 10, 30);
             
-            if (particle.x > canvas.width) {
-                particle.x = 0;
-                particle.y = Math.random() * canvas.height;
+            if (showStreamlines) {
+                displayStreamlines();
             }
             
-            if (particle.x > canvas.width * 0.3 && particle.x < canvas.width * 0.7) {
-                const narrowWidth = tubeWidth / 2;
-                const center = canvas.height / 2;
-                const distFromCenter = Math.abs(particle.y - center);
-                const maxDist = canvas.height / 2;
-                const t = (particle.x - canvas.width * 0.3) / (canvas.width * 0.4);
-                const currentWidth = maxDist - t * (maxDist - narrowWidth);
-                
-                if (distFromCenter > currentWidth) {
-                    particle.y = center + (particle.y > center ? 1 : -1) * currentWidth;
+            shape.display();
+            
+            for (let obstacle of obstacles) {
+                obstacle.display();
+            }
+            
+            let totalVelocity = 0;
+            let totalPressure = 0;
+            
+            for (let particle of particles) {
+                if (flowOn) {
+                    particle.update();
                 }
+                particle.display();
+                totalVelocity += particle.getVelocity();
+                totalPressure += particle.pressure;
+            }
+            
+            let avgVelocity = totalVelocity / particles.length;
+            let avgPressure = totalPressure / particles.length;
+            
+            document.getElementById('avg-velocity').textContent = avgVelocity.toFixed(2);
+            document.getElementById('avg-pressure').textContent = avgPressure.toFixed(2);
+        }
 
-                // Adjust particle speed based on tube width
-                const speedMultiplier = 1 + (1 - currentWidth / maxDist) * 2;
-                particle.x += particle.speed * fluidSpeed * speedMultiplier;
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            
+            reset() {
+                this.x = random(width);
+                this.y = random(height);
+                this.vx = random(1, 3);
+                this.vy = 0;
+                this.pressure = 0;
+                this.size = random(2, 5);
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if (this.x > width) this.x = 0;
+                if (this.y < 0 || this.y > height) this.y = random(height);
+                
+                let shapeEffect = shape.getEffect(this.x, this.y);
+                this.vy += shapeEffect.y;
+                this.vx = constrain(this.vx + shapeEffect.x, 1, 7);
+                
+                for (let obstacle of obstacles) {
+                    let obstacleEffect = obstacle.getEffect(this.x, this.y);
+                    this.vx += obstacleEffect.x;
+                    this.vy += obstacleEffect.y;
+                }
+                
+                this.vy *= 0.95; // damping
+                
+                this.pressure = map(this.vx, 1, 7, 0, 1);
+            }
+            
+            display() {
+                let c = lerpColor(color(0, 0, 255), color(255, 0, 0), this.pressure);
+                fill(c);
+                ellipse(this.x, this.y, this.size, this.size);
+            }
+            
+            getVelocity() {
+                return sqrt(this.vx * this.vx + this.vy * this.vy);
             }
         }
 
-        function drawParticle(particle) {
-            ctx.beginPath();
-            ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
-            ctx.fillStyle = particle.color;
-            ctx.fill();
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            drawTube();
-            
-            particles.forEach(particle => {
-                updateParticle(particle);
-                drawParticle(particle);
-            });
-            
-            updatePressureIndicator();
-            
-            requestAnimationFrame(animate);
-        }
-
-        function updatePressureIndicator() {
-            const narrowestPoint = canvas.width * 0.6;
-            const particlesAtNarrowest = particles.filter(p => Math.abs(p.x - narrowestPoint) < 10).length;
-            let pressure;
-            if (particlesAtNarrowest < 5) pressure = "Low";
-            else if (particlesAtNarrowest < 10) pressure = "Medium";
-            else pressure = "High";
-            pressureValue.textContent = pressure;
-        }
-
-        function init() {
-            resizeCanvas();
-            for (let i = 0; i < 200; i++) {
-                particles.push(createParticle());
+        class Shape {
+            constructor() {
+                this.type = 'airfoil';
+                this.generate();
             }
-            animate();
+            
+            generate() {
+                if (this.type === 'airfoil') {
+                    this.points = [];
+                    for (let x = 0; x < width; x += 10) {
+                        let y = height/2 - 70 * sin(x * 0.02) * exp(-pow(x - width/2, 2) / 30000);
+                        this.points.push(createVector(x, y));
+                    }
+                } else {
+                    this.top = height/2 - 70;
+                    this.bottom = height/2 + 70;
+                    this.left = width/4;
+                    this.right = 3*width/4;
+                }
+            }
+            
+            display() {
+                stroke(255);
+                strokeWeight(2);
+                noFill();
+                if (this.type === 'airfoil') {
+                    beginShape();
+                    for (let p of this.points) {
+                        vertex(p.x, p.y);
+                    }
+                    endShape();
+                } else {
+                    beginShape();
+                    vertex(0, this.top);
+                    vertex(this.left, this.top);
+                    vertex(this.left, height/2 - 140);
+                    vertex(this.right, height/2 - 140);
+                    vertex(this.right, this.top);
+                    vertex(width, this.top);
+                    endShape();
+                    
+                    beginShape();
+                    vertex(0, this.bottom);
+                    vertex(this.left, this.bottom);
+                    vertex(this.left, height/2 + 140);
+                    vertex(this.right, height/2 + 140);
+                    vertex(this.right, this.bottom);
+                    vertex(width, this.bottom);
+                    endShape();
+                }
+            }
+            
+            getEffect(x, y) {
+                let effect = createVector(0, 0);
+                if (this.type === 'airfoil') {
+                    for (let i = 0; i < this.points.length - 1; i++) {
+                        let p1 = this.points[i];
+                        let p2 = this.points[i+1];
+                        if (x >= p1.x && x < p2.x) {
+                            let t = (x - p1.x) / (p2.x - p1.x);
+                            let shapeY = lerp(p1.y, p2.y, t);
+                            let distance = y - shapeY;
+                            effect.y = -distance * 0.02;
+                            effect.x = map(abs(distance), 0, 100, 0.2, -0.2);
+                            break;
+                        }
+                    }
+                } else {
+                    if (x > this.left && x < this.right) {
+                        if (y < height/2) {
+                            effect.y = (y - (height/2 - 140)) * 0.1;
+                        } else {
+                            effect.y = (y - (height/2 + 140)) * 0.1;
+                        }
+                        effect.x = 0.2;
+                    }
+                }
+                return effect;
+            }
         }
 
-        window.addEventListener('resize', resizeCanvas);
+        class Obstacle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 30;
+            }
+            
+            display() {
+                fill(200);
+                ellipse(this.x, this.y, this.radius * 2);
+            }
+            
+            getEffect(x, y) {
+                let effect = createVector(0, 0);
+                let d = dist(x, y, this.x, this.y);
+                if (d < this.radius * 2) {
+                    let angle = atan2(y - this.y, x - this.x);
+                    let strength = map(d, 0, this.radius * 2, 1, 0);
+                    effect.x = cos(angle) * strength;
+                    effect.y = sin(angle) * strength;
+                }
+                return effect;
+            }
+        }
 
-        fluidSpeedInput.addEventListener('input', (e) => {
-            fluidSpeed = e.target.value / 25;
+        function generateStreamlines() {
+            streamlines = [];
+            for (let y = 0; y < height; y += 30) {
+                let streamline = [];
+                let x = 0;
+                let prevX = -1;
+                let prevY = -1;
+                while (x < width) {
+                    let effect = shape.getEffect(x, y);
+                    for (let obstacle of obstacles) {
+                        let obstacleEffect = obstacle.getEffect(x, y);
+                        effect.add(obstacleEffect);
+                    }
+                    if (dist(x, y, prevX, prevY) > 5) {
+                        streamline.push(createVector(x, y));
+                        prevX = x;
+                        prevY = y;
+                    }
+                    x += 5;
+                    y += effect.y * 2;
+                }
+                streamlines.push(streamline);
+            }
+        }
+
+        function displayStreamlines() {
+            stroke(100, 100, 255, 100);
+            strokeWeight(1);
+            noFill();
+            for (let streamline of streamlines) {
+                beginShape();
+                for (let point of streamline) {
+                    vertex(point.x, point.y);
+                }
+                endShape();
+            }
+        }
+
+        function toggleFlow() {
+            flowOn = !flowOn;
+        }
+
+        function changeShape() {
+            shape.type = shape.type === 'airfoil' ? 'venturi' : 'airfoil';
+            shape.generate();
+            generateStreamlines();
+        }
+
+        function addObstacle() {
+            obstacles.push(new Obstacle(random(width), random(height)));
+            generateStreamlines();
+        }
+
+        function toggleStreamlines() {
+            showStreamlines = !showStreamlines;
+        }
+
+        function resetSimulation() {
+            particles = [];
+            for (let i = 0; i < 2000; i++) {
+                particles.push(new Particle());
+            }
+            obstacles = [];
+            shape.type = 'airfoil';
+            shape.generate();
+            generateStreamlines();
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth - 300, windowHeight);
+            shape.generate();
+            generateStreamlines();
+        }
+
+        document.getElementById('toggle-flow').addEventListener('click', toggleFlow);
+        document.getElementById('change-shape').addEventListener('click', changeShape);
+        document.getElementById('add-obstacle').addEventListener('click', addObstacle);
+        document.getElementById('toggle-streamlines').addEventListener('click', toggleStreamlines);
+        document.getElementById('reset').addEventListener('click', resetSimulation);
+
+        document.getElementById('toggle-explanation').addEventListener('click', function() {
+            let explanation = document.getElementById('explanation');
+            explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
         });
-
-        tubeWidthInput.addEventListener('input', (e) => {
-            tubeWidth = e.target.value;
-        });
-
-        toggleExplanationBtn.addEventListener('click', () => {
-            explanationDiv.style.display = explanationDiv.style.display === 'none' ? 'block' : 'none';
-        });
-
-        init();
     </script>
 </body>
 </html>
