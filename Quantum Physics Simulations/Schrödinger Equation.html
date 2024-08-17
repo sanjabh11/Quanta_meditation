@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Schrödinger Equation</title>
+    <title>Interactive Schrödinger Equation Visualizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
         body, html {
@@ -12,9 +12,9 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: Arial, sans-serif;
-            background-color: #1a1a2e;
-            color: #87CEFA;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a1e;
+            color: #e0f0ff;
         }
         #visualization {
             position: absolute;
@@ -22,86 +22,97 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460);
+            background: linear-gradient(45deg, #0a0a1e, #0f1a3a, #142b5f);
         }
-        #text-toggle {
-            position: absolute;
-            left: 10px;
-            bottom: 10px;
-            padding: 5px 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: #87CEFA;
-            border: 1px solid #87CEFA;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #explanation {
-            position: absolute;
-            left: 10px;
-            bottom: 50px;
-            width: 300px;
-            max-height: 80%;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: rgba(0, 0, 0, 0.8);
-            border-radius: 10px;
-            display: none;
-        }
-        #controls {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            background-color: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 10px;
-        }
-        #controls button {
-            padding: 5px 10px;
-            font-size: 12px;
+        .button {
+            padding: 8px 15px;
+            font-size: 14px;
             background-color: rgba(135, 206, 250, 0.2);
             color: #87CEFA;
             border: 1px solid #87CEFA;
-            border-radius: 5px;
+            border-radius: 20px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background-color: rgba(135, 206, 250, 0.4);
+        }
+        #more-info {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        #explanation {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            width: 300px;
+            max-height: 80%;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: rgba(10, 10, 30, 0.9);
+            border-radius: 15px;
+            display: none;
+            box-shadow: 0 0 20px rgba(135, 206, 250, 0.3);
+        }
+        #explanation h2 {
+            color: #87CEFA;
+            margin-top: 0;
         }
         .formula {
             font-style: italic;
-            margin: 10px 0;
+            margin: 15px 0;
+            font-size: 1.2em;
+            color: #ffd700;
+        }
+        #tooltip {
+            position: absolute;
+            background-color: rgba(10, 10, 30, 0.9);
+            color: #e0f0ff;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div id="visualization"></div>
-    <button id="text-toggle">Toggle Info</button>
-    <div id="explanation">
-        <h2>The Schrödinger Equation</h2>
-        <p>The Schrödinger equation describes how the quantum state of a physical system changes over time.</p>
-        <p class="formula">iℏ ∂Ψ/∂t = ĤΨ</p>
-        <p>Where:</p>
-        <ul>
-            <li>i is the imaginary unit</li>
-            <li>ℏ is the reduced Planck constant</li>
-            <li>Ψ (Psi) is the wave function</li>
-            <li>t is time</li>
-            <li>Ĥ is the Hamiltonian operator</li>
-        </ul>
-        <p><strong>In the Animation:</strong></p>
-        <ul>
-            <li>The colorful wave represents the wave function Ψ</li>
-            <li>The white line shows the potential energy</li>
-            <li>The yellow dot appears when you measure the particle's position</li>
-            <li>Interact with the buttons to change the simulation</li>
-        </ul>
-    </div>
+    <button id="more-info" class="button">More Info</button>
     <div id="controls">
-        <button id="change-potential">Change Potential</button>
-        <button id="add-energy">Add Energy</button>
-        <button id="measure">Measure Position</button>
-        <button id="reset">Reset</button>
+        <button id="change-potential" class="button">Change Potential</button>
+        <button id="add-energy" class="button">Add Energy</button>
+        <button id="measure" class="button">Measure Position</button>
+        <button id="reset" class="button">Reset</button>
     </div>
+    <div id="explanation">
+        <h2>The Schrödinger Equation Visualizer</h2>
+        <p>This interactive simulation brings the Schrödinger equation to life, demonstrating key concepts of quantum mechanics.</p>
+        <p class="formula">iℏ ∂Ψ/∂t = ĤΨ</p>
+        <p><strong>Key Components:</strong></p>
+        <ul>
+            <li><strong>Wave Function (Ψ):</strong> The colorful undulating wave represents the quantum state of the particle.</li>
+            <li><strong>Potential Energy (V):</strong> The white line shows the potential energy landscape.</li>
+            <li><strong>Probability Density (|Ψ|²):</strong> The white area at the bottom represents the probability of finding the particle at each position.</li>
+        </ul>
+        <p><strong>Interactions:</strong></p>
+        <ul>
+            <li>Click and drag on the visualization to perturb the wave function.</li>
+            <li>Use the buttons to alter the simulation and observe quantum effects.</li>
+        </ul>
+        <p>Explore how changes in potential and energy affect the quantum state, and witness the probabilistic nature of quantum measurements!</p>
+    </div>
+    <div id="tooltip"></div>
 
     <script>
         let waveFunction;
@@ -120,7 +131,7 @@
         }
 
         function draw() {
-            background(30);
+            background(10, 10, 30);
             
             potential.display();
             waveFunction.update();
@@ -148,7 +159,6 @@
                     this.phase[i] += 0.1 * potential.getValue(i);
                     this.amplitude[i] *= 0.999;
                     
-                    // Apply periodic boundary conditions
                     if (i > 0) {
                         this.amplitude[i] += 0.01 * (this.amplitude[i-1] - this.amplitude[i]);
                     }
@@ -167,7 +177,6 @@
                 }
                 endShape();
                 
-                // Display probability density
                 for (let i = 0; i < width; i++) {
                     let probability = this.amplitude[i] * this.amplitude[i];
                     fill(255, 255, 255, probability * 200);
@@ -259,7 +268,7 @@
             potential = new Potential();
         }
 
-        function mousePressed() {
+        function mouseDragged() {
             if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
                 let clickStrength = 0.5;
                 let clickWidth = width / 10;
@@ -278,9 +287,44 @@
         document.getElementById('measure').addEventListener('click', measure);
         document.getElementById('reset').addEventListener('click', resetSimulation);
 
-        document.getElementById('text-toggle').addEventListener('click', function() {
+        document.getElementById('more-info').addEventListener('click', function() {
             let explanation = document.getElementById('explanation');
             explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Tooltip functionality
+        const buttons = document.querySelectorAll('.button');
+        const tooltip = document.getElementById('tooltip');
+
+        buttons.forEach(button => {
+            button.addEventListener('mouseover', (e) => {
+                let text;
+                switch(e.target.id) {
+                    case 'more-info':
+                        text = "Show/hide detailed explanation";
+                        break;
+                    case 'change-potential':
+                        text = "Alter the potential energy landscape";
+                        break;
+                    case 'add-energy':
+                        text = "Introduce random energy fluctuations";
+                        break;
+                    case 'measure':
+                        text = "Perform a quantum measurement";
+                        break;
+                    case 'reset':
+                        text = "Reset the simulation to its initial state";
+                        break;
+                }
+                tooltip.textContent = text;
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${e.pageX + 10}px`;
+                tooltip.style.top = `${e.pageY + 10}px`;
+            });
+
+            button.addEventListener('mouseout', () => {
+                tooltip.style.display = 'none';
+            });
         });
     </script>
 </body>
