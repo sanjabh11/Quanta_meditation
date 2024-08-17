@@ -1,316 +1,287 @@
 <!DOCTYPE html>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Schrödinger Equation Visualization</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<style>
-  body, html {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #0a0a0a;
-    color: #00ff00;
-    height: 100%;
-    overflow: hidden;
-  }
-  .container {
-    display: flex;
-    height: 100%;
-  }
-  .sidebar {
-    width: 0;
-    background-color: #111;
-    transition: width 0.3s ease;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-  .sidebar.open {
-    width: 300px;
-  }
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    box-sizing: border-box;
-    overflow-y: auto;
-  }
-  h1 {
-    text-align: center;
-    color: #ff00ff;
-    font-size: 1.5em;
-    margin-bottom: 10px;
-  }
-  .visualization {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  #wave-function-plot, #probability-density-plot {
-    width: 100%;
-    height: 40vh;
-    margin-bottom: 10px;
-  }
-  .key-concept {
-    color: #00ffff;
-  }
-  .equation {
-    font-style: italic;
-    color: #ffff00;
-    text-align: center;
-    margin: 10px 0;
-  }
-  #controls {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 10px;
-  }
-  button {
-    background-color: #4CAF50;
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 14px;
-    margin: 4px 2px;
-    cursor: pointer;
-  }
-  #toggle-explanation {
-    background-color: #008CBA;
-    position: fixed;
-    left: 10px;
-    top: 10px;
-    z-index: 1000;
-  }
-  .explanation {
-    padding: 20px;
-    color: #00ff00;
-  }
-</style>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Schrödinger Equation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #87CEFA;
+        }
+        #visualization {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460);
+        }
+        #text-toggle {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            padding: 5px 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #87CEFA;
+            border: 1px solid #87CEFA;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #explanation {
+            position: absolute;
+            left: 10px;
+            bottom: 50px;
+            width: 300px;
+            max-height: 80%;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            display: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            background-color: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        #controls button {
+            padding: 5px 10px;
+            font-size: 12px;
+            background-color: rgba(135, 206, 250, 0.2);
+            color: #87CEFA;
+            border: 1px solid #87CEFA;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .formula {
+            font-style: italic;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-<button id="toggle-explanation">Toggle Explanation</button>
-<div class="container">
-  <div class="sidebar" id="sidebar">
-    <div class="explanation" style="color: lightblue;">
-  <h2>The Schrödinger Equation</h2>
-  <p>The Schrödinger equation is a fundamental equation in quantum mechanics that describes how the quantum state of a physical system changes with time. It was formulated by Erwin Schrödinger in 1925 and is considered one of the most important equations in physics.</p>
-  
-  <p>The time-dependent Schrödinger equation is:</p>
-  <p class="equation">iℏ ∂Ψ/∂t = ĤΨ</p>
-
-  <p>Where:</p>
-  <ul>
-    <li>i is the imaginary unit</li>
-    <li>ℏ is the reduced Planck's constant</li>
-    <li>Ψ (Psi) is the wave function</li>
-    <li>t is time</li>
-    <li>Ĥ is the Hamiltonian operator</li>
-  </ul>
-
-  <p>Key concepts:</p>
-  <ul>
-    <li><span class="key-concept">Wave Function (Ψ)</span>: Describes the quantum state of a system. Its absolute square |Ψ|² gives the probability density of finding a particle at a certain position and time.</li>
-    <li><span class="key-concept">Hamiltonian (Ĥ)</span>: An operator corresponding to the total energy of the system. It typically includes kinetic and potential energy terms.</li>
-    <li><span class="key-concept">Superposition</span>: The wave function can be in multiple states simultaneously, a key principle of quantum mechanics.</li>
-    <li><span class="key-concept">Probability Interpretation</span>: The wave function is related to the probability of finding a particle in a certain state.</li>
-  </ul>
-
-  <p>For a particle in one dimension, the Schrödinger equation takes the form:</p>
-  <p class="equation">iℏ ∂Ψ/∂t = -ℏ²/2m ∂²Ψ/∂x² + V(x)Ψ</p>
-
-  <p>Where:</p>
-  <ul>
-    <li>m is the mass of the particle</li>
-    <li>V(x) is the potential energy as a function of position</li>
-  </ul>
-
-  <p>The visualization shows a solution to the Schrödinger equation for a free particle (V(x) = 0). It displays the real and imaginary parts of the wave function, as well as the probability density |Ψ|².</p>
-
-  <p>Applications of the Schrödinger equation include:</p>
-  <ul>
-    <li>Describing electron behavior in atoms and molecules</li>
-    <li>Understanding quantum tunneling</li>
-    <li>Explaining the behavior of particles in potential wells</li>
-    <li>Forming the basis for more advanced quantum mechanical calculations</li>
-  </ul>
-
-  <p>The Schrödinger equation is a cornerstone of quantum mechanics and has led to numerous technological advancements, from the development of transistors to the ongoing research in quantum computing.</p>
-</div>
-  </div>
-  <div class="main-content">
-    <h1>The Schrödinger Equation Visualization</h1>
-    <div class="visualization">
-      <div id="wave-function-plot"></div>
-      <div id="probability-density-plot"></div>
-      <div id="controls">
-        <button id="play-pause">Play</button>
-        <button id="reset">Reset</button>
-      </div>
+    <div id="visualization"></div>
+    <button id="text-toggle">Toggle Info</button>
+    <div id="explanation">
+        <h2>The Schrödinger Equation</h2>
+        <p>The Schrödinger equation describes how the quantum state of a physical system changes over time.</p>
+        <p class="formula">iℏ ∂Ψ/∂t = ĤΨ</p>
+        <p>Where:</p>
+        <ul>
+            <li>i is the imaginary unit</li>
+            <li>ℏ is the reduced Planck constant</li>
+            <li>Ψ (Psi) is the wave function</li>
+            <li>t is time</li>
+            <li>Ĥ is the Hamiltonian operator</li>
+        </ul>
+        <p><strong>In the Animation:</strong></p>
+        <ul>
+            <li>The colorful wave represents the wave function Ψ</li>
+            <li>The white line shows the potential energy</li>
+            <li>The yellow dot appears when you measure the particle's position</li>
+            <li>Interact with the buttons to change the simulation</li>
+        </ul>
     </div>
-  </div>
-</div>
+    <div id="controls">
+        <button id="change-potential">Change Potential</button>
+        <button id="add-energy">Add Energy</button>
+        <button id="measure">Measure Position</button>
+        <button id="reset">Reset</button>
+    </div>
 
-<script>
-// Constants
-const hbar = 1;
-const m = 1;
-const k = 2;
-const omega = Math.sqrt(k / m);
-const A = 1;
+    <script>
+        let waveFunction;
+        let potential;
+        let particle;
+        let time = 0;
+        let measurementMade = false;
 
-// Generate x values
-const x = math.range(-10, 10, 0.1).toArray();
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.parent('visualization');
+            waveFunction = new WaveFunction();
+            potential = new Potential();
+            particle = new Particle();
+            noStroke();
+        }
 
-// Time values
-let t = 0;
-const dt = 0.05;
+        function draw() {
+            background(30);
+            
+            potential.display();
+            waveFunction.update();
+            waveFunction.display();
+            
+            if (measurementMade) {
+                particle.display();
+            }
+            
+            time += 0.01;
+        }
 
-// Wave function
-function psi(x, t) {
-  return x.map(xi => {
-    const real = A * Math.cos(k * xi - omega * t);
-    const imag = A * Math.sin(k * xi - omega * t);
-    return {real, imag};
-  });
-}
+        class WaveFunction {
+            constructor() {
+                this.amplitude = [];
+                this.phase = [];
+                for (let i = 0; i < width; i++) {
+                    this.amplitude[i] = sin(i * 0.05) * exp(-pow(i - width/2, 2) / 10000);
+                    this.phase[i] = random(TWO_PI);
+                }
+            }
+            
+            update() {
+                for (let i = 0; i < width; i++) {
+                    this.phase[i] += 0.1 * potential.getValue(i);
+                    this.amplitude[i] *= 0.999;
+                    
+                    // Apply periodic boundary conditions
+                    if (i > 0) {
+                        this.amplitude[i] += 0.01 * (this.amplitude[i-1] - this.amplitude[i]);
+                    }
+                    if (i < width - 1) {
+                        this.amplitude[i] += 0.01 * (this.amplitude[i+1] - this.amplitude[i]);
+                    }
+                }
+            }
+            
+            display() {
+                beginShape();
+                for (let i = 0; i < width; i++) {
+                    let y = height/2 + this.amplitude[i] * 100 * sin(this.phase[i] + time);
+                    fill(127 + 127 * sin(this.phase[i]), 127 + 127 * cos(this.phase[i]), 200, 150);
+                    vertex(i, y);
+                }
+                endShape();
+                
+                // Display probability density
+                for (let i = 0; i < width; i++) {
+                    let probability = this.amplitude[i] * this.amplitude[i];
+                    fill(255, 255, 255, probability * 200);
+                    rect(i, height * 0.8, 1, -probability * height * 0.6);
+                }
+            }
+        }
 
-// Probability density
-function probabilityDensity(psi) {
-  return psi.map(p => p.real * p.real + p.imag * p.imag);
-}
+        class Potential {
+            constructor() {
+                this.values = [];
+                this.regenerate();
+            }
+            
+            regenerate() {
+                for (let i = 0; i < width; i++) {
+                    this.values[i] = noise(i * 0.01) * 2 - 1;
+                }
+            }
+            
+            getValue(x) {
+                return this.values[x];
+            }
+            
+            display() {
+                stroke(255);
+                noFill();
+                beginShape();
+                for (let i = 0; i < width; i++) {
+                    vertex(i, map(this.values[i], -1, 1, height * 0.8, height * 0.2));
+                }
+                endShape();
+            }
+        }
 
-// Create wave function plot
-const realTrace = {
-  x: x,
-  y: psi(x, t).map(p => p.real),
-  mode: 'lines',
-  name: 'Real Part',
-  line: {color: '#ff0000'}
-};
+        class Particle {
+            constructor() {
+                this.x = random(width);
+                this.y = height/2;
+            }
+            
+            display() {
+                fill(255, 255, 0);
+                ellipse(this.x, this.y, 10, 10);
+            }
+        }
 
-const imagTrace = {
-  x: x,
-  y: psi(x, t).map(p => p.imag),
-  mode: 'lines',
-  name: 'Imaginary Part',
-  line: {color: '#0000ff'}
-};
+        function changePotential() {
+            potential.regenerate();
+        }
 
-const waveLayout = {
-  title: 'Wave Function',
-  xaxis: {title: 'Position'},
-  yaxis: {title: 'Ψ(x,t)', range: [-1.5, 1.5]},
-  plot_bgcolor: '#222',
-  paper_bgcolor: '#111',
-  font: {color: '#00ff00'},
-  showlegend: true
-};
+        function addEnergy() {
+            for (let i = 0; i < width; i++) {
+                waveFunction.amplitude[i] += random(-0.1, 0.1);
+            }
+        }
 
-Plotly.newPlot('wave-function-plot', [realTrace, imagTrace], waveLayout);
+        function measure() {
+            let totalProbability = 0;
+            for (let i = 0; i < width; i++) {
+                totalProbability += waveFunction.amplitude[i] * waveFunction.amplitude[i];
+            }
+            
+            let randomPoint = random(totalProbability);
+            let cumulativeProbability = 0;
+            
+            for (let i = 0; i < width; i++) {
+                cumulativeProbability += waveFunction.amplitude[i] * waveFunction.amplitude[i];
+                if (cumulativeProbability >= randomPoint) {
+                    particle.x = i;
+                    particle.y = height/2 + waveFunction.amplitude[i] * 100 * sin(waveFunction.phase[i] + time);
+                    break;
+                }
+            }
+            
+            measurementMade = true;
+        }
 
-// Create probability density plot
-const probabilityTrace = {
-  x: x,
-  y: probabilityDensity(psi(x, t)),
-  mode: 'lines',
-  name: 'Probability Density',
-  line: {color: '#00ff00'}
-};
+        function resetSimulation() {
+            waveFunction = new WaveFunction();
+            potential = new Potential();
+            measurementMade = false;
+            time = 0;
+        }
 
-const probabilityLayout = {
-  title: 'Probability Density',
-  xaxis: {title: 'Position'},
-  yaxis: {title: '|Ψ(x,t)|²', range: [0, 1.5]},
-  plot_bgcolor: '#222',
-  paper_bgcolor: '#111',
-  font: {color: '#00ff00'},
-  showlegend: false
-};
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            waveFunction = new WaveFunction();
+            potential = new Potential();
+        }
 
-Plotly.newPlot('probability-density-plot', [probabilityTrace], probabilityLayout);
+        function mousePressed() {
+            if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+                let clickStrength = 0.5;
+                let clickWidth = width / 10;
+                for (let i = 0; i < width; i++) {
+                    let distance = abs(i - mouseX);
+                    if (distance < clickWidth) {
+                        let effect = clickStrength * (1 - distance / clickWidth);
+                        waveFunction.amplitude[i] += effect * (mouseY < height/2 ? 1 : -1);
+                    }
+                }
+            }
+        }
 
-// Animation
-let animationId;
-let isPlaying = false;
+        document.getElementById('change-potential').addEventListener('click', changePotential);
+        document.getElementById('add-energy').addEventListener('click', addEnergy);
+        document.getElementById('measure').addEventListener('click', measure);
+        document.getElementById('reset').addEventListener('click', resetSimulation);
 
-function animate() {
-  t += dt;
-  const newPsi = psi(x, t);
-  
-  Plotly.animate('wave-function-plot', {
-    data: [
-      {y: newPsi.map(p => p.real)},
-      {y: newPsi.map(p => p.imag)}
-    ]
-  }, {
-    transition: {duration: 0},
-    frame: {duration: 0, redraw: false}
-  });
-
-  Plotly.animate('probability-density-plot', {
-    data: [{y: probabilityDensity(newPsi)}]
-  }, {
-    transition: {duration: 0},
-    frame: {duration: 0, redraw: false}
-  });
-
-  animationId = requestAnimationFrame(animate);
-}
-
-// Controls
-const playPauseButton = document.getElementById('play-pause');
-const resetButton = document.getElementById('reset');
-const toggleExplanationButton = document.getElementById('toggle-explanation');
-const sidebar = document.getElementById('sidebar');
-
-function toggleAnimation() {
-  if (isPlaying) {
-    cancelAnimationFrame(animationId);
-    isPlaying = false;
-    playPauseButton.textContent = 'Play';
-  } else {
-    animate();
-    isPlaying = true;
-    playPauseButton.textContent = 'Pause';
-  }
-}
-
-function resetAnimation() {
-  cancelAnimationFrame(animationId);
-  isPlaying = false;
-  playPauseButton.textContent = 'Play';
-  t = 0;
-  const initialPsi = psi(x, t);
-  Plotly.react('wave-function-plot', [
-    {x: x, y: initialPsi.map(p => p.real), mode: 'lines', name: 'Real Part', line: {color: '#ff0000'}},
-    {x: x, y: initialPsi.map(p => p.imag), mode: 'lines', name: 'Imaginary Part', line: {color: '#0000ff'}}
-  ], waveLayout);
-  Plotly.react('probability-density-plot', [
-    {x: x, y: probabilityDensity(initialPsi), mode: 'lines', name: 'Probability Density', line: {color: '#00ff00'}}
-  ], probabilityLayout);
-}
-
-function toggleExplanation() {
-  sidebar.classList.toggle('open');
-}
-
-playPauseButton.addEventListener('click', toggleAnimation);
-resetButton.addEventListener('click', resetAnimation);
-toggleExplanationButton.addEventListener('click', toggleExplanation);
-
-// Initial state
-resetAnimation();
-
-// Resize plots on window resize
-window.addEventListener('resize', function() {
-  Plotly.Plots.resize('wave-function-plot');
-  Plotly.Plots.resize('probability-density-plot');
-});
-</script>
-
-</body></html>
+        document.getElementById('text-toggle').addEventListener('click', function() {
+            let explanation = document.getElementById('explanation');
+            explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>
