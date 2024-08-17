@@ -1,1 +1,363 @@
+<html><head>
+<title>Journey to the Real: Beyond Phenomena</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background-color: #000;
+    color: #fff;
+  }
+  #canvas-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  #info-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0,0,0,0.7);
+    padding: 15px;
+    border-radius: 10px;
+    max-width: 300px;
+    font-size: 14px;
+  }
+  #quote {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+    width: 80%;
+    max-width: 800px;
+  }
+  #interaction-info {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="info-panel">
+  <h2>Journey to the Real</h2>
+  <p>Experience the movement of consciousness away from phenomena and towards the Real. Discover the center that ties all experiences into unity.</p>
+</div>
+<div id="quote">"Go behind all experience to that which is aware of the experience, and that which ties the multiplicities of experience into the unity of one whole. This center is that which I am."</div>
+<div id="interaction-info">
+  Click and drag to rotate<br>
+  Scroll to zoom<br>
+  Double-click to journey inward<br>
+  Press 'R' to reset view
+</div>
 
+<script>
+let scene, camera, renderer, centerSphere, phenomenaParticles, unifyingLines, raycaster, mouse;
+const particleCount = 1000;
+let phenomenaNodes = [];
+let isJourneyingInward = false;
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  createCenterSphere();
+  createPhenomenaParticles();
+  createUnifyingLines();
+
+  camera.position.z = 50;
+
+  window.addEventListener('resize', onWindowResize, false);
+  window.addEventListener('dblclick', onDoubleClick, false);
+  window.addEventListener('mousemove', onMouseMove, false);
+  window.addEventListener('keydown', onKeyDown, false);
+
+  animate();
+}
+
+function createCenterSphere() {
+  const geometry = new THREE.SphereGeometry(5, 32, 32);
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      time: { value: 0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      void main() {
+        vUv = uv;
+        vNormal = normal;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      void main() {
+        float pulse = (sin(time * 1.5) + 1.0) * 0.5;
+        vec3 color = mix(vec3(0.1, 0.4, 0.8), vec3(1.0, 1.0, 1.0), pulse);
+        float fresnel = pow(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+        color = mix(color, vec3(1.0), fresnel);
+        gl_FragColor = vec4(color, 0.9);
+      }
+    `,
+    transparent: true
+  });
+  centerSphere = new THREE.Mesh(geometry, material);
+  scene.add(centerSphere);
+}
+
+function createPhenomenaParticles() {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
+
+  for (let i = 0; i < particleCount; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(Math.random() * 2 - 1);
+    const radius = Math.random() * 30 + 10;
+
+    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = radius * Math.cos(phi);
+
+    colors[i * 3] = Math.random() * 0.5 + 0.5;
+    colors[i * 3 + 1] = Math.random() * 0.5;
+    colors[i * 3 + 2] = Math.random() * 0.5 + 0.5;
+
+    phenomenaNodes.push(new THREE.Vector3(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]));
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, opacity: 0.7 });
+  phenomenaParticles = new THREE.Points(geometry, material);
+  scene.add(phenomenaParticles);
+}
+
+function createUnifyingLines() {
+  const material = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
+  const geometry = new THREE.BufferGeometry();
+  
+  const positions = [];
+  for (let i = 0; i < phenomenaNodes.length; i++) {
+    positions.push(0, 0, 0);
+    positions.push(phenomenaNodes[i].x, phenomenaNodes[i].y, phenomenaNodes[i].z);
+  }
+  
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  unifyingLines = new THREE.LineSegments(geometry, material);
+  scene.add(unifyingLines);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onDoubleClick(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersects = raycaster.intersectObjects([centerSphere, phenomenaParticles]);
+
+  if (intersects.length > 0) {
+    const clickedObject = intersects[0].object;
+
+    if (clickedObject === centerSphere) {
+      journeyInward();
+    } else if (clickedObject === phenomenaParticles) {
+      const particleIndex = intersects[0].index;
+      focusOnPhenomenon(particleIndex);
+    }
+  } else {
+    resetView();
+  }
+}
+
+function journeyInward() {
+  if (isJourneyingInward) return;
+  isJourneyingInward = true;
+
+  gsap.to(camera.position, {
+    x: 0,
+    y: 0,
+    z: 7,
+    duration: 3,
+    ease: "power2.inOut",
+    onUpdate: function() {
+      camera.lookAt(scene.position);
+    },
+    onComplete: function() {
+      isJourneyingInward = false;
+    }
+  });
+
+  gsap.to(phenomenaParticles.material, {
+    opacity: 0.2,
+    duration: 3
+  });
+
+  gsap.to(unifyingLines.material, {
+    opacity: 0.5,
+    duration: 3
+  });
+
+  gsap.to(centerSphere.scale, {
+    x: 1.5,
+    y: 1.5,
+    z: 1.5,
+    duration: 3,
+    ease: "elastic.out(1, 0.5)"
+  });
+}
+
+function focusOnPhenomenon(index) {
+  const targetPosition = phenomenaNodes[index];
+
+  gsap.to(camera.position, {
+    x: targetPosition.x * 1.2,
+    y: targetPosition.y * 1.2,
+    z: targetPosition.z * 1.2,
+    duration: 2,
+    ease: "power2.inOut",
+    onUpdate: function() {
+      camera.lookAt(targetPosition);
+    }
+  });
+
+  gsap.to(phenomenaParticles.material, {
+    opacity: 1,
+    duration: 2
+  });
+
+  gsap.to(unifyingLines.material, {
+    opacity: 0.3,
+    duration: 2
+  });
+
+  gsap.to(centerSphere.scale, {
+    x: 0.8,
+    y: 0.8,
+    z: 0.8,
+    duration: 2,
+    ease: "elastic.out(1, 0.5)"
+  });
+}
+
+function resetView() {
+  gsap.to(camera.position, {
+    x: 0,
+    y: 0,
+    z: 50,
+    duration: 2,
+    ease: "power2.inOut",
+    onUpdate: function() {
+      camera.lookAt(scene.position);
+    }
+  });
+
+  gsap.to(phenomenaParticles.material, {
+    opacity: 0.7,
+    duration: 2
+  });
+
+  gsap.to(unifyingLines.material, {
+    opacity: 0.2,
+    duration: 2
+  });
+
+  gsap.to(centerSphere.scale, {
+    x: 1,
+    y: 1,
+    z: 1,
+    duration: 2,
+    ease: "elastic.out(1, 0.5)"
+  });
+}
+
+function onMouseMove(event) {
+  if (isJourneyingInward) return;
+
+  const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+  const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  gsap.to(scene.rotation, {
+    x: mouseY * 0.1,
+    y: mouseX * 0.1,
+    duration: 0.5
+  });
+}
+
+function onKeyDown(event) {
+  if (event.key === 'r' || event.key === 'R') {
+    resetView();
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const time = performance.now() * 0.001;
+
+  centerSphere.material.uniforms.time.value = time;
+  
+  const positions = phenomenaParticles.geometry.attributes.position.array;
+  for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i];
+    const y = positions[i + 1];
+    const z = positions[i + 2];
+    
+    const distance = Math.sqrt(x * x + y * y + z * z);
+    const factor = 1 + Math.sin(time + distance * 0.05) * 0.03;
+    
+    positions[i] *= factor;
+    positions[i + 1] *= factor;
+    positions[i + 2] *= factor;
+
+    phenomenaNodes[i / 3].set(positions[i], positions[i + 1], positions[i + 2]);
+  }
+  phenomenaParticles.geometry.attributes.position.needsUpdate = true;
+
+  // Update unifying lines
+  const linePositions = unifyingLines.geometry.attributes.position.array;
+  for (let i = 0; i < linePositions.length; i += 6) {
+    const nodeIndex = i / 6;
+    linePositions[i + 3] = phenomenaNodes[nodeIndex].x;
+    linePositions[i + 4] = phenomenaNodes[nodeIndex].y;
+    linePositions[i + 5] = phenomenaNodes[nodeIndex].z;
+  }
+  unifyingLines.geometry.attributes.position.needsUpdate = true;
+
+  renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body></html>
