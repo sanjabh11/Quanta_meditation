@@ -1,177 +1,258 @@
-<!DOCTYPE html><html><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bernoulli Principle</title>
-<style>
-    body {
-        margin: 0;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-        background-color: #1a1a1a; /* Dark background */
-    }
-    #container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-    }
-    canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        background-color: #1a1a1a; /* Dark background for canvas */
-    }
-    #controls {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: rgba(255, 255, 255, 0.1); /* Slightly transparent dark background */
-        padding: 10px;
-        border-radius: 5px;
-        color: #ffffff; /* White text for better contrast */
-    }
-    #explanation {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        background: rgba(255, 255, 255, 0.1); /* Slightly transparent dark background */
-        padding: 10px;
-        border-radius: 5px;
-        color: #ffffff; /* White text for better contrast */
-    }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bernoulli's Principle Interactive Visualization</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a1e;
+            color: #e0f0ff;
+        }
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #fluidCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(10, 10, 30, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 10;
+        }
+        .slider-container {
+            margin-bottom: 10px;
+        }
+        label {
+            display: inline-block;
+            width: 100px;
+            color: #87CEFA;
+        }
+        input[type="range"] {
+            width: 200px;
+            vertical-align: middle;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        #explanation {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: rgba(10, 10, 30, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 10;
+        }
+        h3 {
+            color: #4a90e2;
+            margin-top: 0;
+        }
+        #pressureIndicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(10, 10, 30, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-<div id="container">
-    <canvas id="fluidCanvas"></canvas>
-    <div id="controls">
-    <label for="fluidSpeed">Fluid Speed: </label>
-    <input type="range" id="fluidSpeed" min="0" max="100" value="50"><br>
-    <label for="tubeWidth">Tube Width: </label>
-    <input type="range" id="tubeWidth" min="20" max="100" value="60"><br>
-    <button id="toggleExplanation">Toggle Explanation</button>
-</div>
-    <div id="explanation" style="display: none;">
-    <h3>Bernoulli's Principle</h3>
-    <p>Bernoulli's principle states that an increase in the speed of a fluid occurs simultaneously with a decrease in pressure or a decrease in the fluid's potential energy. Observe how the fluid particles move faster in the narrow section of the tube, demonstrating lower pressure in that area.</p>
-</div>
-</div>
+    <div id="container">
+        <canvas id="fluidCanvas"></canvas>
+        <div id="controls">
+            <div class="slider-container">
+                <label for="fluidSpeed">Fluid Speed:</label>
+                <input type="range" id="fluidSpeed" min="0" max="100" value="50">
+            </div>
+            <div class="slider-container">
+                <label for="tubeWidth">Tube Width:</label>
+                <input type="range" id="tubeWidth" min="20" max="100" value="60">
+            </div>
+            <button id="toggleExplanation">More Info</button>
+        </div>
+        <div id="explanation">
+            <h3>Bernoulli's Principle</h3>
+            <p>Bernoulli's principle states that an increase in the speed of a fluid occurs simultaneously with a decrease in pressure or a decrease in the fluid's potential energy.</p>
+            <p>In this visualization:</p>
+            <ul>
+                <li>Observe how particles move faster in the narrow section.</li>
+                <li>The color gradient indicates pressure: blue for high, red for low.</li>
+                <li>Adjust the sliders to see how speed and tube width affect the flow.</li>
+            </ul>
+            <p>This principle explains phenomena like lift in airplane wings and the curve of a baseball.</p>
+        </div>
+        <div id="pressureIndicator">
+            Pressure: <span id="pressureValue">Medium</span>
+        </div>
+    </div>
 
-<script>
-const canvas = document.getElementById('fluidCanvas');
-const ctx = canvas.getContext('2d');
-const fluidSpeedInput = document.getElementById('fluidSpeed');
-const tubeWidthInput = document.getElementById('tubeWidth');
-const toggleExplanationBtn = document.getElementById('toggleExplanation');
-const explanationDiv = document.getElementById('explanation');
+    <script>
+        const canvas = document.getElementById('fluidCanvas');
+        const ctx = canvas.getContext('2d');
+        const fluidSpeedInput = document.getElementById('fluidSpeed');
+        const tubeWidthInput = document.getElementById('tubeWidth');
+        const toggleExplanationBtn = document.getElementById('toggleExplanation');
+        const explanationDiv = document.getElementById('explanation');
+        const pressureValue = document.getElementById('pressureValue');
 
-let particles = [];
-let fluidSpeed = 2;
-let tubeWidth = 60;
+        let particles = [];
+        let fluidSpeed = 2;
+        let tubeWidth = 60;
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-
-function createParticle() {
-    return {
-        x: 0,
-        y: Math.random() * canvas.height,
-        speed: Math.random() * 0.5 + 0.5,
-        color: getRandomColor()
-    };
-}
-
-function getRandomColor() {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
-    return colors[Math.floor(Math.random() * colors.length)];
-}
-
-function drawTube() {
-    const narrowWidth = tubeWidth / 2;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(canvas.width * 0.3, 0);
-    ctx.quadraticCurveTo(canvas.width * 0.4, 0, canvas.width * 0.5, canvas.height / 2 - narrowWidth / 2);
-    ctx.lineTo(canvas.width * 0.7, canvas.height / 2 - narrowWidth / 2);
-    ctx.quadraticCurveTo(canvas.width * 0.8, canvas.height / 2, canvas.width, canvas.height / 2);
-    ctx.quadraticCurveTo(canvas.width * 0.8, canvas.height / 2, canvas.width * 0.7, canvas.height / 2 + narrowWidth / 2);
-    ctx.lineTo(canvas.width * 0.5, canvas.height / 2 + narrowWidth / 2);
-    ctx.quadraticCurveTo(canvas.width * 0.4, canvas.height, canvas.width * 0.3, canvas.height);
-    ctx.lineTo(0, canvas.height);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(100, 150, 200, 0.3)';
-    ctx.fill();
-    ctx.strokeStyle = '#4a90e2';
-    ctx.stroke();
-}
-
-function updateParticle(particle) {
-    particle.x += particle.speed * fluidSpeed;
-    
-    if (particle.x > canvas.width) {
-        particle.x = 0;
-        particle.y = Math.random() * canvas.height;
-    }
-    
-    if (particle.x > canvas.width * 0.3 && particle.x < canvas.width * 0.7) {
-        const narrowWidth = tubeWidth / 2;
-        const center = canvas.height / 2;
-        const distFromCenter = Math.abs(particle.y - center);
-        const maxDist = canvas.height / 2;
-        const t = (particle.x - canvas.width * 0.3) / (canvas.width * 0.4);
-        const currentWidth = maxDist - t * (maxDist - narrowWidth);
-        
-        if (distFromCenter > currentWidth) {
-            particle.y = center + (particle.y > center ? 1 : -1) * currentWidth;
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-    }
-}
 
-function drawParticle(particle) {
-    ctx.beginPath();
-    ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = particle.color;
-    ctx.fill();
-}
+        function createParticle() {
+            return {
+                x: 0,
+                y: Math.random() * canvas.height,
+                speed: Math.random() * 0.5 + 0.5,
+                color: getRandomColor()
+            };
+        }
 
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    drawTube();
-    
-    particles.forEach(particle => {
-        updateParticle(particle);
-        drawParticle(particle);
-    });
-    
-    requestAnimationFrame(animate);
-}
+        function getRandomColor() {
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
 
-function init() {
-    resizeCanvas();
-    for (let i = 0; i < 200; i++) {
-        particles.push(createParticle());
-    }
-    animate();
-}
+        function drawTube() {
+            const narrowWidth = tubeWidth / 2;
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, 'rgba(0, 0, 255, 0.3)');
+            gradient.addColorStop(0.4, 'rgba(0, 255, 0, 0.3)');
+            gradient.addColorStop(0.6, 'rgba(255, 0, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 0, 255, 0.3)');
 
-window.addEventListener('resize', resizeCanvas);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(canvas.width * 0.3, 0);
+            ctx.quadraticCurveTo(canvas.width * 0.4, 0, canvas.width * 0.5, canvas.height / 2 - narrowWidth / 2);
+            ctx.lineTo(canvas.width * 0.7, canvas.height / 2 - narrowWidth / 2);
+            ctx.quadraticCurveTo(canvas.width * 0.8, canvas.height / 2, canvas.width, canvas.height / 2);
+            ctx.quadraticCurveTo(canvas.width * 0.8, canvas.height / 2, canvas.width * 0.7, canvas.height / 2 + narrowWidth / 2);
+            ctx.lineTo(canvas.width * 0.5, canvas.height / 2 + narrowWidth / 2);
+            ctx.quadraticCurveTo(canvas.width * 0.4, canvas.height, canvas.width * 0.3, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.strokeStyle = '#4a90e2';
+            ctx.stroke();
+        }
 
-fluidSpeedInput.addEventListener('input', (e) => {
-    fluidSpeed = e.target.value / 25;
-});
+        function updateParticle(particle) {
+            particle.x += particle.speed * fluidSpeed;
+            
+            if (particle.x > canvas.width) {
+                particle.x = 0;
+                particle.y = Math.random() * canvas.height;
+            }
+            
+            if (particle.x > canvas.width * 0.3 && particle.x < canvas.width * 0.7) {
+                const narrowWidth = tubeWidth / 2;
+                const center = canvas.height / 2;
+                const distFromCenter = Math.abs(particle.y - center);
+                const maxDist = canvas.height / 2;
+                const t = (particle.x - canvas.width * 0.3) / (canvas.width * 0.4);
+                const currentWidth = maxDist - t * (maxDist - narrowWidth);
+                
+                if (distFromCenter > currentWidth) {
+                    particle.y = center + (particle.y > center ? 1 : -1) * currentWidth;
+                }
 
-tubeWidthInput.addEventListener('input', (e) => {
-    tubeWidth = e.target.value;
-});
+                // Adjust particle speed based on tube width
+                const speedMultiplier = 1 + (1 - currentWidth / maxDist) * 2;
+                particle.x += particle.speed * fluidSpeed * speedMultiplier;
+            }
+        }
 
-toggleExplanationBtn.addEventListener('click', () => {
-    explanationDiv.style.display = explanationDiv.style.display === 'none' ? 'block' : 'none';
-});
+        function drawParticle(particle) {
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = particle.color;
+            ctx.fill();
+        }
 
-init();
-</script>
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawTube();
+            
+            particles.forEach(particle => {
+                updateParticle(particle);
+                drawParticle(particle);
+            });
+            
+            updatePressureIndicator();
+            
+            requestAnimationFrame(animate);
+        }
 
-</body></html>
+        function updatePressureIndicator() {
+            const narrowestPoint = canvas.width * 0.6;
+            const particlesAtNarrowest = particles.filter(p => Math.abs(p.x - narrowestPoint) < 10).length;
+            let pressure;
+            if (particlesAtNarrowest < 5) pressure = "Low";
+            else if (particlesAtNarrowest < 10) pressure = "Medium";
+            else pressure = "High";
+            pressureValue.textContent = pressure;
+        }
+
+        function init() {
+            resizeCanvas();
+            for (let i = 0; i < 200; i++) {
+                particles.push(createParticle());
+            }
+            animate();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        fluidSpeedInput.addEventListener('input', (e) => {
+            fluidSpeed = e.target.value / 25;
+        });
+
+        tubeWidthInput.addEventListener('input', (e) => {
+            tubeWidth = e.target.value;
+        });
+
+        toggleExplanationBtn.addEventListener('click', () => {
+            explanationDiv.style.display = explanationDiv.style.display === 'none' ? 'block' : 'none';
+        });
+
+        init();
+    </script>
+</body>
+</html>
