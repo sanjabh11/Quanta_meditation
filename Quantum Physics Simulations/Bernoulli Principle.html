@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Bernoulli Principle Simulator</title>
+    <title>Bernoulli Principle Simulator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
     <style>
-        body, html {
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
             background-color: #f0f0f0;
         }
         .container {
             display: flex;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
         }
         #sidebar {
             width: 300px;
-            background-color: #2c3e50;
+            background-color: #333;
             color: white;
             padding: 20px;
             overflow-y: auto;
@@ -31,53 +34,46 @@
         }
         #visualization {
             flex-grow: 1;
-            background-color: #34495e;
-        }
-        #controls {
-            background-color: #2c3e50;
-            padding: 10px;
-            display: flex;
-            justify-content: space-around;
-        }
-        button {
-            background-color: #3498db;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            transition-duration: 0.4s;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        .formula {
-            background-color: #34495e;
-            padding: 10px;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
+            background-color: #222;
         }
         #data-display {
-            background-color: rgba(0, 0, 0, 0.5);
+            height: 60px;
+            background-color: #444;
             color: white;
             padding: 10px;
-            position: absolute;
-            top: 10px;
-            right: 10px;
+        }
+        #controls {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background-color: #555;
+        }
+        button {
+            padding: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
         }
         #explanation {
+            display: none;
             margin-top: 20px;
+        }
+        .formula {
+            font-style: italic;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div id="sidebar">
-        <h2>Advanced Bernoulli Principle</h2>
+        <h2>Bernoulli Principle</h2>
         <button id="toggle-explanation">Toggle Explanation</button>
         <div id="explanation">
             <p>The Bernoulli Principle is a fundamental concept in fluid dynamics that relates pressure, velocity, and elevation in a moving fluid.</p>
@@ -127,6 +123,7 @@ let obstacles = [];
 let showStreamlines = false;
 let showPressureMap = false;
 let pressureField;
+let dataDisplay;
 
 function setup() {
     let canvas = createCanvas(select('#visualization').width, select('#visualization').height);
@@ -137,6 +134,7 @@ function setup() {
         particles.push(new Particle());
     }
     noStroke();
+    dataDisplay = select('#data-display');
 }
 
 function draw() {
@@ -369,15 +367,9 @@ function displayData() {
     let avgVelocity = particles.reduce((sum, p) => sum + p.vx, 0) / particles.length;
     let avgPressure = particles.reduce((sum, p) => sum + p.pressure, 0) / particles.length;
     
-    let display = `Average Velocity: ${avgVelocity.toFixed(2)}
-Average Pressure: ${avgPressure.toFixed(2)}
-Shape: ${shape.type}
-Obstacles: ${obstacles.length}`;
+    let display = `Average Velocity: ${avgVelocity.toFixed(2)} | Average Pressure: ${avgPressure.toFixed(2)} | Shape: ${shape.type} | Obstacles: ${obstacles.length}`;
     
-    fill(255);
-    noStroke();
-    textAlign(LEFT, TOP);
-    text(display, 10, 10);
+    dataDisplay.html(display);
 }
 
 function toggleFlow() {
@@ -429,6 +421,8 @@ document.getElementById('toggle-explanation').addEventListener('click', function
     let explanation = document.getElementById('explanation');
     explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
 });
+
+window.addEventListener('resize', windowResized);
 </script>
 
 </body>
