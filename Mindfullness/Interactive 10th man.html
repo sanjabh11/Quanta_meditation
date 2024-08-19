@@ -3,60 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Quantum Spirituality Animation</title>
+    <title>Enhanced Quantum Spirituality Animation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #000;
-            color: #fff;
-            font-family: Arial, sans-serif;
-        }
-        #explanation {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 300px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .button {
-            position: absolute;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            color: white;
-        }
-        #startButton {
-            bottom: 20px;
-            left: 20px;
-            background-color: blue;
-        }
-        #nextButton {
-            bottom: 20px;
-            left: 150px;
-            background-color: green;
-        }
-        #downloadButton {
-            bottom: 20px;
-            right: 20px;
-            background-color: purple;
-        }
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; }
+        #canvasContainer { position: relative; }
+        #explanation { position: absolute; bottom: 10px; left: 10px; color: white; font-family: Arial, sans-serif; max-width: 300px; }
+        .button { position: absolute; top: 10px; padding: 10px; cursor: pointer; }
+        #startButton { left: 10px; }
+        #nextButton { right: 10px; }
     </style>
 </head>
 <body>
-    <div id="explanation"></div>
-    <button id="startButton" class="button">Start Animation</button>
-    <button id="nextButton" class="button">Next Scene</button>
-    <button id="downloadButton" class="button">Download MP4</button>
+    <div id="canvasContainer">
+        <div id="explanation"></div>
+        <button id="startButton" class="button">Start Animation</button>
+        <button id="nextButton" class="button">Next Scene</button>
+    </div>
     <script>
         let currentScene = 0;
         let objects = [];
@@ -76,6 +39,7 @@
 
         function setup() {
             canvas = createCanvas(1000, 600, WEBGL);
+            canvas.parent('canvasContainer');
             textFont(font);
             textSize(18);
             textAlign(CENTER, CENTER);
@@ -84,15 +48,13 @@
 
             document.getElementById('startButton').addEventListener('click', startAnimation);
             document.getElementById('nextButton').addEventListener('click', nextScene);
-            document.getElementById('downloadButton').addEventListener('click', downloadMP4);
 
             document.getElementById('nextButton').style.display = 'none';
-            document.getElementById('downloadButton').style.display = 'none';
         }
 
         function draw() {
             background(0);
-            orbitControl();
+            orbitControl(4, 4);
 
             if (isAnimating) {
                 displaySceneInfo();
@@ -101,7 +63,7 @@
                 push();
                 fill(255);
                 textSize(24);
-                text("Click 'Start Animation' to begin", 0, 0);
+                text("Click to start the animation", 0, 0);
                 pop();
             }
         }
@@ -111,7 +73,6 @@
             currentScene = 0;
             document.getElementById('startButton').style.display = 'none';
             document.getElementById('nextButton').style.display = 'inline-block';
-            document.getElementById('downloadButton').style.display = 'inline-block';
         }
 
         function nextScene() {
@@ -185,6 +146,11 @@
             for (let obj of objects) {
                 obj.visible = looking;
             }
+
+            push();
+            fill(255);
+            text("Press and hold mouse to observe", 0, 250);
+            pop();
         }
 
         function drawDualityOfAction() {
@@ -195,36 +161,39 @@
             fill(255);
             text("Meditation", meditator.x, meditator.y + 50);
             text("Action", activeCharacter.x, activeCharacter.y + 50);
-            text("Both are 'doing'", 0, 100);
+            text("Move mouse left/right to balance action and non-action", 0, 250);
             pop();
 
-            // Interactive: Move characters with mouse
-            if (mouseIsPressed) {
-                meditator.x = mouseX - width/2;
-                activeCharacter.x = -meditator.x;
-            }
+            let balance = map(mouseX, 0, width, -200, 200);
+            meditator.x = -balance;
+            activeCharacter.x = balance;
         }
 
         function drawParavritti() {
-            let t = frameCount * 0.05;
+            let t = frameCount * 0.02;
             
             push();
-            for (let i = 0; i < 100; i++) {
+            rotateY(t);
+            for (let i = 0; i < 500; i++) {
                 let angle = noise(i, t) * TWO_PI;
-                let radius = noise(i, t + 1000) * 100;
+                let radius = noise(i, t + 1000) * 200;
                 let x = cos(angle) * radius;
                 let y = sin(angle) * radius;
-                let z = noise(i, t + 2000) * 100 - 50;
+                let z = noise(i, t + 2000) * 200 - 100;
                 
-                fill(noise(i) * 255, noise(i + 1000) * 255, noise(i + 2000) * 255, 100);
+                let size = map(noise(i, t), 0, 1, 2, 8);
+                fill(noise(i) * 255, noise(i + 1000) * 255, noise(i + 2000) * 255, 150);
+                push();
                 translate(x, y, z);
-                sphere(3);
+                sphere(size);
+                pop();
             }
             pop();
 
-            // Interactive: Change dissolution speed with mouse Y position
-            let dissolutionSpeed = map(mouseY, 0, height, 0.01, 0.1);
-            t *= dissolutionSpeed;
+            push();
+            fill(255);
+            text("Move mouse up/down to control dissolution speed", 0, 250);
+            pop();
         }
 
         function drawIllusionOfSeparateSelf() {
@@ -239,7 +208,6 @@
                 }
             }
 
-            // Interactive: Move objects with mouse
             if (mouseIsPressed) {
                 let closestObj = null;
                 let minDist = Infinity;
@@ -255,6 +223,11 @@
                     closestObj.y = mouseY - height/2;
                 }
             }
+
+            push();
+            fill(255);
+            text("Click and drag spheres to see interconnectedness", 0, 250);
+            pop();
         }
 
         function drawParadoxOfSeeking() {
@@ -262,26 +235,30 @@
                 push();
                 translate(mirror.x, mirror.y, mirror.z);
                 rotateY(mirror.rotY);
-                fill(200);
+                fill(200, 200, 200, 100);
                 plane(100, 150);
                 pop();
             }
 
-            // Interactive: Control seeker with mouse
             let x = mouseX - width/2;
             let y = mouseY - height/2;
             drawRotatingSphere(x, y, 0, 20, 0.05, color(255, 165, 0));
+
+            push();
+            fill(255);
+            text("Move mouse to seek, but notice you can't see yourself", 0, 250);
+            pop();
         }
 
         function drawPresenceInAbsence() {
-            if (mouseIsPressed && frameCount % 5 === 0) {
+            if (mouseIsPressed && frameCount % 3 === 0) {
                 presenceParticles.push({
                     x: mouseX - width/2,
                     y: mouseY - height/2,
                     z: random(-200, 200),
                     size: random(5, 15),
                     rotationSpeed: random(0.01, 0.05),
-                    color: color(random(255), random(255), random(255))
+                    color: color(random(255), random(255), random(255), 150)
                 });
             }
 
@@ -289,51 +266,53 @@
                 let p = presenceParticles[i];
                 drawRotatingSphere(p.x, p.y, p.z, p.size, p.rotationSpeed, p.color);
 
-                p.size -= 0.1;
+                p.size -= 0.2;
                 if (p.size <= 0) {
                     presenceParticles.splice(i, 1);
                 }
             }
+
+            push();
+            fill(255);
+            text("Click and drag to create presence", 0, 250);
+            pop();
         }
 
         function drawNonDualNature() {
-            let t = frameCount * 0.05;
+            let t = frameCount * 0.02;
             
             push();
             rotateX(t);
             rotateY(t * 0.5);
             let morphFactor = map(mouseX, 0, width, 0, 1);
-            let vertices = [];
             
-            for (let i = 0; i < 100; i++) {
-                let lat = map(i, 0, 99, -PI/2, PI/2);
-                for (let j = 0; j < 100; j++) {
-                    let lon = map(j, 0, 99, -PI, PI);
-                    let x = cos(lat) * cos(lon);
-                    let y = cos(lat) * sin(lon);
-                    let z = sin(lat);
-                    
-                    let r = 150 + 50 * noise(x * 0.1, y * 0.1, z * 0.1 + t * 0.1);
-                    r = lerp(r, 100, morphFactor);
-                    
-                    vertices.push(x * r, y * r, z * r);
-                }
-            }
-            
-            stroke(255);
-            beginShape(POINTS);
-            for (let i = 0; i < vertices.length; i += 3) {
-                let col = color(noise(i) * 255, noise(i + 1000) * 255, noise(i + 2000) * 255);
+            for (let i = 0; i < 10000; i++) {
+                let theta = random(TWO_PI);
+                let phi = random(PI);
+                let r = 200 + 50 * noise(theta, phi, t);
+                
+                let x = r * sin(phi) * cos(theta);
+                let y = r * sin(phi) * sin(theta);
+                let z = r * cos(phi);
+                
+                let morphedR = lerp(r, 150, morphFactor);
+                x = lerp(x, morphedR * sin(phi) * cos(theta), morphFactor);
+                y = lerp(y, morphedR * sin(phi) * sin(theta), morphFactor);
+                z = lerp(z, morphedR * cos(phi), morphFactor);
+                
+                let col = color(noise(x * 0.01, y * 0.01, z * 0.01) * 255, 
+                                noise(x * 0.01 + 1000, y * 0.01 + 1000, z * 0.01 + 1000) * 255, 
+                                noise(x * 0.01 + 2000, y * 0.01 + 2000, z * 0.01 + 2000) * 255,
+                                150);
                 stroke(col);
-                vertex(vertices[i], vertices[i+1], vertices[i+2]);
+                point(x, y, z);
             }
-            endShape();
-            
             pop();
-        }
 
-        function downloadMP4() {
-            saveCanvas(canvas, 'quantum_spirituality', 'mp4');
+            push();
+            fill(255);
+            text("Move mouse left/right to morph between form and formlessness", 0, 250);
+            pop();
         }
 
         function initializeObjects() {
