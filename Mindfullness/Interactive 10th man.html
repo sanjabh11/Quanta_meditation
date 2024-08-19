@@ -6,12 +6,64 @@
     <title>Enhanced Quantum Spirituality Animation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
-        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; }
-        #canvasContainer { position: relative; }
-        #explanation { position: absolute; bottom: 10px; left: 10px; color: white; font-family: Arial, sans-serif; max-width: 300px; }
-        .button { position: absolute; top: 10px; padding: 10px; cursor: pointer; }
-        #startButton { left: 10px; }
-        #nextButton { right: 10px; }
+        body { 
+            margin: 0; 
+            padding: 0;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background-color: #000; 
+            font-family: Arial, sans-serif;
+        }
+        #canvasContainer { 
+            position: relative; 
+            width: 100%; 
+            max-width: 1000px; 
+            height: 600px;
+        }
+        #explanation { 
+            position: absolute; 
+            bottom: 10px; 
+            left: 10px; 
+            color: white; 
+            max-width: 300px; 
+            z-index: 10;
+        }
+        .button { 
+            position: absolute; 
+            padding: 10px 20px; 
+            cursor: pointer; 
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            z-index: 20;
+        }
+        #startButton { 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+        }
+        #nextButton { 
+            top: 10px; 
+            right: 10px; 
+        }
+        @media (max-width: 600px) {
+            #canvasContainer {
+                height: 400px;
+            }
+            .button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+            #explanation {
+                font-size: 12px;
+                max-width: 200px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -28,19 +80,14 @@
         let activeCharacter;
         let mirrors = [];
         let presenceParticles = [];
-        let font;
-        let canvas;
         let isAnimating = false;
         let totalScenes = 7;
 
-        function preload() {
-            font = loadFont('https://cdnjs.cloudflare.com/ajax/libs/topcoat/0.8.0/font/SourceSansPro-Regular.otf');
-        }
-
         function setup() {
-            canvas = createCanvas(1000, 600, WEBGL);
+            let canvasContainer = document.getElementById('canvasContainer');
+            let canvas = createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight, WEBGL);
             canvas.parent('canvasContainer');
-            textFont(font);
+            textFont('Arial');
             textSize(18);
             textAlign(CENTER, CENTER);
 
@@ -50,6 +97,13 @@
             document.getElementById('nextButton').addEventListener('click', nextScene);
 
             document.getElementById('nextButton').style.display = 'none';
+
+            window.addEventListener('resize', windowResized);
+        }
+
+        function windowResized() {
+            let canvasContainer = document.getElementById('canvasContainer');
+            resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
         }
 
         function draw() {
@@ -286,7 +340,7 @@
             rotateY(t * 0.5);
             let morphFactor = map(mouseX, 0, width, 0, 1);
             
-            for (let i = 0; i < 10000; i++) {
+            for (let i = 0; i < 2000; i++) {
                 let theta = random(TWO_PI);
                 let phi = random(PI);
                 let r = 200 + 50 * noise(theta, phi, t);
