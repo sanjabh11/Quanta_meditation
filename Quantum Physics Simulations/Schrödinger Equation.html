@@ -3,100 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Schrödinger Equation Visualizer</title>
+    <title>Schrödinger Equation Visualizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
-        body, html {
+        body {
             margin: 0;
             padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background-color: #0a0a1e;
-            color: #e0f0ff;
+            color: #ffffff;
         }
         #visualization {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, #0a0a1e, #0f1a3a, #142b5f);
-        }
-        .button {
-            padding: 8px 15px;
-            font-size: 14px;
-            background-color: rgba(135, 206, 250, 0.2);
-            color: #87CEFA;
-            border: 1px solid #87CEFA;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .button:hover {
-            background-color: rgba(135, 206, 250, 0.4);
-        }
-        #more-info {
-            position: absolute;
-            left: 20px;
-            bottom: 20px;
+            height: 70vh;
         }
         #controls {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
             display: flex;
-            gap: 10px;
             flex-wrap: wrap;
-            justify-content: flex-end;
+            justify-content: center;
+            padding: 10px;
+        }
+        .button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 14px;
+            background-color: #4a4a8a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #6a6aaa;
         }
         #explanation {
-            position: absolute;
-            left: 20px;
-            top: 20px;
-            width: 300px;
-            max-height: 80%;
-            overflow-y: auto;
-            padding: 20px;
-            background-color: rgba(10, 10, 30, 0.9);
-            border-radius: 15px;
             display: none;
-            box-shadow: 0 0 20px rgba(135, 206, 250, 0.3);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background-color: rgba(20, 20, 40, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
         }
         #explanation h2 {
-            color: #87CEFA;
             margin-top: 0;
         }
         .formula {
             font-style: italic;
-            margin: 15px 0;
+            font-weight: bold;
             font-size: 1.2em;
-            color: #ffd700;
         }
         #tooltip {
-            position: absolute;
-            background-color: rgba(10, 10, 30, 0.9);
-            color: #e0f0ff;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            pointer-events: none;
+            position: fixed;
             display: none;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1001;
+        }
+        #close-explanation {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            .button {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            #explanation {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="visualization"></div>
-    <button id="more-info" class="button">More Info</button>
     <div id="controls">
+        <button id="more-info" class="button">More Info</button>
         <button id="change-potential" class="button">Change Potential</button>
         <button id="add-energy" class="button">Add Energy</button>
         <button id="measure" class="button">Measure Position</button>
+        <button id="toggle-animation" class="button">Pause/Resume</button>
         <button id="reset" class="button">Reset</button>
     </div>
     <div id="explanation">
-        <h2>The Schrödinger Equation Visualizer</h2>
+        <button id="close-explanation">&times;</button>
+        <h2>Schrödinger Equation Visualizer</h2>
         <p>This interactive simulation brings the Schrödinger equation to life, demonstrating key concepts of quantum mechanics.</p>
         <p class="formula">iℏ ∂Ψ/∂t = ĤΨ</p>
         <p><strong>Key Components:</strong></p>
@@ -120,9 +127,10 @@
         let particle;
         let time = 0;
         let measurementMade = false;
+        let isAnimating = true;
 
         function setup() {
-            let canvas = createCanvas(windowWidth, windowHeight);
+            let canvas = createCanvas(windowWidth, windowHeight * 0.7);
             canvas.parent('visualization');
             waveFunction = new WaveFunction();
             potential = new Potential();
@@ -131,6 +139,8 @@
         }
 
         function draw() {
+            if (!isAnimating) return;
+
             background(10, 10, 30);
             
             potential.display();
@@ -146,12 +156,9 @@
 
         class WaveFunction {
             constructor() {
-                this.amplitude = [];
-                this.phase = [];
-                for (let i = 0; i < width; i++) {
-                    this.amplitude[i] = sin(i * 0.05) * exp(-pow(i - width/2, 2) / 10000);
-                    this.phase[i] = random(TWO_PI);
-                }
+                this.amplitude = new Array(width).fill(0).map((_, i) => 
+                    sin(i * 0.05) * exp(-pow(i - width/2, 2) / 10000));
+                this.phase = new Array(width).fill(0).map(() => random(TWO_PI));
             }
             
             update() {
@@ -187,7 +194,7 @@
 
         class Potential {
             constructor() {
-                this.values = [];
+                this.values = new Array(width).fill(0);
                 this.regenerate();
             }
             
@@ -235,11 +242,7 @@
         }
 
         function measure() {
-            let totalProbability = 0;
-            for (let i = 0; i < width; i++) {
-                totalProbability += waveFunction.amplitude[i] * waveFunction.amplitude[i];
-            }
-            
+            let totalProbability = waveFunction.amplitude.reduce((sum, amp) => sum + amp * amp, 0);
             let randomPoint = random(totalProbability);
             let cumulativeProbability = 0;
             
@@ -262,8 +265,17 @@
             time = 0;
         }
 
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            if (isAnimating) {
+                loop();
+            } else {
+                noLoop();
+            }
+        }
+
         function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
+            resizeCanvas(windowWidth, windowHeight * 0.7);
             waveFunction = new WaveFunction();
             potential = new Potential();
         }
@@ -285,11 +297,15 @@
         document.getElementById('change-potential').addEventListener('click', changePotential);
         document.getElementById('add-energy').addEventListener('click', addEnergy);
         document.getElementById('measure').addEventListener('click', measure);
+        document.getElementById('toggle-animation').addEventListener('click', toggleAnimation);
         document.getElementById('reset').addEventListener('click', resetSimulation);
 
         document.getElementById('more-info').addEventListener('click', function() {
-            let explanation = document.getElementById('explanation');
-            explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+            document.getElementById('explanation').style.display = 'block';
+        });
+
+        document.getElementById('close-explanation').addEventListener('click', function() {
+            document.getElementById('explanation').style.display = 'none';
         });
 
         // Tooltip functionality
@@ -301,7 +317,7 @@
                 let text;
                 switch(e.target.id) {
                     case 'more-info':
-                        text = "Show/hide detailed explanation";
+                        text = "Show detailed explanation";
                         break;
                     case 'change-potential':
                         text = "Alter the potential energy landscape";
@@ -311,6 +327,9 @@
                         break;
                     case 'measure':
                         text = "Perform a quantum measurement";
+                        break;
+                    case 'toggle-animation':
+                        text = "Pause or resume the animation";
                         break;
                     case 'reset':
                         text = "Reset the simulation to its initial state";
@@ -324,6 +343,27 @@
 
             button.addEventListener('mouseout', () => {
                 tooltip.style.display = 'none';
+            });
+        });
+
+        // Touch device support for tooltip
+        buttons.forEach(button => {
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                let touch = e.touches[0];
+                let event = new MouseEvent('mouseover', {
+                    'view': window,
+                    'bubbles': true,
+                    'cancelable': true,
+                    'clientX': touch.clientX,
+                    'clientY': touch.clientY
+                });
+                e.target.dispatchEvent(event);
+            });
+
+            button.addEventListener('touchend', () => {
+                let event = new MouseEvent('mouseout');
+                button.dispatchEvent(event);
             });
         });
     </script>
