@@ -1,1 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum States Visualization: Finite and Infinite-Dimensional Hilbert Spaces</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        #info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            display: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            background: #87CEEB; /* Light blue color */
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button:hover {
+            background: #7bbcd4; /* Slightly darker blue on hover */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="info-panel">
+  <h2>Quantum States Visualization</h2>
+  <div id="explanation"></div>
+</div>
+<div id="controls">
+  <button id="toggle-space">Toggle Hilbert Space</button>
+  <button id="measure">Perform Measurement</button>
+  <button id="reset">Reset</button>
+  <button id="toggle-info">Toggle Info</button>
+</div>
 
+<script>
+let scene, camera, renderer;
+let blochSphere, stateSphere, axes;
+let wavefunctionMesh, potentialWellMesh;
+let currentSpace = 'finite';
+let measurement = false;
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+  createFiniteDimensionalSpace();
+  createInfiniteDimensionalSpace();
+
+  camera.position.z = 5;
+
+  window.addEventListener('resize', onWindowResize, false);
+  document.getElementById('toggle-space').addEventListener('click', toggleSpace);
+  document.getElementById('measure').addEventListener('click', performMeasurement);
+  document.getElementById('reset').addEventListener('click', resetVisualization);
+  document.getElementById('toggle-info').addEventListener('click', toggleInfoPanel);
+
+  renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+  renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+  renderer.domElement.addEventListener('mousemove', onMouseMove, false);
+
+  animate();
+}
+
+function createFiniteDimensionalSpace() {
+  // Create Bloch sphere
+  const sphereGeometry = new THREE.SphereGeometry(2, 32, 32);
+  const sphereMaterial = new THREE.MeshBasicMaterial({
+    color: 0xaaaaaa,
+    transparent: true,
+    opacity: 0.3,
+    wireframe: true
+  });
+  blochSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+  scene.add(blochSphere);
+
+  // Create state sphere
+  const stateGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+  const stateMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  stateSphere = new THREE.Mesh(stateGeometry, stateMaterial);
+  scene.add(stateSphere);
+
+  // Create axes
+  axes = new THREE.Group();
+  const axisLength = 2.5;
+  const axisColor = 0xffffff;
+  
+  const xAxis = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), axisLength, axisColor);
+  const yAxis = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), axisLength, axisColor);
+  const zAxis = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), axisLength, axisColor);
+
+  axes.add(xAxis);
+  axes.add(yAxis);
+  axes.add(zAxis);
+  scene.add(axes);
+
+  updateExplanation('finite');
+}
+
+function createInfiniteDimensionalSpace() {
+  // Create wavefunction mesh
+  const wavefunctionGeometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(200 * 3);
+  wavefunctionGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const wavefunctionMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+  wavefunctionMesh = new THREE.Line(wavefunctionGeometry, wavefunctionMaterial);
+  wavefunctionMesh.visible = false;
+  scene.add(wavefunctionMesh);
+
+  // Create potential well mesh
+  const potentialWellGeometry = new THREE.BufferGeometry();
+  const wellPositions = new Float32Array(200 * 3);
+  potentialWellGeometry.setAttribute('position', new THREE.BufferAttribute(wellPositions, 3));
+  const potentialWellMaterial = new THREE.LineBasicMaterial({ color: 0xffff00 });
+  potentialWellMesh = new THREE.Line(potentialWellGeometry, potentialWellMaterial);
+  potentialWellMesh.visible = false;
+  scene.add(potentialWellMesh);
+
+  updateWavefunction();
+  updatePotentialWell();
+}
+
+function updateWavefunction() {
+  const positions = wavefunctionMesh.geometry.attributes.position.array;
+  const time = performance.now() * 0.001;
+
+  for (let i = 0; i < 200; i++) {
+    const x = (i / 100) * 10 - 5;
+    const y = Math.sin(x + time) * Math.exp(-x*x/10);
+    const z = 0;
+
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = z;
+  }
+
+  wavefunctionMesh.geometry.attributes.position.needsUpdate = true;
+}
+
+function updatePotentialWell() {
+  const positions = potentialWellMesh.geometry.attributes.position.array;
+
+  for (let i = 0; i < 200; i++) {
+    const x = (i / 100) * 10 - 5;
+    const y = -Math.pow(x/2, 2) - 1;
+    const z = 0;
+
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = z;
+  }
+
+  potentialWellMesh.geometry.attributes.position.needsUpdate = true;
+}
+
+function toggleSpace() {
+  currentSpace = currentSpace === 'finite' ? 'infinite' : 'finite';
+  blochSphere.visible = currentSpace === 'finite';
+  stateSphere.visible = currentSpace === 'finite';
+  axes.visible = currentSpace === 'finite';
+  wavefunctionMesh.visible = currentSpace === 'infinite';
+  potentialWellMesh.visible = currentSpace === 'infinite';
+  updateExplanation(currentSpace);
+}
+
+function performMeasurement() {
+  measurement = true;
+  if (currentSpace === 'finite') {
+    const randomAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+    gsap.to(stateSphere.position, {
+      x: randomAxis.x * 2,
+      y: randomAxis.y * 2,
+      z: randomAxis.z * 2,
+      duration: 1,
+      onComplete: () => {
+        measurement = false;
+      }
+    });
+  } else {
+    gsap.to(wavefunctionMesh.scale, {
+      y: 0.1,
+      duration: 0.5,
+      onComplete: () => {
+        gsap.to(wavefunctionMesh.scale, {
+          y: 1,
+          duration: 0.5,
+          onComplete: () => {
+            measurement = false;
+          }
+        });
+      }
+    });
+  }
+}
+
+function resetVisualization() {
+  if (currentSpace === 'finite') {
+    gsap.to(stateSphere.position, { x: 0, y: 0, z: 2, duration: 1 });
+  } else {
+    gsap.to(wavefunctionMesh.scale, { x: 1, y: 1, z: 1, duration: 1 });
+  }
+}
+
+function updateExplanation(space) {
+  const explanationElement = document.getElementById('explanation');
+  if (space === 'finite') {
+    explanationElement.innerHTML = `
+      <h3>Finite-Dimensional Hilbert Space</h3>
+      <p>Visualizing a two-level system (e.g., spin-1/2 particle) with basis states |0⟩ and |1⟩.</p>
+      <p>The red sphere represents the quantum state on the Bloch sphere.</p>
+      <p>Key concepts:</p>
+      <ul>
+        <li>Superposition: The state can be in any position on the sphere.</li>
+        <li>Measurement: Collapses the state to one of the basis states.</li>
+      </ul>
+    `;
+  } else {
+    explanationElement.innerHTML = `
+      <h3>Infinite-Dimensional Hilbert Space</h3>
+      <p>Visualizing the position and momentum states of a particle in a potential well.</p>
+      <p>The green line represents the wavefunction, and the yellow line represents the potential well.</p>
+      <p>Key concepts:</p>
+      <ul>
+        <li>Wave-particle duality: The particle behaves as both a wave and a particle.</li>
+        <li>Uncertainty principle: Position and momentum cannot be simultaneously determined with arbitrary precision.</li>
+      </ul>
+    `;
+  }
+}
+
+function toggleInfoPanel() {
+  const infoPanel = document.getElementById('info-panel');
+  infoPanel.style.display = infoPanel.style.display === 'none' ? 'block' : 'none';
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseDown(event) {
+  isDragging = true;
+}
+
+function onMouseUp(event) {
+  isDragging = false;
+}
+
+function onMouseMove(event) {
+  if (isDragging) {
+    const deltaMove = {
+      x: event.offsetX - previousMousePosition.x,
+      y: event.offsetY - previousMousePosition.y
+    };
+
+    const deltaRotationQuaternion = new THREE.Quaternion()
+      .setFromEuler(new THREE.Euler(
+        toRadians(deltaMove.y * 1),
+        toRadians(deltaMove.x * 1),
+        0,
+        'XYZ'
+      ));
+
+    scene.quaternion.multiplyQuaternions(deltaRotationQuaternion, scene.quaternion);
+  }
+
+  previousMousePosition = {
+    x: event.offsetX,
+    y: event.offsetY
+  };
+}
+
+function toRadians(angle) {
+  return angle * (Math.PI / 180);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (currentSpace === 'finite' && !measurement) {
+    const time = performance.now() * 0.001;
+    stateSphere.position.x = Math.sin(time) * 2;
+    stateSphere.position.y = Math.cos(time) * Math.sin(time * 0.5) * 2;
+    stateSphere.position.z = Math.cos(time) * Math.cos(time * 0.5) * 2;
+  } else if (currentSpace === 'infinite') {
+    updateWavefunction();
+  }
+
+  renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body>
+</html>
