@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Energy Theory Journey</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; }
+        #canvas-container { width: 100%; height: 100vh; }
+        #controls { position: absolute; bottom: 20px; left: 20px; }
+        #explanation { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); color: white; padding: 10px; max-width: 300px; display: none; }
+        button { margin-right: 10px; padding: 10px; font-size: 16px; background-color: #4CAF50; color: white; border: none; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="controls">
+        <button onclick="prevScene()">Previous</button>
+        <button onclick="nextScene()">Next</button>
+        <button onclick="toggleExplanation()">Toggle Explanation</button>
+    </div>
+    <div id="explanation"></div>
+    <script>
+        let currentScene = 0;
+        let scenes = [];
+        let explanations = [];
+        let particles = [];
+        let mouseInteraction = false;
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight, WEBGL);
+            canvas.parent('canvas-container');
+            
+            // Initialize scenes
+            scenes = [
+                new MultidimensionalSphere(),
+                new DarkMatterFlow(),
+                new VortexScene(),
+                new BigBangScene(),
+                new LightParticlesScene(),
+                new IdeasEventsScene(),
+                new EthericBodyScene(),
+                new EnergyFlowScene(),
+                new TimeCircleScene(),
+                new QuantumEntanglementScene()
+            ];
+            
+            // Initialize explanations
+            explanations = [
+                "The universe is a multi-dimensional sphere of dark matter, with each dimension represented by a layer.",
+                "Dark matter motion composes time and causes vortexes rotation. Interact with the particles using your mouse!",
+                "Vortexes and anti-vortexes connect different dimensional worlds. Try clicking to create new vortexes!",
+                "The Big Bang was caused by a crack in the center of the multidimensional spheres. Watch the universe expand!",
+                "Light and particles are manifestations of dark matter oscillations. Move your mouse to influence the light paths!",
+                "Ideas and events are energies that move through dimensional worlds. Click to generate new idea particles!",
+                "The etheric body exists in higher dimensions and influences our physical world. Move your mouse to see the connection strengthen!",
+                "Positive and negative energies affect the flow of dark matter between dimensions. Click to switch between positive and negative energy!",
+                "Time is cyclical, with events and energies moving through a multi-dimensional loop. Interact with the time circle using your mouse!",
+                "Quantum entanglement connects particles across dimensions. Click to entangle new particle pairs!"
+            ];
+            
+            updateExplanation();
+
+            // Initialize particles
+            for (let i = 0; i < 1000; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function draw() {
+            background(0);
+            orbitControl(4, 4);
+            scenes[currentScene].display();
+        }
+
+        function nextScene() {
+            currentScene = (currentScene + 1) % scenes.length;
+            updateExplanation();
+        }
+
+        function prevScene() {
+            currentScene = (currentScene - 1 + scenes.length) % scenes.length;
+            updateExplanation();
+        }
+
+        function toggleExplanation() {
+            let explanation = document.getElementById('explanation');
+            explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function updateExplanation() {
+            document.getElementById('explanation').innerHTML = explanations[currentScene];
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+
+        function mousePressed() {
+            mouseInteraction = true;
+            scenes[currentScene].mousePressed();
+        }
+
+        function mouseReleased() {
+            mouseInteraction = false;
+        }
+
+        class Particle {
+            constructor() {
+                this.pos = p5.Vector.random3D().mult(random(100, 300));
+                this.vel = p5.Vector.random3D().mult(random(0.5, 2));
+                this.color = color(random(100, 255), random(100, 255), random(100, 255));
+            }
+
+            update() {
+                this.pos.add(this.vel);
+                if (this.pos.mag() > 300) {
+                    this.pos.setMag(300);
+                    this.vel.mult(-1);
+                }
+            }
+
+            display() {
+                push();
+                translate(this.pos.x, this.pos.y, this.pos.z);
+                fill(this.color);
+                noStroke();
+                sphere(2);
+                pop();
+            }
+        }
+
+        class MultidimensionalSphere {
+            constructor() {
+                this.dimension = 3;
+                this.maxDimension = 7;
+                this.colors = [
+                    color(255, 0, 0),
+                    color(0, 255, 0),
+                    color(0, 0, 255),
+                    color(255, 255, 0),
+                    color(255, 0, 255),
+                    color(0, 255, 255),
+                    color(255, 255, 255)
+                ];
+            }
+
+            display() {
+                rotateY(frameCount * 0.01);
+                for (let i = 0; i < this.dimension; i++) {
+                    push();
+                    rotateX(i * PI / this.maxDimension);
+                    rotateY(i * PI / this.maxDimension);
+                    noFill();
+                    stroke(this.colors[i]);
+                    strokeWeight(2);
+                    sphere(200 - i * 20);
+                    pop();
+                }
+                if (frameCount % 60 === 0) {
+                    this.dimension = (this.dimension % this.maxDimension) + 1;
+                }
+            }
+
+            mousePressed() {
+                this.dimension = (this.dimension % this.maxDimension) + 1;
+            }
+        }
+
+        class DarkMatterFlow {
+            display() {
+                for (let particle of particles) {
+                    particle.update();
+                    if (mouseInteraction) {
+                        let mouseForce = createVector(mouseX - width/2, mouseY - height/2, 0);
+                        mouseForce.setMag(0.5);
+                        particle.vel.add(mouseForce);
+                    }
+                    particle.display();
+                }
+            }
+
+            mousePressed() {}
+        }
+
+        class VortexScene {
+            constructor() {
+                this.vortexes = [
+                    { pos: createVector(200, 0, 0), rot: 0, color: color(255, 0, 0, 100) },
+                    { pos: createVector(-200, 0, 0), rot: PI, color: color(0, 0, 255, 100) }
+                ];
+            }
+
+            display() {
+                rotateY(frameCount * 0.01);
+                for (let vortex of this.vortexes) {
+                    push();
+                    translate(vortex.pos.x, vortex.pos.y, vortex.pos.z);
+                    rotateY(vortex.rot);
+                    fill(vortex.color);
+                    torus(50, 20);
+                    pop();
+                }
+            }
+
+            mousePressed() {
+                let newVortex = {
+                    pos: createVector(random(-200, 200), random(-200, 200), random(-200, 200)),
+                    rot: random(TWO_PI),
+                    color: color(random(255), random(255), random(255), 100)
+                };
+                this.vortexes.push(newVortex);
+            }
+        }
+
+        class BigBangScene {
+            constructor() {
+                this.particles = [];
+                for (let i = 0; i < 500; i++) {
+                    this.particles.push(new Particle());
+                }
+                this.expansion = 0;
+            }
+
+            display() {
+                this.expansion += 0.01;
+                for (let particle of this.particles) {
+                    push();
+                    translate(particle.pos.x * this.expansion, particle.pos.y * this.expansion, particle.pos.z * this.expansion);
+                    fill(particle.color);
+                    sphere(2);
+                    pop();
+                }
+            }
+
+            mousePressed() {
+                this.expansion = 0;
+            }
+        }
+
+        class LightParticlesScene {
+            constructor() {
+                this.lightPaths = [];
+                for (let i = 0; i < 5; i++) {
+                    this.lightPaths.push(new LightPath());
+                }
+            }
+
+            display() {
+                rotateY(frameCount * 0.01);
+                for (let path of this.lightPaths) {
+                    path.update();
+                    path.display();
+                }
+            }
+
+            mousePressed() {
+                this.lightPaths.push(new LightPath());
+            }
+        }
+
+        class LightPath {
+            constructor() {
+                this.points = [];
+                this.color = color(random(100, 255), random(100, 255), random(100, 255));
+            }
+
+            update() {
+                let newPoint = p5.Vector.random3D().mult(200);
+                if (mouseInteraction) {
+                    let mouseForce = createVector(mouseX - width/2, mouseY - height/2, 0);
+                    mouseForce.setMag(20);
+                    newPoint.add(mouseForce);
+                }
+                this.points.push(newPoint);
+                if (this.points.length > 50) {
+                    this.points.shift();
+                }
+            }
+
+            display() {
+                noFill();
+                stroke(this.color);
+                beginShape();
+                for (let point of this.points) {
+                    vertex(point.x, point.y, point.z);
+                }
+                endShape();
+            }
+        }
+
+        class IdeasEventsScene {
+            constructor() {
+                this.ideas = [];
+                for (let i = 0; i < 20; i++) {
+                    this.ideas.push(new Idea());
+                }
+            }
+
+            display() {
+                rotateY(frameCount * 0.01);
+                for (let idea of this.ideas) {
+                    idea.update();
+                    idea.display();
+                }
+            }
+
+            mousePressed() {
+                this.ideas.push(new Idea());
+            }
+        }
+
+        class Idea {
+            constructor() {
+                this.pos = p5.Vector.random3D().mult(200);
+                this.size = random(5, 20);
+                this.color = color(random(100, 255), random(100, 255), random(100, 255), 150);
+                this.rotSpeed = random(-0.05, 0.05);
+            }
+
+            update() {
+                this.pos.rotate(this.rotSpeed);
+            }
+
+            display() {
+                push();
+                translate(this.pos.x, this.pos.y, this.pos.z);
+                fill(this.color);
+                sphere(this.size);
+                pop();
+            }
+        }
+
+        class EthericBodyScene {
+            constructor() {
+                this.connectionStrength = 0;
+            }
+
+            display() {
+                rotateY(frameCount * 0.01);
+                // Physical body
+                push();
+                translate(-100, 0, 0);
+                fill(255, 200, 200);
+                sphere(50);
+                pop();
+
+                // Etheric body
+                push();
+                translate(100, 0, 0);
+                noFill();
+                stroke(100, 200, 255);
+                sphere(60);
+                pop();
+
+                // Connection
+                stroke(200, 200, 255, 100 + this.connectionStrength);
+                strokeWeight(1 + this.connectionStrength / 50);
+                line(-100, 0, 0, 100, 0, 0);
+
+                if (mouseInteraction) {
+                    this.connectionStrength = min(this.connectionStrength + 5, 155);
+                } else {
+                    this.connectionStrength = max(this.connectionStrength - 2, 0);
+                }
+            }
+
+            mousePressed() {}
+        }
+
+        class EnergyFlowScene {
+            constructor() {
+                this.particles = [];
+                for (let i = 0; i < 200; i++) {
+                    this.particles.push(new EnergyParticle());
+                }
+                this.isPositive = true;
+            }
+
+            display() {
+                rotateY(frameCount * 0.01);
+                for (let particle of this.particles) {
+                    particle.update(this.isPositive);
+                    particle.display();
+                }
+            }
+
+            mousePressed() {
+                this.isPositive = !this.isPositive;
+            }
+        }
+
+        class EnergyParticle extends Particle {
+            update(isPositive) {
+                super.update();
+                this.color = isPositive ? color(255, 100, 100) : color(100, 100, 255);
+            }
+        }
+
+        class TimeCircleScene {
+            constructor() {
+                this.events = [];
+                for (let i = 0; i < 20; i++) {
+                    this.events.push(new TimeEvent());
+                }
+                this.radius = 200;
+            }
+
+            display() {
+                rotateX(HALF_PI);
+                noFill();
+                stroke(255);
+                circle(0, 0, this.radius * 2);
+
+                for (let event of this.events) {
+                    event.update();
+                    event.display(this.radius);
+                }
+
+                if (mouseInteraction) {
+                    let mouseAngle = atan2(mouseY - height/2, mouseX - width/2);
+                    stroke(255, 255, 0);
+                    line(0, 0, cos(mouseAngle) * this.radius, sin(mouseAngle) * this.radius);
+                }
+            }
+
+            mousePressed() {
+                this.events.push(new TimeEvent());
+            }
+        }
+
+        class TimeEvent {
+            constructor() {
+                this.angle = random(TWO_PI);
+                this.color = color(random(100, 255), random(100, 255), random(100, 255));
+                this.size = random(5, 15);
+            }
+
+            update() {
+                this.angle += 0.01;
+                if (this.angle > TWO_PI) this.angle -= TWO_PI;
+            }
+
+            display(radius) {
+                push();
+                rotate(this.angle);
+                translate(radius, 0);
+                fill(this.color);
+                noStroke();
+                sphere(this.size);
+                pop();
+            }
+        }
+
+                class QuantumEntanglementScene {
+            constructor() {
+                this.particlePairs = [];
+                for (let i = 0; i < 5; i++) {
+                    this.particlePairs.push(new EntangledPair());
+                }
+            }
+
+            display() {
+                rotateY(frameCount * 0.01);
+                for (let pair of this.particlePairs) {
+                    pair.update();
+                    pair.display();
+                }
+            }
+
+            mousePressed() {
+                this.particlePairs.push(new EntangledPair());
+            }
+        }
+
+        class EntangledPair {
+            constructor() {
+                this.particle1 = p5.Vector.random3D().mult(150);
+                this.particle2 = this.particle1.copy().mult(-1);
+                this.color = color(random(100, 255), random(100, 255), random(100, 255));
+                this.rotationAxis = p5.Vector.random3D();
+                this.rotationSpeed = random(0.01, 0.05);
+            }
+
+            update() {
+                let rotation = p5.Vector.rotate(this.particle1, this.rotationSpeed, this.rotationAxis);
+                this.particle1.set(rotation);
+                this.particle2.set(rotation.mult(-1));
+            }
+
+            display() {
+                stroke(this.color);
+                strokeWeight(2);
+                line(this.particle1.x, this.particle1.y, this.particle1.z, 
+                     this.particle2.x, this.particle2.y, this.particle2.z);
+                
+                fill(this.color);
+                noStroke();
+                push();
+                translate(this.particle1.x, this.particle1.y, this.particle1.z);
+                sphere(5);
+                pop();
+                
+                push();
+                translate(this.particle2.x, this.particle2.y, this.particle2.z);
+                sphere(5);
+                pop();
+            }
+        }
+    </script>
+</body>
+</html>
