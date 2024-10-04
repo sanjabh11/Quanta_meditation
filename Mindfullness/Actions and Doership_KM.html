@@ -1,0 +1,277 @@
+<html><head><base href="https://ai-websim.org/actions-and-doership/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Actions and Doership: A Mind-Expanding Journey</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #animation-container {
+    width: 80vw;
+    height: 70vh;
+    position: relative;
+  }
+  .scene {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+  }
+  .scene.active {
+    opacity: 1;
+  }
+  #toggle-button {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #87CEFA;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #controls {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .control-button {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #87CEFA;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #explanation-container {
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <div id="animation-container">
+    <div id="scene1" class="scene active">
+      <!-- The Whirling Vortex -->
+      <svg width="100%" height="100%" viewBox="0 0 1000 1000">
+        <defs>
+          <radialGradient id="vortexGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+            <stop offset="0%" style="stop-color:rgb(255,0,0);stop-opacity:1"></stop>
+            <stop offset="25%" style="stop-color:rgb(255,165,0);stop-opacity:1"></stop>
+            <stop offset="50%" style="stop-color:rgb(255,255,0);stop-opacity:1"></stop>
+            <stop offset="75%" style="stop-color:rgb(0,128,0);stop-opacity:1"></stop>
+            <stop offset="100%" style="stop-color:rgb(0,0,255);stop-opacity:1"></stop>
+          </radialGradient>
+          <filter id="turbulence">
+            <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="2" result="turbulence"></feTurbulence>
+            <feDisplacementMap in2="turbulence" in="SourceGraphic" scale="50" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+          </filter>
+        </defs>
+        <g filter="url(#turbulence)">
+          <circle cx="500" cy="500" r="400" fill="url(#vortexGradient)">
+            <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 500 500" to="360 500 500" dur="10s" repeatCount="indefinite"></animateTransform>
+          </circle>
+        </g>
+        <g id="thoughts" opacity="0.7">
+          <text x="300" y="300" fill="white" font-size="20" font-weight="bold">Thoughts</text>
+          <text x="700" y="700" fill="white" font-size="20" font-weight="bold">Emotions</text>
+          <text x="200" y="600" fill="white" font-size="20" font-weight="bold">Sensations</text>
+          <animateMotion dur="15s" repeatCount="indefinite" path="M0,0 C100,-50 200,50 300,0 S500,100 600,50 S800,-50 900,0"></animateMotion>
+        </g>
+      </svg>
+    </div>
+    <div id="scene2" class="scene">
+      <!-- Seeking Rest -->
+      <svg width="100%" height="100%" viewBox="0 0 1000 1000">
+        <defs>
+          <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+            <stop offset="0%" style="stop-color:rgb(0,0,50);stop-opacity:1"></stop>
+            <stop offset="100%" style="stop-color:rgb(0,0,20);stop-opacity:1"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#bgGradient)"></rect>
+        <g id="character">
+          <circle cx="500" cy="500" r="30" fill="#87CEFA"></circle>
+          <animateMotion dur="10s" repeatCount="indefinite" path="M0,0 C100,-100 200,100 300,-100 S500,100 600,-100 S800,100 900,0"></animateMotion>
+        </g>
+        <g id="rest-places">
+          <rect x="100" y="400" width="200" height="100" fill="#228B22" rx="10" ry="10"></rect>
+          <text x="200" y="460" fill="white" font-size="20" text-anchor="middle">Nature</text>
+          <circle cx="800" cy="300" r="80" fill="#4B0082"></circle>
+          <text x="800" y="310" fill="white" font-size="20" text-anchor="middle">Meditation</text>
+          <rect x="400" y="700" width="200" height="100" fill="#1E90FF" rx="10" ry="10"></rect>
+          <text x="500" y="760" fill="white" font-size="20" text-anchor="middle">Sleep</text>
+        </g>
+      </svg>
+    </div>
+    <div id="scene3" class="scene">
+      <!-- Glimpses of Stillness -->
+      <svg width="100%" height="100%" viewBox="0 0 1000 1000">
+        <defs>
+          <radialGradient id="vortexGradient2" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+            <stop offset="0%" style="stop-color:rgba(255,0,0,0.5);stop-opacity:1"></stop>
+            <stop offset="25%" style="stop-color:rgba(255,165,0,0.5);stop-opacity:1"></stop>
+            <stop offset="50%" style="stop-color:rgba(255,255,0,0.5);stop-opacity:1"></stop>
+            <stop offset="75%" style="stop-color:rgba(0,128,0,0.5);stop-opacity:1"></stop>
+            <stop offset="100%" style="stop-color:rgba(0,0,255,0.5);stop-opacity:1"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="#000"></rect>
+        <g filter="url(#turbulence)">
+          <circle cx="500" cy="500" r="400" fill="url(#vortexGradient2)">
+            <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 500 500" to="360 500 500" dur="15s" repeatCount="indefinite"></animateTransform>
+          </circle>
+        </g>
+        <g id="stillness-moments">
+          <circle cx="300" cy="300" r="50" fill="#FFF" opacity="0.2">
+            <animate attributeName="opacity" values="0.2;1;0.2" dur="5s" repeatCount="indefinite"></animate>
+          </circle>
+          <circle cx="700" cy="700" r="70" fill="#FFF" opacity="0.2">
+            <animate attributeName="opacity" values="0.2;1;0.2" dur="7s" repeatCount="indefinite"></animate>
+          </circle>
+          <circle cx="200" cy="600" r="40" fill="#FFF" opacity="0.2">
+            <animate attributeName="opacity" values="0.2;1;0.2" dur="6s" repeatCount="indefinite"></animate>
+          </circle>
+        </g>
+        <rect x="0" y="800" width="1000" height="200" fill="#000">
+          <animate attributeName="height" values="0;200" dur="10s" fill="freeze"></animate>
+        </rect>
+        <text x="500" y="900" fill="white" font-size="24" text-anchor="middle" opacity="0">
+          Deep Sleep
+          <animate attributeName="opacity" values="0;1" dur="10s" fill="freeze" begin="8s"></animate>
+        </text>
+      </svg>
+    </div>
+    <div id="scene4" class="scene">
+      <!-- Recognizing the Witness -->
+      <svg width="100%" height="100%" viewBox="0 0 1000 1000">
+        <defs>
+          <radialGradient id="witnessGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+            <stop offset="0%" style="stop-color:rgb(255,255,255);stop-opacity:0.1"></stop>
+            <stop offset="100%" style="stop-color:rgb(255,255,255);stop-opacity:0"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="#000"></rect>
+        <g id="vortex" opacity="0.3">
+          <use href="#scene1"></use>
+        </g>
+        <circle cx="500" cy="500" r="450" fill="url(#witnessGradient)"></circle>
+        <g id="witness">
+          <circle cx="500" cy="500" r="20" fill="#FFF"></circle>
+          <text x="500" y="550" fill="white" font-size="24" text-anchor="middle">The Silent Observer</text>
+        </g>
+      </svg>
+    </div>
+    <div id="scene5" class="scene">
+      <!-- The Unchanging Background -->
+      <svg width="100%" height="100%" viewBox="0 0 1000 1000">
+        <rect width="100%" height="100%" fill="#000033"></rect>
+        <g id="background">
+          <rect width="100%" height="100%" fill="url(#witnessGradient)"></rect>
+        </g>
+        <g id="vortex" opacity="0.5">
+          <use href="#scene1"></use>
+        </g>
+        <text x="500" y="900" fill="white" font-size="24" text-anchor="middle">The Unchanging Self</text>
+      </svg>
+    </div>
+    <div id="scene6" class="scene">
+      <!-- Embracing the Stillness -->
+      <svg width="100%" height="100%" viewBox="0 0 1000 1000">
+        <rect width="100%" height="100%" fill="#000066"></rect>
+        <g id="merging">
+          <circle cx="500" cy="500" r="200" fill="#FFF" opacity="0.1">
+            <animate attributeName="r" values="200;450" dur="10s" fill="freeze"></animate>
+            <animate attributeName="opacity" values="0.1;0.5" dur="10s" fill="freeze"></animate>
+          </circle>
+        </g>
+        <text x="500" y="500" fill="white" font-size="36" text-anchor="middle">Peace</text>
+        <text x="500" y="550" fill="white" font-size="36" text-anchor="middle">Freedom</text>
+        <text x="500" y="900" fill="white" font-size="24" text-anchor="middle">Transcending Duality</text>
+      </svg>
+    </div>
+  </div>
+  
+  <button id="toggle-button">Toggle Explanation</button>
+  
+  <div id="explanation-container" style="display: none;">
+    <p id="explanation" style="color: #87CEFA; text-align: center; margin-top: 10px;"></p>
+  </div>
+
+  <div id="controls">
+    <button class="control-button" id="prev-button">Previous</button>
+    <button class="control-button" id="next-button">Next</button>
+  </div>
+
+  <script>
+  const scenes = document.querySelectorAll('.scene');
+  const prevButton = document.getElementById('prev-button');
+  const nextButton = document.getElementById('next-button');
+  const toggleButton = document.getElementById('toggle-button');
+  const explanationContainer = document.getElementById('explanation-container');
+  const explanationElement = document.getElementById('explanation');
+  let currentScene = 0;
+  let explanationVisible = false;
+
+  const explanations = [
+    "The whirling vortex represents the constant stream of thoughts, emotions, and sensations that we often identify with.",
+    "We often seek rest from the constant mental activity through various means like nature, meditation, or sleep.",
+    "In moments of stillness, we catch glimpses of a deeper peace beyond the mind's chatter.",
+    "As we practice observing our thoughts, we begin to recognize the silent witness - our true self.",
+    "We realize that our essence is the unchanging background of awareness, distinct from the ever-changing contents of consciousness.",
+    "Finally, we learn to embrace the stillness, transcending the duality of observer and observed."
+  ];
+
+  function showScene(index) {
+    scenes.forEach((scene, i) => {
+      if (i === index) {
+        scene.classList.add('active');
+      } else {
+        scene.classList.remove('active');
+      }
+    });
+    updateExplanation();
+  }
+
+  function updateExplanation() {
+    if (explanationVisible) {
+      explanationElement.textContent = explanations[currentScene];
+      explanationContainer.style.display = 'block';
+    } else {
+      explanationContainer.style.display = 'none';
+    }
+  }
+
+  nextButton.addEventListener('click', () => {
+    currentScene = (currentScene + 1) % scenes.length;
+    showScene(currentScene);
+  });
+
+  prevButton.addEventListener('click', () => {
+    currentScene = (currentScene - 1 + scenes.length) % scenes.length;
+    showScene(currentScene);
+  });
+
+  toggleButton.addEventListener('click', () => {
+    explanationVisible = !explanationVisible;
+    updateExplanation();
+    toggleButton.textContent = explanationVisible ? 'Hide Explanation' : 'Show Explanation';
+  });
+
+  // Initialize the first scene with explanation hidden
+  showScene(0);
+</script>
+</body></html>

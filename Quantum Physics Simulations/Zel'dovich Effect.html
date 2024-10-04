@@ -1,0 +1,175 @@
+<html><head><base href="https://zeldovich-effect.physics.edu/"><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script><style>
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background-color: #000;
+  color: #fff;
+}
+#canvas {
+  width: 100%;
+  height: 100%;
+}
+#info {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 5px;
+  max-width: 300px;
+}
+#controls {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.button {
+  background: transparent;
+  border: 1px solid #0099cc;
+  color: #0099cc;
+  padding: 5px 10px;
+  margin: 0 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+#knowMore {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+</style></head><body>
+<div id="canvas"></div>
+<div id="info">
+  <h2>Zel'dovich Effect</h2>
+  <p id="description"></p>
+</div>
+<div id="controls">
+  <button class="button" id="prevBtn">Previous</button>
+  <button class="button" id="nextBtn">Next</button>
+</div>
+<button class="button" id="knowMore">Know More</button>
+
+<script>
+let scene, camera, renderer, cylinder, wave, rotationSpeed = 0, waveFrequency = 0;
+let currentStep = 0;
+const steps = [
+  "The Zel'dovich effect involves waves with angular momentum interacting with a rotating object.",
+  "Normally, these waves would be absorbed by the object.",
+  "However, if the object rotates fast enough, the waves can be amplified instead.",
+  "In our case, we have an aluminum cylinder rotating at high speed.",
+  "The cylinder must rotate faster than the frequency of the incoming radiation.",
+  "From the cylinder's perspective, it 'sees' a 'twisted wave' shift in angular frequency.",
+  "This shift can be so extreme that the frequency becomes negative.",
+  "When the frequency goes negative, the wave interaction changes dramatically.",
+  "Instead of being absorbed, the wave is amplified.",
+  "The wave reflects off the cylinder with more energy than it had when approaching."
+];
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById('canvas').appendChild(renderer.domElement);
+
+  const geometry = new THREE.CylinderGeometry(1, 1, 5, 32);
+  const material = new THREE.MeshPhongMaterial({color: 0xcccccc});
+  cylinder = new THREE.Mesh(geometry, material);
+  scene.add(cylinder);
+
+  const light = new THREE.PointLight(0xffffff, 1, 100);
+  light.position.set(0, 0, 10);
+  scene.add(light);
+
+  camera.position.z = 10;
+
+  wave = new THREE.Group();
+  const waveGeometry = new THREE.BoxGeometry(0.1, 0.1, 10);
+  const waveMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
+  for (let i = 0; i < 10; i++) {
+    const wavePart = new THREE.Mesh(waveGeometry, waveMaterial);
+    wavePart.position.x = -5 + i;
+    wave.add(wavePart);
+  }
+  scene.add(wave);
+
+  animate();
+  updateDescription();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  cylinder.rotation.y += rotationSpeed;
+  wave.rotation.z += 0.01 * waveFrequency;
+  renderer.render(scene, camera);
+}
+
+function updateDescription() {
+  document.getElementById('description').textContent = steps[currentStep];
+}
+
+function nextStep() {
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    updateDescription();
+    animateStep();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    updateDescription();
+    animateStep();
+  }
+}
+
+function animateStep() {
+  switch(currentStep) {
+    case 0:
+      gsap.to(camera.position, { z: 10, duration: 1 });
+      break;
+    case 1:
+      gsap.to(wave.position, { x: 0, duration: 1 });
+      break;
+    case 2:
+      rotationSpeed = 0.1;
+      break;
+    case 3:
+      gsap.to(cylinder.scale, { x: 1.2, y: 1.2, z: 1.2, duration: 1 });
+      break;
+    case 4:
+      rotationSpeed = 0.5;
+      break;
+    case 5:
+      waveFrequency = 0.2;
+      break;
+    case 6:
+      waveFrequency = -0.2;
+      break;
+    case 7:
+      gsap.to(wave.children[0].material.color, { r: 0, g: 1, b: 0, duration: 1 });
+      break;
+    case 8:
+      gsap.to(wave.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1 });
+      break;
+    case 9:
+      gsap.to(wave.position, { x: 5, duration: 1 });
+      break;
+  }
+}
+
+init();
+
+document.getElementById('nextBtn').addEventListener('click', nextStep);
+document.getElementById('prevBtn').addEventListener('click', prevStep);
+document.getElementById('knowMore').addEventListener('click', () => {
+  alert("The Zel'dovich effect is a fascinating phenomenon in physics where rotating objects can amplify waves under certain conditions. This simulation provides a simplified visualization of the concept.");
+});
+</script>
+</body></html>

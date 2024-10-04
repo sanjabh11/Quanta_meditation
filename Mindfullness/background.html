@@ -1,0 +1,402 @@
+<!DOCTYPE html><html><head><base href="https://websim.io/journeyofi/">
+<style>
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+#animation-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+#scene {
+    width: 100%;
+    height: 100%;
+}
+
+#explanation {
+    position: absolute;
+    top: 50px;
+    left: 20px;
+    width: 300px;
+    background-color: rgba(0,0,0,0.7);
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: opacity 0.3s ease;
+}
+
+.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.button {
+    background-color: rgba(0,0,0,0.5);
+    color: #add8e6;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.button:hover {
+    background-color: rgba(0,0,0,0.7);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(173, 216, 230, 0.5);
+}
+
+#toggle-explanation {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+#perspective-shift {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+#controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+</head>
+<body>
+<div id="animation-container">
+    <div id="scene"></div>
+    <div id="explanation" class="hidden"></div>
+    <button id="toggle-explanation" class="button">Reveal Insights</button>
+    <button id="perspective-shift" class="button">Perspective Shift</button>
+</div>
+<div id="controls">
+    <button id="prev" class="button">Previous</button>
+    <button id="next" class="button">Next</button>
+</div>
+
+<script>
+let scene, camera, renderer, currentScene = 0;
+let firstPersonCamera, thirdPersonCamera, currentCamera;
+const scenes = [
+    {
+        setup: () => createInfiniteVoid(),
+        explanation: "Witness the vast, infinite void - the canvas of all potential."
+    },
+    {
+        setup: () => createCosmicEmergence(),
+        explanation: "Experience the explosive emergence of cosmic patterns and harmonies."
+    },
+    {
+        setup: () => createEphemeralDance(),
+        explanation: "Observe the dance of forms, ever-changing yet interconnected."
+    },
+    {
+        setup: () => createReturnToStillness(),
+        explanation: "Feel the gradual return to stillness, the source of all manifestation."
+    },
+    {
+        setup: () => createAwakeningAwareness(),
+        explanation: "Sense the awakening of primordial awareness, pulsating with potential."
+    },
+    {
+        setup: () => createNondualRealization(),
+        explanation: "Realize the non-dual nature of existence, where observer and observed merge."
+    }
+];
+
+function init() {
+    scene = new THREE.Scene();
+    
+    firstPersonCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    thirdPersonCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    thirdPersonCamera.position.set(0, 5, 10);
+    thirdPersonCamera.lookAt(scene.position);
+    
+    currentCamera = firstPersonCamera;
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('scene').appendChild(renderer.domElement);
+
+    scenes[currentScene].setup();
+    updateExplanation();
+
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    TWEEN.update();
+    renderer.render(scene, currentCamera);
+}
+
+function createInfiniteVoid() {
+    scene.clear();
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 5000;
+    const posArray = new Float32Array(particlesCount * 3);
+    const colorArray = new Float32Array(particlesCount * 3);
+    
+    for (let i = 0; i < particlesCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 100;
+        colorArray[i] = Math.random();
+    }
+    
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+    const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.005,
+        vertexColors: true
+    });
+    
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particlesMesh);
+
+    function animateParticles() {
+        particlesMesh.rotation.x += 0.0001;
+        particlesMesh.rotation.y += 0.0001;
+    }
+
+    return animateParticles;
+}
+
+function createCosmicEmergence() {
+    scene.clear();
+    const geometry = new THREE.IcosahedronGeometry(1, 4);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        emissive: 0x222222,
+        specular: 0xffffff,
+        shininess: 100,
+        wireframe: true
+    });
+    const fractal = new THREE.Mesh(geometry, material);
+    scene.add(fractal);
+
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(0, 0, 10);
+    scene.add(light);
+
+    function animateFractal() {
+        fractal.rotation.x += 0.005;
+        fractal.rotation.y += 0.005;
+        fractal.scale.x = 1 + Math.sin(Date.now() * 0.001) * 0.2;
+        fractal.scale.y = 1 + Math.sin(Date.now() * 0.001) * 0.2;
+        fractal.scale.z = 1 + Math.sin(Date.now() * 0.001) * 0.2;
+        light.color.setHSL((Date.now() * 0.0002) % 1, 1, 0.5);
+    }
+
+    return animateFractal;
+}
+
+function createEphemeralDance() {
+    scene.clear();
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 5000;
+    const posArray = new Float32Array(particlesCount * 3);
+    const colorArray = new Float32Array(particlesCount * 3);
+    
+    for (let i = 0; i < particlesCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 5;
+        colorArray[i] = Math.random();
+    }
+    
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+    const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.01,
+        vertexColors: true
+    });
+    
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particlesMesh);
+
+    function animateParticles() {
+        const positions = particlesGeometry.attributes.position.array;
+        const colors = particlesGeometry.attributes.color.array;
+        for (let i = 0; i < positions.length; i += 3) {
+            positions[i] += Math.sin(Date.now() * 0.001 + i) * 0.01;
+            positions[i + 1] += Math.cos(Date.now() * 0.002 + i) * 0.01;
+            positions[i + 2] += Math.sin(Date.now() * 0.003 + i) * 0.01;
+            colors[i] = (Math.sin(Date.now() * 0.001 + i) + 1) / 2;
+            colors[i + 1] = (Math.cos(Date.now() * 0.002 + i) + 1) / 2;
+            colors[i + 2] = (Math.sin(Date.now() * 0.003 + i) + 1) / 2;
+        }
+        particlesGeometry.attributes.position.needsUpdate = true;
+        particlesGeometry.attributes.color.needsUpdate = true;
+    }
+
+    return animateParticles;
+}
+
+function createReturnToStillness() {
+    scene.clear();
+    const geometry = new THREE.SphereGeometry(1, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.5,
+        emissive: 0x222222,
+        specular: 0xffffff,
+        shininess: 100
+    });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(0, 0, 10);
+    scene.add(light);
+
+    function animateSphere() {
+        sphere.scale.x = 1 + Math.sin(Date.now() * 0.0005) * 0.1;
+        sphere.scale.y = 1 + Math.sin(Date.now() * 0.0005) * 0.1;
+        sphere.scale.z = 1 + Math.sin(Date.now() * 0.0005) * 0.1;
+        light.color.setHSL((Date.now() * 0.0001) % 1, 1, 0.5);
+    }
+
+    return animateSphere;
+}
+
+function createAwakeningAwareness() {
+    scene.clear();
+    const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.8,
+        emissive: 0x222222,
+        specular: 0xffffff,
+        shininess: 100
+    });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(0, 0, 10);
+    scene.add(light);
+
+    function animateSphere() {
+        sphere.scale.x = 1 + Math.sin(Date.now() * 0.002) * 0.2;
+        sphere.scale.y = 1 + Math.sin(Date.now() * 0.002) * 0.2;
+        sphere.scale.z = 1 + Math.sin(Date.now() * 0.002) * 0.2;
+        light.color.setHSL((Date.now() * 0.0003) % 1, 1, 0.5);
+    }
+
+    return animateSphere;
+}
+
+function createNondualRealization() {
+    scene.clear();
+    const eyeGeometry = new THREE.SphereGeometry(2, 32, 32);
+    const eyeMaterial = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        emissive: 0x222222,
+        specular: 0xffffff,
+        shininess: 100,
+        wireframe: true
+    });
+    const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    scene.add(eye);
+
+    const irisGeometry = new THREE.CircleGeometry(0.5, 32);
+    const irisMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x000000,
+        emissive: 0x222222,
+        specular: 0xffffff,
+        shininess: 100
+    });
+    const iris = new THREE.Mesh(irisGeometry, irisMaterial);
+    iris.position.z = 2;
+    eye.add(iris);
+
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(0, 0, 10);
+    scene.add(light);
+
+    function animateEye() {
+        eye.rotation.y += 0.005;
+        iris.scale.x = 1 + Math.sin(Date.now() * 0.001) * 0.2;
+        iris.scale.y = 1 + Math.sin(Date.now() * 0.001) * 0.2;
+        light.color.setHSL((Date.now() * 0.0002) % 1, 1, 0.5);
+    }
+
+    return animateEye;
+}
+
+function updateExplanation() {
+    const explanation = document.getElementById('explanation');
+    explanation.textContent = scenes[currentScene].explanation;
+}
+
+let currentAnimation = null;
+
+document.getElementById('next').addEventListener('click', () => {
+    if (currentScene < scenes.length - 1) {
+        currentScene++;
+        currentAnimation = scenes[currentScene].setup();
+        updateExplanation();
+    }
+});
+
+document.getElementById('prev').addEventListener('click', () => {
+    if (currentScene > 0) {
+        currentScene--;
+        currentAnimation = scenes[currentScene].setup();
+        updateExplanation();
+    }
+});
+
+document.getElementById('toggle-explanation').addEventListener('click', () => {
+    const explanation = document.getElementById('explanation');
+    explanation.classList.toggle('hidden');
+});
+
+document.getElementById('perspective-shift').addEventListener('click', () => {
+    currentCamera = currentCamera === firstPersonCamera ? thirdPersonCamera : firstPersonCamera;
+});
+
+window.addEventListener('resize', () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    firstPersonCamera.aspect = width / height;
+    firstPersonCamera.updateProjectionMatrix();
+
+    thirdPersonCamera.aspect = width / height;
+    thirdPersonCamera.updateProjectionMatrix();
+
+    renderer.setSize(width, height);
+});
+
+init();
+function animate() {
+    requestAnimationFrame(animate);
+    if (currentAnimation) {
+        currentAnimation();
+    }
+    TWEEN.update();
+    renderer.render(scene, currentCamera);
+}
+
+animate();
+</script>
+</body></html>

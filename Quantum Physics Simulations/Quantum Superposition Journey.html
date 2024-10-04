@@ -1,0 +1,215 @@
+<html><head><base href="https://websim.quantum-journey.com/"><title>Quantum Superposition Journey</title><style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#container {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+#animation-container {
+    width: 70%;
+    height: 500px;
+    background-color: #111;
+    border-radius: 10px;
+    position: relative;
+}
+#controls {
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+button {
+    background-color: #333;
+    color: #87CEFA;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px 0;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+}
+button:hover {
+    background-color: #444;
+}
+#explanation {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 10px;
+}
+#formula {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 5px;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+</head>
+<body>
+<h1>Quantum Superposition Journey</h1>
+<div id="container">
+    <div id="animation-container"></div>
+    <div id="controls">
+        <button id="toggleKnowMore">Know More</button>
+        <button id="prev">Previous</button>
+        <button id="next">Next</button>
+    </div>
+</div>
+<div id="explanation"></div>
+<div id="formula"></div>
+
+<script>
+let scene, camera, renderer, waves = [], step = 0;
+const concepts = [
+    {
+        title: "Single Sine Wave",
+        description: "A single sine wave represents a simple harmonic oscillation.",
+        formula: "y = A * sin(kx - ωt)",
+        setup: () => {
+            waves = [createWave(0x00ff00)];
+        }
+    },
+    {
+        title: "Superposition of Two Sine Waves",
+        description: "Two sine waves with different frequencies combine to form a new waveform.",
+        formula: "y = A1 * sin(k1x - ω1t) + A2 * sin(k2x - ω2t)",
+        setup: () => {
+            waves = [
+                createWave(0x00ff00),
+                createWave(0x0000ff, 2),
+                createWave(0xff0000, 1, true)
+            ];
+        }
+    },
+    {
+        title: "Complex-Valued Plane Wave",
+        description: "A complex-valued plane wave is a solution to the Schrödinger equation.",
+        formula: "ψ(x,t) = A * e^(i(kx - ωt))",
+        setup: () => {
+            waves = [createComplexWave(0xffff00)];
+        }
+    },
+    {
+        title: "Superposition of Complex Waves",
+        description: "Superposition of complex waves creates new solutions to the Schrödinger equation.",
+        formula: "ψ(x,t) = A1 * e^(i(k1x - ω1t)) + A2 * e^(i(k2x - ω2t))",
+        setup: () => {
+            waves = [
+                createComplexWave(0xffff00),
+                createComplexWave(0xff00ff, 2),
+                createComplexWave(0x00ffff, 1, true)
+            ];
+        }
+    }
+];
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(document.getElementById('animation-container').offsetWidth, 500);
+    document.getElementById('animation-container').appendChild(renderer.domElement);
+
+    concepts[step].setup();
+    updateExplanation();
+
+    document.getElementById('toggleKnowMore').addEventListener('click', toggleKnowMore);
+    document.getElementById('prev').addEventListener('click', () => changeStep(-1));
+    document.getElementById('next').addEventListener('click', () => changeStep(1));
+}
+
+function createWave(color, frequency = 1, isSuperposition = false) {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({ color });
+    const wave = new THREE.Line(geometry, material);
+    scene.add(wave);
+    return { object: wave, frequency, isSuperposition };
+}
+
+function createComplexWave(color, frequency = 1, isSuperposition = false) {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({ color });
+    const realPart = new THREE.Line(geometry, material);
+    const imaginaryPart = new THREE.Line(geometry, material);
+    imaginaryPart.position.y = 1;
+    scene.add(realPart);
+    scene.add(imaginaryPart);
+    return { realPart, imaginaryPart, frequency, isSuperposition };
+}
+
+function updateWave(wave, time) {
+    const points = [];
+    for (let x = -10; x <= 10; x += 0.1) {
+        const y = Math.sin(x * wave.frequency + time);
+        points.push(new THREE.Vector3(x, y, 0));
+    }
+    wave.object.geometry.setFromPoints(points);
+}
+
+function updateComplexWave(wave, time) {
+    const realPoints = [];
+    const imagPoints = [];
+    for (let x = -10; x <= 10; x += 0.1) {
+        const real = Math.cos(x * wave.frequency + time);
+        const imag = Math.sin(x * wave.frequency + time);
+        realPoints.push(new THREE.Vector3(x, real, 0));
+        imagPoints.push(new THREE.Vector3(x, imag, 0));
+    }
+    wave.realPart.geometry.setFromPoints(realPoints);
+    wave.imaginaryPart.geometry.setFromPoints(imagPoints);
+}
+
+function animate(time) {
+    requestAnimationFrame(animate);
+    time *= 0.001;
+
+    waves.forEach(wave => {
+        if (wave.object) {
+            updateWave(wave, time);
+        } else {
+            updateComplexWave(wave, time);
+        }
+    });
+
+    renderer.render(scene, camera);
+}
+
+function updateExplanation() {
+    document.getElementById('explanation').textContent = concepts[step].description;
+    document.getElementById('formula').textContent = concepts[step].formula;
+}
+
+function toggleKnowMore() {
+    const explanation = document.getElementById('explanation');
+    explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+}
+
+function changeStep(direction) {
+    step = (step + direction + concepts.length) % concepts.length;
+    scene.clear();
+    concepts[step].setup();
+    updateExplanation();
+}
+
+init();
+animate();
+</script>
+</body></html>

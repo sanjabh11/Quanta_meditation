@@ -1,0 +1,372 @@
+<html><head>
+<title>Quantum Concepts: Interactive 3D Visualizations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Roboto', sans-serif;
+        background-color: #120024;
+        color: #ffffff;
+    }
+    #canvas-container {
+        width: 100%;
+        height: 100%;
+    }
+    #controls {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+    }
+    button {
+        background-color: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    button:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+    #explanation {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 300px;
+        background-color: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        border-radius: 10px;
+        display: none;
+    }
+    .math {
+        font-family: 'Cambria Math', 'Times New Roman', serif;
+        font-style: italic;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="controls">
+    <button id="prev-btn">Previous</button>
+    <button id="next-btn">Next</button>
+    <button id="toggle-explanation">Toggle Explanation</button>
+</div>
+<div id="explanation"></div>
+
+<script>
+let scene, camera, renderer, composer;
+let currentVisualization = 0;
+const visualizations = [
+    {
+        name: "Relative Stereographic Superposition",
+        setup: setupRelativeStereographicSuperposition,
+        animate: animateRelativeStereographicSuperposition,
+        explanation: "This visualization demonstrates the merging of two translucent spheres, representing overlapping stereographic projections. The colorful swirls within depict probability distributions, while the varying opacities of the spheres represent gap sizes. The equation <span class='math'>ψ = ψ₁ + ψ₂</span> represents the superposition of two quantum states."
+    },
+    {
+        name: "Stereographic Projection Operator",
+        setup: setupStereographicProjectionOperator,
+        animate: animateStereographicProjectionOperator,
+        explanation: "Here, we see a pulsating wave function transforming into a sphere, illustrating the concept of a stereographic projection operator. The floating mathematical symbols represent various quantum operators, occasionally interacting with the sphere's surface. The key equation is <span class='math'>P = |ψ⟩⟨ψ|</span>, representing the projection operator."
+    },
+    {
+        name: "Time in Multiple States",
+        setup: setupTimeInMultipleStates,
+        animate: animateTimeInMultipleStates,
+        explanation: "This visualization shows a central clock face fragmenting into multiple, overlapping temporal states. Each state ripples outward, creating a complex quasiprobability landscape with areas of negative curvature. The concept is related to the time-dependent Schrödinger equation: <span class='math'>iℏ∂ψ/∂t = Ĥψ</span>."
+    },
+    {
+        name: "Quasiprobability and Stereograms",
+        setup: setupQuasiprobabilityStereograms,
+        animate: animateQuasiprobabilityStereograms,
+        explanation: "In this final visualization, a stereogram-like pattern morphs into a 3D quantum landscape. Probability clouds and geometric shapes emerge, showcasing the fusion of quasiprobability distributions and stereographic projections. The Wigner function, <span class='math'>W(x,p)</span>, is a key concept in understanding quasiprobability distributions in quantum mechanics."
+    }
+];
+
+function init() {
+    try {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        camera.position.z = 5;
+
+        if (visualizations[currentVisualization] && typeof visualizations[currentVisualization].setup === 'function') {
+            visualizations[currentVisualization].setup();
+        }
+
+        animate();
+    } catch (error) {
+        console.error("Initialization error:", error);
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    try {
+        if (visualizations[currentVisualization] && typeof visualizations[currentVisualization].animate === 'function') {
+            visualizations[currentVisualization].animate();
+        }
+        renderer.render(scene, camera);
+    } catch (error) {
+        console.error("Animation error:", error);
+    }
+}
+
+function clearScene() {
+    while(scene.children.length > 0) { 
+        scene.remove(scene.children[0]); 
+    }
+}
+
+function setupRelativeStereographicSuperposition() {
+    clearScene();
+    const geometry = new THREE.SphereGeometry(1, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0x8800ff,
+        transparent: true,
+        opacity: 0.5,
+        shininess: 100
+    });
+    const sphere1 = new THREE.Mesh(geometry, material);
+    const sphere2 = new THREE.Mesh(geometry, material);
+    sphere1.position.x = -1;
+    sphere2.position.x = 1;
+    scene.add(sphere1);
+    scene.add(sphere2);
+
+    const particles = new THREE.BufferGeometry();
+    const particleCount = 5000;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 3;
+        positions[i + 1] = (Math.random() - 0.5) * 3;
+        positions[i + 2] = (Math.random() - 0.5) * 3;
+        colors[i] = Math.random();
+        colors[i + 1] = Math.random();
+        colors[i + 2] = Math.random();
+    }
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const particleMaterial = new THREE.PointsMaterial({ size: 0.02, vertexColors: true });
+    const particleSystem = new THREE.Points(particles, particleMaterial);
+    scene.add(particleSystem);
+
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+}
+
+function animateRelativeStereographicSuperposition() {
+    const time = Date.now() * 0.001;
+    scene.children.forEach((child, index) => {
+        if (child instanceof THREE.Mesh) {
+            child.position.x = Math.sin(time + index * Math.PI) * 1.5;
+            child.material.opacity = 0.3 + Math.sin(time * 2 + index * Math.PI) * 0.2;
+        } else if (child instanceof THREE.Points) {
+            child.rotation.y = time * 0.1;
+        }
+    });
+}
+
+function setupStereographicProjectionOperator() {
+    clearScene();
+    const geometry = new THREE.SphereGeometry(1, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0x00ffff,
+        emissive: 0x006666,
+        shininess: 100
+    });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+
+    const loader = new THREE.TextureLoader();
+    const symbolTexture = loader.load('https://quantum-concepts.visualizer.edu/psi-symbol.png');
+    const symbolMaterial = new THREE.SpriteMaterial({ map: symbolTexture });
+    
+    for (let i = 0; i < 10; i++) {
+        const symbol = new THREE.Sprite(symbolMaterial);
+        symbol.scale.set(0.2, 0.2, 0.2);
+        symbol.position.set(
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4
+        );
+        scene.add(symbol);
+    }
+
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(0, 0, 10);
+    scene.add(pointLight);
+}
+
+function animateStereographicProjectionOperator() {
+    const time = Date.now() * 0.001;
+    scene.children.forEach((child) => {
+        if (child instanceof THREE.Mesh) {
+            if (child.geometry instanceof THREE.SphereGeometry) {
+                child.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
+            } else {
+                child.rotation.x = time;
+                child.rotation.y = time * 0.5;
+            }
+        }
+    });
+}
+
+function setupTimeInMultipleStates() {
+    clearScene();
+    const clockGeometry = new THREE.CircleGeometry(1, 32);
+    const clockMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const clock = new THREE.Mesh(clockGeometry, clockMaterial);
+    scene.add(clock);
+
+    for (let i = 0; i < 5; i++) {
+        const stateGeometry = new THREE.TorusGeometry(1.5 + i * 0.5, 0.1, 16, 100);
+        const stateMaterial = new THREE.MeshPhongMaterial({
+            color: 0x0000ff,
+            transparent: true,
+            opacity: 0.5 - i * 0.1
+        });
+        const state = new THREE.Mesh(stateGeometry, stateMaterial);
+        state.rotation.x = Math.PI / 2;
+        scene.add(state);
+    }
+
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+}
+
+function animateTimeInMultipleStates() {
+    const time = Date.now() * 0.001;
+    scene.children.forEach((child, index) => {
+        if (child instanceof THREE.Mesh && child.geometry instanceof THREE.TorusGeometry) {
+            child.rotation.z = time * (1 + index * 0.1);
+            child.scale.setScalar(1 + Math.sin(time * 2 + index) * 0.1);
+        }
+    });
+}
+
+function setupQuasiprobabilityStereograms() {
+    clearScene();
+    const patternGeometry = new THREE.PlaneGeometry(4, 4);
+    const patternMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0 }
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float time;
+            varying vec2 vUv;
+            void main() {
+                vec2 p = vUv * 20.0;
+                float v = sin(p.x + time) * sin(p.y + time);
+                gl_FragColor = vec4(v, v * 0.5, v * 0.25, 1.0);
+            }
+        `
+    });
+    const pattern = new THREE.Mesh(patternGeometry, patternMaterial);
+    scene.add(pattern);
+
+    const cloudGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+    const cloudMaterial = new THREE.MeshPhongMaterial({
+        color: 0x00ffff,
+        transparent: true,
+        opacity: 0.7
+    });
+    for (let i = 0; i < 20; i++) {
+        const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        cloud.position.set(
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4
+        );
+        scene.add(cloud);
+    }
+
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(0, 0, 10);
+    scene.add(pointLight);
+}
+
+function animateQuasiprobabilityStereograms() {
+    const time = Date.now() * 0.001;
+    scene.children.forEach((child) => {
+        if (child instanceof THREE.Mesh) {
+            if (child.geometry instanceof THREE.PlaneGeometry) {
+                child.material.uniforms.time.value = time;
+            } else if (child.geometry instanceof THREE.SphereGeometry) {
+                child.position.y = child.position.y + Math.sin(time + child.position.x) * 0.01;
+                child.scale.setScalar(0.8 + Math.sin(time * 2 + child.position.z) * 0.2);
+            }
+        }
+    });
+}
+
+init();
+
+document.getElementById('next-btn').addEventListener('click', () => {
+    currentVisualization = (currentVisualization + 1) % visualizations.length;
+    visualizations[currentVisualization].setup();
+    updateExplanation();
+});
+
+document.getElementById('prev-btn').addEventListener('click', () => {
+    currentVisualization = (currentVisualization - 1 + visualizations.length) % visualizations.length;
+    visualizations[currentVisualization].setup();
+    updateExplanation();
+});
+
+document.getElementById('toggle-explanation').addEventListener('click', () => {
+    const explanation = document.getElementById('explanation');
+    explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+});
+
+function updateExplanation() {
+    document.getElementById('explanation').innerHTML = visualizations[currentVisualization].explanation;
+}
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body></html>
