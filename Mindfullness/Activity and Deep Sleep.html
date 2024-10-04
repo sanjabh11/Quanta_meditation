@@ -1,0 +1,297 @@
+<html><head>
+<title>Interactive Meditation Journey</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #000;
+  }
+  canvas {
+    display: block;
+  }
+  .button {
+    background-color: transparent;
+    border: 1px solid #90cdf4;
+    color: #90cdf4;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 14px;
+    margin: 4px 2px;
+    cursor: pointer;
+    transition-duration: 0.4s;
+    position: absolute;
+  }
+  .button:hover {
+    background-color: #90cdf4;
+    color: white;
+  }
+  #description {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    max-width: 300px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div id="description"></div>
+<script>
+let currentScene = 0;
+let scenes = [
+  { name: "The Whirling Vortex", description: "The world of activity - a swirling movements of thoughts, emotions, and sensory experiences." },
+  { name: "Seeking Rest", description: "Attempts to escape the restlessness, seeking refuge in various forms of rest - sleep, meditation, nature." },
+  { name: "Glimpses of Stillness", description: "Moments of stillness emerge within the movements, hinting at a deeper peace beyond the activity." },
+  { name: "Recognizing the Witness", description: "Awareness of a silent observer, the Self, present throughout all experiences." },
+  { name: "The Unchanging Background", description: "The activities as a play of light and shadow against a vast, unchanging background." },
+  { name: "Embracing the Stillness", description: "Merging with the background, experiencing profound peace and freedom." }
+];
+
+let showDescription = false;
+let particles = [];
+let mouseInteraction = { x: 0, y: 0, isPressed: false };
+
+function setup() {
+  createCanvas(windowWidth, windowHeight, WEBGL);
+  colorMode(HSB);
+  
+  // Create buttons
+  let buttonY = height - 50;
+  createButton('Previous').position(width/2 - 100, buttonY).mousePressed(previousScene).class('button');
+  createButton('Next').position(width/2 + 50, buttonY).mousePressed(nextScene).class('button');
+  createButton('Know More').position(20, 20).mousePressed(toggleDescription).class('button');
+  
+  // Create particles
+  for (let i = 0; i < 200; i++) {
+    particles.push(new Particle());
+  }
+}
+
+function draw() {
+  background(0);
+  
+  // Apply some basic 3D transformations
+  rotateX(frameCount * 0.01 + mouseInteraction.y * 0.01);
+  rotateY(frameCount * 0.02 + mouseInteraction.x * 0.01);
+  
+  // Draw current scene
+  drawScene(currentScene);
+  
+  // Draw description if toggled
+  if (showDescription) {
+    drawDescription();
+  }
+}
+
+function drawScene(sceneIndex) {
+  switch(sceneIndex) {
+    case 0:
+      drawWhirlingVortex();
+      break;
+    case 1:
+      drawSeekingRest();
+      break;
+    case 2:
+      drawGlimpsesOfStillness();
+      break;
+    case 3:
+      drawRecognizingWitness();
+      break;
+    case 4:
+      drawUnchangingBackground();
+      break;
+    case 5:
+      drawEmbracingStillness();
+      break;
+  }
+}
+
+function drawWhirlingVortex() {
+  push();
+  noFill();
+  stroke(frameCount % 360, 80, 100);
+  rotateY(frameCount * 0.02 + mouseInteraction.x * 0.05);
+  rotateX(mouseInteraction.y * 0.05);
+  torus(150, 10);
+  pop();
+  
+  for (let particle of particles) {
+    particle.update();
+    particle.display();
+  }
+}
+
+function drawSeekingRest() {
+  push();
+  translate(mouseInteraction.x, sin(frameCount * 0.05) * 50 + mouseInteraction.y);
+  fill(200, 80, 80);
+  sphere(100);
+  pop();
+}
+
+function drawGlimpsesOfStillness() {
+  for (let i = 0; i < 5; i++) {
+    push();
+    translate(
+      sin(frameCount * 0.02 + i) * 100 + mouseInteraction.x * 0.5,
+      cos(frameCount * 0.02 + i) * 100 + mouseInteraction.y * 0.5,
+      0
+    );
+    fill(280, 80, 80, 150);
+    sphere(20);
+    pop();
+  }
+}
+
+function drawRecognizingWitness() {
+  push();
+  translate(mouseInteraction.x * 0.5, mouseInteraction.y * 0.5, -200);
+  fill(60, 80, 80);
+  sphere(50);
+  pop();
+  
+  push();
+  rotateY(frameCount * 0.01 + mouseInteraction.x * 0.02);
+  rotateX(mouseInteraction.y * 0.02);
+  stroke(60, 80, 80);
+  noFill();
+  sphere(150);
+  pop();
+}
+
+function drawUnchangingBackground() {
+  push();
+  noFill();
+  stroke(0, 0, 100);
+  rotateY(mouseInteraction.x * 0.01);
+  rotateX(mouseInteraction.y * 0.01);
+  sphere(300);
+  pop();
+  
+  for (let particle of particles) {
+    particle.update();
+    particle.display();
+  }
+}
+
+function drawEmbracingStillness() {
+  background(0, 0, map(dist(mouseInteraction.x, mouseInteraction.y, 0, 0), 0, width/2, 20, 5));
+  
+  push();
+  noFill();
+  stroke(0, 0, 100);
+  rotateY(mouseInteraction.x * 0.01);
+  rotateX(mouseInteraction.y * 0.01);
+  sphere(300);
+  pop();
+  
+  push();
+  fill(0, 0, 100);
+  let size = map(sin(frameCount * 0.05), -1, 1, 50, 150);
+  size *= map(dist(mouseInteraction.x, mouseInteraction.y, 0, 0), 0, width/2, 1.5, 0.5);
+  sphere(size);
+  pop();
+}
+
+function drawDescription() {
+  let descriptionDiv = document.getElementById('description');
+  descriptionDiv.innerHTML = scenes[currentScene].name + ": " + scenes[currentScene].description;
+  descriptionDiv.style.display = 'block';
+}
+
+function nextScene() {
+  currentScene = (currentScene + 1) % scenes.length;
+}
+
+function previousScene() {
+  currentScene = (currentScene - 1 + scenes.length) % scenes.length;
+}
+
+function toggleDescription() {
+  showDescription = !showDescription;
+  let descriptionDiv = document.getElementById('description');
+  descriptionDiv.style.display = showDescription ? 'block' : 'none';
+}
+
+class Particle {
+  constructor() {
+    this.pos = p5.Vector.random3D().mult(random(100, 200));
+    this.vel = p5.Vector.random3D().mult(random(0.5, 2));
+    this.color = color(random(360), 80, 100);
+  }
+  
+  update() {
+    this.pos.add(this.vel);
+    if (this.pos.mag() > 200) {
+      this.pos.setMag(200);
+      this.vel.mult(-1);
+    }
+    if (mouseInteraction.isPressed) {
+      let force = createVector(mouseInteraction.x, mouseInteraction.y).sub(this.pos);
+      force.setMag(0.1);
+      this.vel.add(force);
+    }
+  }
+  
+  display() {
+    push();
+    translate(this.pos.x, this.pos.y, this.pos.z);
+    fill(this.color);
+    noStroke();
+    sphere(3);
+    pop();
+  }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  let buttonY = height - 50;
+  select('.button:nth-child(1)').position(width/2 - 100, buttonY);
+  select('.button:nth-child(2)').position(width/2 + 50, buttonY);
+}
+
+function mouseMoved() {
+  mouseInteraction.x = mouseX - width/2;
+  mouseInteraction.y = mouseY - height/2;
+}
+
+function mousePressed() {
+  mouseInteraction.isPressed = true;
+}
+
+function mouseReleased() {
+  mouseInteraction.isPressed = false;
+}
+
+function touchMoved(event) {
+  if (event.touches && event.touches.length > 0) {
+    mouseInteraction.x = event.touches[0].clientX - width/2;
+    mouseInteraction.y = event.touches[0].clientY - height/2;
+  }
+  return false;
+}
+
+function touchStarted(event) {
+  mouseInteraction.isPressed = true;
+  if (event.touches && event.touches.length > 0) {
+    mouseInteraction.x = event.touches[0].clientX - width/2;
+    mouseInteraction.y = event.touches[0].clientY - height/2;
+  }
+  return false;
+}
+
+function touchEnded() {
+  mouseInteraction.isPressed = false;
+}
+</script>
+</body></html>

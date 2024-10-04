@@ -1,59 +1,68 @@
-<html><head>
-<title>Dynamic Potentiality to Manifestation</title>
-<style>
-    body, html {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-        background-color: #000;
-        color: #fff;
-    }
-    #canvas {
-        width: 100%;
-        height: 100%;
-    }
-    #info-panel {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: rgba(0,0,0,0.7);
-        padding: 20px;
-        border-radius: 10px;
-        max-width: 300px;
-    }
-    #controls {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-    }
-    button {
-        background: #4CAF50;
-        border: none;
-        color: white;
-        padding: 15px 32px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        margin: 4px 2px;
-        cursor: pointer;
-        border-radius: 5px;
-    }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Potentiality to Manifestation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
+        }
+        #canvas {
+            display: block;
+        }
+        #info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            display: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
 </head>
 <body>
 <canvas id="canvas"></canvas>
 <div id="info-panel">
     <h2>Dynamic Potentiality to Manifestation</h2>
-    <p>Witness the journey from unmanifest Dynamic Potentiality to the manifestation of Dynamic Intelligent Energy as body and world.</p>
+    <p><strong>Dynamic Potentiality:</strong> This sphere represents the unmanifest potential, a state of pure possibility.</p>
+    <p><strong>Intelligent Energy:</strong> The particles symbolize the initial manifestation of energy, forming the building blocks of reality.</p>
+    <p><strong>Body:</strong> The torus knot represents the physical form, a complex structure emerging from energy.</p>
+    <p><strong>World:</strong> The icosahedron symbolizes the world, a harmonious and interconnected system.</p>
     <p>Click and drag to rotate the view. Scroll to zoom.</p>
 </div>
 <div id="controls">
     <button id="toggleManifestation">Actualize Manifestation</button>
+    <button id="toggleInfo">Toggle Info</button>
 </div>
 
 <script>
@@ -74,12 +83,17 @@ function init() {
             time: { value: 1.0 }
         },
         vertexShader: `
+            uniform float time;
             varying vec2 vUv;
             varying vec3 vNormal;
             void main() {
                 vUv = uv;
                 vNormal = normal;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                vec3 newPosition = position;
+                newPosition.x += sin(position.y * 10.0 + time) * 0.1;
+                newPosition.y += cos(position.x * 10.0 + time) * 0.1;
+                newPosition.z += sin(position.x * 10.0 + cos(position.y * 10.0 + time)) * 0.1;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
             }
         `,
         fragmentShader: `
@@ -105,7 +119,7 @@ function init() {
 
     // Intelligent Energy representation
     const energyGeometry = new THREE.BufferGeometry();
-    const particleCount = 10000;
+    const particleCount = 5000; // Reduced for better performance on mobile
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
@@ -150,6 +164,7 @@ function init() {
     document.addEventListener('mousemove', onDocumentMouseMove, false);
     document.addEventListener('wheel', onDocumentWheel, false);
     document.getElementById('toggleManifestation').addEventListener('click', toggleManifestation);
+    document.getElementById('toggleInfo').addEventListener('click', toggleInfo);
 
     animate();
 }
@@ -197,6 +212,11 @@ function toggleManifestation() {
         
         document.getElementById('toggleManifestation').textContent = "Actualize Manifestation";
     }
+}
+
+function toggleInfo() {
+    const infoPanel = document.getElementById('info-panel');
+    infoPanel.style.display = infoPanel.style.display === 'none' ? 'block' : 'none';
 }
 
 function animate() {

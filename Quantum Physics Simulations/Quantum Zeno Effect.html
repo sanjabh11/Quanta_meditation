@@ -1,0 +1,182 @@
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Zeno Effect Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+<style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    #info { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+    #controls { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); }
+    button { background: #0077be; color: white; border: none; padding: 10px 20px; margin: 0 5px; cursor: pointer; border-radius: 5px; }
+    #knowMore { position: absolute; top: 10px; left: 10px; }
+</style>
+</head>
+<body>
+<div id="info">
+    <h2>Quantum Zeno Effect</h2>
+    <p id="explanation"></p>
+    <p id="formula"></p>
+</div>
+<div id="controls">
+    <button id="prevBtn">Previous</button>
+    <button id="nextBtn">Next</button>
+</div>
+<button id="knowMore">Know More</button>
+<script>
+    let scene, camera, renderer, particle, waveFunction, measurementPlane;
+    let currentStep = 0;
+    const steps = [
+        {
+            explanation: "Initial quantum state: The particle exists in a superposition.",
+            formula: "Ψ(r, t) = Σ c_n Ψ_n(r)"
+        },
+        {
+            explanation: "Natural evolution: The wavefunction spreads out in space over time.",
+            formula: "i(h/2π)∂Ψ/∂t = HΨ"
+        },
+        {
+            explanation: "Measurement: The wavefunction collapses to a definite state in 3D space.",
+            formula: "P(r) = |Ψ(r)|^2"
+        },
+        {
+            explanation: "Rapid measurements: The system is 'frozen' in its initial state.",
+            formula: "P(t) ≈ exp(-γt^2/τ)"
+        }
+    ];
+
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        camera.position.set(5, 5, 5);
+        camera.lookAt(0, 0, 0);
+
+        // Add ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        // Add directional light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // Create particle
+        const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+        const material = new THREE.MeshPhongMaterial({ color: 0xffff00 });
+        particle = new THREE.Mesh(geometry, material);
+        scene.add(particle);
+
+        // Create 3D wavefunction
+        waveFunction = new THREE.Group();
+        scene.add(waveFunction);
+
+        // Create measurement plane
+        const planeGeometry = new THREE.PlaneGeometry(4, 4);
+        const planeMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+        measurementPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+        measurementPlane.rotation.x = Math.PI / 2;
+        scene.add(measurementPlane);
+
+        // Add coordinate axes
+        const axesHelper = new THREE.AxesHelper(5);
+        scene.add(axesHelper);
+
+        updateInfo();
+        animate();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Rotate camera around the scene
+        const time = Date.now() * 0.001;
+        camera.position.x = Math.cos(time * 0.5) * 7;
+        camera.position.z = Math.sin(time * 0.5) * 7;
+        camera.position.y = 5;
+        camera.lookAt(0, 0, 0);
+
+        // Animation logic based on current step
+        switch(currentStep) {
+            case 0:
+                particle.position.y = Math.sin(time) * 0.5;
+                particle.position.x = Math.cos(time) * 0.5;
+                particle.position.z = Math.sin(time * 1.5) * 0.5;
+                break;
+            case 1:
+                updateWaveFunction3D(time);
+                break;
+            case 2:
+                collapseWaveFunction3D(time);
+                break;
+            case 3:
+                rapidMeasurements3D(time);
+                break;
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    function updateWaveFunction3D(time) {
+        waveFunction.clear();
+        const resolution = 20;
+        const size = 2;
+        for (let i = 0; i < resolution; i++) {
+            for (let j = 0; j < resolution; j++) {
+                const x = (i / resolution - 0.5) * size * 2;
+                const z = (j / resolution - 0.5) * size * 2;
+                const distance = Math.sqrt(x*x + z*z);
+                const y = Math.sin(distance * 5 - time * 2) * Math.exp(-distance*distance/2) * 0.5;
+                
+                const geometry = new THREE.BoxGeometry(size/resolution, Math.abs(y), size/resolution);
+                const material = new THREE.MeshPhongMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(x, y/2, z);
+                waveFunction.add(cube);
+            }
+        }
+    }
+
+    function collapseWaveFunction3D(time) {
+        const t = (time % 3) / 3;
+        if (t < 0.9) {
+            updateWaveFunction3D(time);
+        } else {
+            waveFunction.clear();
+            particle.position.set(0, 0, 0);
+        }
+    }
+
+    function rapidMeasurements3D(time) {
+        particle.position.y = Math.sin(time * 10) * 0.1;
+        particle.position.x = Math.cos(time * 10) * 0.1;
+        particle.position.z = Math.sin(time * 15) * 0.1;
+        updateWaveFunction3D(time * 0.1);
+    }
+
+    function updateInfo() {
+        document.getElementById('explanation').textContent = steps[currentStep].explanation;
+        document.getElementById('formula').textContent = steps[currentStep].formula;
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        currentStep = (currentStep - 1 + steps.length) % steps.length;
+        updateInfo();
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        currentStep = (currentStep + 1) % steps.length;
+        updateInfo();
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        alert("The Quantum Zeno Effect is a fascinating phenomenon in quantum mechanics where frequent observation of a system can inhibit its evolution. This interactive 3D visualization demonstrates the key concepts behind this effect, from the initial quantum superposition to the 'freezing' of the system under rapid measurements in three-dimensional space.");
+    });
+
+    init();
+</script>
+
+</body></html>

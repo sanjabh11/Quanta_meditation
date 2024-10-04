@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Double-Slit Experiment Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input[type="range"] {
+            width: 150px;
+        }
+        #sidebar {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            transition: left 0.3s ease-in-out;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #sidebar.open {
+            left: 0;
+        }
+        #sidebar-toggle {
+            position: fixed;
+            left: 10px;
+            top: 10px;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #intensity-graph {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+        }
+        @media (max-width: 768px) {
+            #controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            #sidebar {
+                width: 100%;
+                left: -100%;
+            }
+            #intensity-graph {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+        <canvas id="intensity-graph"></canvas>
+    </div>
+    <div id="controls">
+        <div class="slider-container">
+            <label for="slitSeparationSlider">Slit Separation:</label>
+            <input type="range" id="slitSeparationSlider" min="10" max="200" value="100">
+            <span id="slitSeparationValue" class="value-display">100</span>
+        </div>
+        <div class="slider-container">
+            <label for="particleWavelengthSlider">Particle Wavelength:</label>
+            <input type="range" id="particleWavelengthSlider" min="5" max="50" value="20">
+            <span id="particleWavelengthValue" class="value-display">20</span>
+        </div>
+        <div class="slider-container">
+            <label for="particleSpeedSlider">Particle Speed:</label>
+            <input type="range" id="particleSpeedSlider" min="1" max="10" value="5">
+            <span id="particleSpeedValue" class="value-display">5</span>
+        </div>
+        <div class="slider-container">
+            <label for="numSlitsSlider">Number of Slits:</label>
+            <input type="range" id="numSlitsSlider" min="1" max="3" value="2">
+            <span id="numSlitsValue" class="value-display">2</span>
+        </div>
+        <div class="slider-container">
+            <label for="screenDistanceSlider">Screen Distance:</label>
+            <input type="range" id="screenDistanceSlider" min="100" max="500" value="300">
+            <span id="screenDistanceValue" class="value-display">300</span>
+        </div>
+    </div>
+    <button id="sidebar-toggle">☰ Info</button>
+    <div id="sidebar">
+        <h2>Quantum Double-Slit Experiment</h2>
+        <p>This simulation demonstrates the wave-particle duality of quantum particles.</p>
+        <h3>Key Formulas:</h3>
+        <p>1. De Broglie wavelength: λ = h / p</p>
+        <p>2. Interference condition: d sin θ = mλ</p>
+        <p>3. Probability density: |ψ|² = A² cos²(πd sin θ / λ)</p>
+        <h3>Explanations:</h3>
+        <p>- Particles exhibit wave-like behavior, interfering with themselves.</p>
+        <p>- The interference pattern depends on slit separation and particle wavelength.</p>
+        <p>- The probability of finding a particle at a given point is proportional to the wave function's intensity.</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const intensityGraph = document.getElementById('intensity-graph');
+        const intensityCtx = intensityGraph.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        intensityGraph.width = Math.min(500, window.innerWidth * 0.9);
+        intensityGraph.height = 100;
+
+        const slitSeparationSlider = document.getElementById('slitSeparationSlider');
+        const slitSeparationValue = document.getElementById('slitSeparationValue');
+        const particleWavelengthSlider = document.getElementById('particleWavelengthSlider');
+        const particleWavelengthValue = document.getElementById('particleWavelengthValue');
+        const particleSpeedSlider = document.getElementById('particleSpeedSlider');
+        const particleSpeedValue = document.getElementById('particleSpeedValue');
+        const numSlitsSlider = document.getElementById('numSlitsSlider');
+        const numSlitsValue = document.getElementById('numSlitsValue');
+        const screenDistanceSlider = document.getElementById('screenDistanceSlider');
+        const screenDistanceValue = document.getElementById('screenDistanceValue');
+
+        let slitSeparation = 100;
+        let particleWavelength = 20;
+        let particleSpeed = 5;
+        let numSlits = 2;
+        let screenDistance = 300;
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = 0;
+                this.y = canvas.height / 2 + (Math.random() - 0.5) * canvas.height * 0.4;
+                this.vx = particleSpeed;
+                this.vy = 0;
+                this.phase = Math.random() * Math.PI * 2;
+                this.amplitude = Math.random() * 5 + 2;
+                this.opacity = Math.random() * 0.5 + 0.5;
+                this.wavelength = particleWavelength;
+                this.hue = 650 - this.wavelength * 10; // Map wavelength to color
+            }
+
+            update() {
+                this.x += this.vx;
+                if (this.x > canvas.width * 0.25 && this.x < canvas.width * 0.3) {
+                    // Apply quantum tunneling effect
+                    const slitPositions = this.getSlitPositions();
+                    const nearestSlit = slitPositions.reduce((nearest, current) =>
+                        Math.abs(current - this.y) < Math.abs(nearest - this.y) ? current : nearest
+                    );
+                    const distance = Math.abs(nearestSlit - this.y);
+                    const tunnelingProbability = Math.exp(-distance * distance / (2 * this.wavelength * this.wavelength));
+                    
+                    if (Math.random() < tunnelingProbability) {
+                        this.y = nearestSlit + (Math.random() - 0.5) * 10;
+                        this.vy = (Math.random() - 0.5) * 2;
+                    } else {
+                        this.reset();
+                    }
+                }
+
+                if (this.x > canvas.width * 0.3) {
+                    // Apply wave-like motion after passing through slits
+                    const k = 2 * Math.PI / this.wavelength;
+                    const omega = k * particleSpeed;
+                    const t = this.x / particleSpeed;
+                    this.y += Math.sin(k * this.x - omega * t + this.phase) * this.amplitude;
+                }
+
+                if (this.x > canvas.width) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${this.hue}, 100%, 50%, ${this.opacity})`;
+                ctx.fill();
+            }
+
+            getSlitPositions() {
+                const positions = [];
+                const totalSeparation = (numSlits - 1) * slitSeparation;
+                const startY = canvas.height / 2 - totalSeparation / 2;
+                for (let i = 0; i < numSlits; i++) {
+                    positions.push(startY + i * slitSeparation);
+                }
+                return positions;
+            }
+        }
+
+        const particles = Array(1000).fill().map(() => new Particle());
+
+        function drawSlits() {
+            ctx.fillStyle = '#fff';
+            const slitWidth = 10;
+            const barrierX = canvas.width * 0.25;
+            ctx.fillRect(barrierX, 0, 5, canvas.height);
+            
+            const slitPositions = particles[0].getSlitPositions();
+            slitPositions.forEach(y => {
+                ctx.clearRect(barrierX, y - slitWidth / 2, 5, slitWidth);
+            });
+        }
+
+        function drawScreen() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(canvas.width * 0.25 + screenDistance, 0, 5, canvas.height);
+        }
+
+        function calculateInterferencePattern() {
+            const patternWidth = intensityGraph.width;
+            const patternHeight = intensityGraph.height;
+            const data = new Array(patternWidth).fill(0);
+
+            for (let x = 0; x < patternWidth; x++) {
+                const angle = Math.atan2(x - patternWidth / 2, screenDistance);
+                let intensity = 0;
+
+                for (let i = 0; i < numSlits; i++) {
+                    const phaseShift = (i - (numSlits - 1) / 2) * slitSeparation * Math.sin(angle);
+                    intensity += Math.cos(2 * Math.PI * phaseShift / particleWavelength);
+                }
+
+                intensity = Math.pow(intensity, 2) / (numSlits * numSlits);
+                data[x] = intensity;
+            }
+
+            return data;
+        }
+
+        function drawInterferencePattern() {
+            const pattern = calculateInterferencePattern();
+            const maxIntensity = Math.max(...pattern);
+
+            intensityCtx.clearRect(0, 0, intensityGraph.width, intensityGraph.height);
+            intensityCtx.beginPath();
+            intensityCtx.moveTo(0, intensityGraph.height);
+
+            for (let x = 0; x < pattern.length; x++) {
+                const y = intensityGraph.height - (pattern[x] / maxIntensity) * intensityGraph.height;
+                intensityCtx.lineTo(x, y);
+            }
+
+            intensityCtx.lineTo(intensityGraph.width, intensityGraph.height);
+            intensityCtx.closePath();
+
+            const gradient = intensityCtx.createLinearGradient(0, 0, 0, intensityGraph.height);
+            gradient.addColorStop(0, 'rgba(0, 255, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
+
+            intensityCtx.fillStyle = gradient;
+            intensityCtx.fill();
+
+            intensityCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            intensityCtx.stroke();
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawSlits();
+            drawScreen();
+            drawInterferencePattern();
+
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function updateSimulation() {
+            slitSeparation = parseInt(slitSeparationSlider.value);
+            slitSeparationValue.textContent = slitSeparation;
+
+            particleWavelength = parseInt(particleWavelengthSlider.value);
+            particleWavelengthValue.textContent = particleWavelength;
+
+            particleSpeed = parseInt(particleSpeedSlider.value);
+            particleSpeedValue.textContent = particleSpeed;
+
+            numSlits = parseInt(numSlitsSlider.value);
+            numSlitsValue.textContent = numSlits;
+
+            screenDistance = parseInt(screenDistanceSlider.value);
+            screenDistanceValue.textContent = screenDistance;
+
+            particles.forEach(particle => {
+                particle.reset();
+            });
+        }
+
+        slitSeparationSlider.addEventListener('input', updateSimulation);
+        particleWavelengthSlider.addEventListener('input', updateSimulation);
+        particleSpeedSlider.addEventListener('input', updateSimulation);
+        numSlitsSlider.addEventListener('input', updateSimulation);
+        screenDistanceSlider.addEventListener('input', updateSimulation);
+
+                window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            intensityGraph.width = Math.min(500, window.innerWidth * 0.9);
+            intensityGraph.height = 100;
+        });
+
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+
+        animate();
+    </script>
+</body>
+</html>

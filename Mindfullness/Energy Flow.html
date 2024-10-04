@@ -1,265 +1,327 @@
-<html><head>
-<title>Energy Flow Visualization</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background-color: #000;
-    color: #fff;
-  }
-  #canvas-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-  #info-panel {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: rgba(0,0,0,0.7);
-    padding: 15px;
-    border-radius: 10px;
-    max-width: 300px;
-    font-size: 14px;
-  }
-  #controls {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  button {
-    font-size: 16px;
-    padding: 10px 20px;
-    margin: 5px;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-  }
-  button:hover {
-    background-color: #45a049;
-  }
-  #quote {
-    position: absolute;
-    bottom: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0,0,0,0.7);
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    text-align: center;
-    width: 80%;
-    max-width: 800px;
-  }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Energy Flow Visualization</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #text-toggle {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            padding: 10px 5px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #info-panel {
+            position: absolute;
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 250px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            display: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        #controls button {
+            padding: 5px 10px;
+            font-size: 12px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        h2 {
+            color: #333;
+            font-size: 18px;
+            margin-top: 0;
+        }
+        p, #quote {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
-<div id="canvas-container"></div>
-<div id="info-panel">
-  <h2>Energy Flow Visualization</h2>
-  <p>Observe how energy manifests in different forms: as waves in the ocean, wind in the air, and thoughts in the body.</p>
-</div>
-<div id="quote">"Energy moving through the ocean is called waves. When it moves through the air, you call it wind. When it moves through this body, you call it 'your presence' or thoughts."</div>
-<div id="controls">
-  <button id="toggle-ocean">Toggle Ocean</button>
-  <button id="toggle-wind">Toggle Wind</button>
-  <button id="toggle-thoughts">Toggle Thoughts</button>
-</div>
+    <div id="canvas-container"></div>
+    <button id="text-toggle">Toggle Info</button>
+    <div id="info-panel">
+        <h2>Energy Flow Visualization</h2>
+        <p>Observe how energy manifests in different forms: as waves in the ocean, wind in the air, and thoughts in the body.</p>
+        <div id="quote">"Energy moving through the ocean is called waves. When it moves through the air, you call it wind. When it moves through this body, you call it 'your presence' or thoughts."</div>
+    </div>
+    <div id="controls">
+        <button id="toggle-ocean">Ocean</button>
+        <button id="toggle-wind">Wind</button>
+        <button id="toggle-thoughts">Thoughts</button>
+    </div>
 
-<script>
-let scene, camera, renderer, ocean, wind, thoughts;
-let oceanVisible = true, windVisible = true, thoughtsVisible = true;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script>
+        let scene, camera, renderer, ocean, wind, thoughts;
+        let oceanVisible = true, windVisible = true, thoughtsVisible = true;
 
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.getElementById('canvas-container').appendChild(renderer.domElement);
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-  createOcean();
-  createWind();
-  createThoughts();
+            createOcean();
+            createWind();
+            createThoughts();
 
-  camera.position.z = 15;
+            camera.position.z = 15;
 
-  window.addEventListener('resize', onWindowResize, false);
-  document.getElementById('toggle-ocean').addEventListener('click', () => toggleVisibility('ocean'));
-  document.getElementById('toggle-wind').addEventListener('click', () => toggleVisibility('wind'));
-  document.getElementById('toggle-thoughts').addEventListener('click', () => toggleVisibility('thoughts'));
+            window.addEventListener('resize', onWindowResize, false);
+            document.getElementById('toggle-ocean').addEventListener('click', () => toggleVisibility('ocean'));
+            document.getElementById('toggle-wind').addEventListener('click', () => toggleVisibility('wind'));
+            document.getElementById('toggle-thoughts').addEventListener('click', () => toggleVisibility('thoughts'));
+            document.getElementById('text-toggle').addEventListener('click', toggleInfoPanel);
 
-  animate();
-}
+            renderer.domElement.addEventListener('touchstart', onTouchStart, false);
+            renderer.domElement.addEventListener('touchmove', onTouchMove, false);
+            renderer.domElement.addEventListener('touchend', onTouchEnd, false);
 
-function createOcean() {
-  const geometry = new THREE.PlaneGeometry(20, 20, 100, 100);
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      time: { value: 0 }
-    },
-    vertexShader: `
-      uniform float time;
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        vec3 pos = position;
-        float wave = sin(pos.x * 0.5 + time * 2.0) * 0.5 + 
-                     sin(pos.y * 0.5 + time * 1.5) * 0.5;
-        pos.z += wave;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float time;
-      varying vec2 vUv;
-      void main() {
-        vec3 color = vec3(0.0, 0.3, 0.8);
-        color += 0.1 * sin(vUv.x * 10.0 + time) * sin(vUv.y * 10.0 + time);
-        gl_FragColor = vec4(color, 0.8);
-      }
-    `,
-    transparent: true,
-  });
-  ocean = new THREE.Mesh(geometry, material);
-  ocean.rotation.x = -Math.PI / 2;
-  ocean.position.y = -5;
-  scene.add(ocean);
-}
+            if (isMobile()) {
+                optimizeForMobile();
+            }
 
-function createWind() {
-  const geometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(1000 * 3);
-  const colors = new Float32Array(1000 * 3);
+            animate();
+        }
 
-  for (let i = 0; i < positions.length; i += 3) {
-    positions[i] = (Math.random() - 0.5) * 20;
-    positions[i + 1] = (Math.random() - 0.5) * 20;
-    positions[i + 2] = (Math.random() - 0.5) * 20;
+        function createOcean() {
+            const geometry = new THREE.PlaneGeometry(20, 20, 100, 100);
+            const material = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0 }
+                },
+                vertexShader: `
+                    uniform float time;
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        vec3 pos = position;
+                        float wave = sin(pos.x * 0.5 + time * 2.0) * 0.5 + 
+                                     sin(pos.y * 0.5 + time * 1.5) * 0.5;
+                        pos.z += wave;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    varying vec2 vUv;
+                    void main() {
+                        vec3 color = vec3(0.0, 0.3, 0.8);
+                        color += 0.1 * sin(vUv.x * 10.0 + time) * sin(vUv.y * 10.0 + time);
+                        gl_FragColor = vec4(color, 0.8);
+                    }
+                `,
+                transparent: true,
+            });
+            ocean = new THREE.Mesh(geometry, material);
+            ocean.rotation.x = -Math.PI / 2;
+            ocean.position.y = -5;
+            scene.add(ocean);
+        }
 
-    colors[i] = 0.8;
-    colors[i + 1] = 0.8;
-    colors[i + 2] = 1.0;
-  }
+        function createWind() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(1000 * 3);
+            const colors = new Float32Array(1000 * 3);
 
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            for (let i = 0; i < positions.length; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 20;
+                positions[i + 1] = (Math.random() - 0.5) * 20;
+                positions[i + 2] = (Math.random() - 0.5) * 20;
 
-  const material = new THREE.PointsMaterial({
-    size: 0.1,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.5
-  });
+                colors[i] = 0.8;
+                colors[i + 1] = 0.8;
+                colors[i + 2] = 1.0;
+            }
 
-  wind = new THREE.Points(geometry, material);
-  scene.add(wind);
-}
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-function createThoughts() {
-  thoughts = new THREE.Group();
+            const material = new THREE.PointsMaterial({
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.5
+            });
 
-  const geometries = [
-    new THREE.SphereGeometry(0.2, 32, 32),
-    new THREE.BoxGeometry(0.3, 0.3, 0.3),
-    new THREE.TetrahedronGeometry(0.3)
-  ];
+            wind = new THREE.Points(geometry, material);
+            scene.add(wind);
+        }
 
-  for (let i = 0; i < 50; i++) {
-    const geometry = geometries[Math.floor(Math.random() * geometries.length)];
-    const material = new THREE.MeshBasicMaterial({
-      color: Math.random() * 0xffffff,
-      transparent: true,
-      opacity: 0.7
-    });
-    const thought = new THREE.Mesh(geometry, material);
-    
-    thought.position.set(
-      (Math.random() - 0.5) * 10,
-      (Math.random() - 0.5) * 10,
-      (Math.random() - 0.5) * 10
-    );
-    
-    thoughts.add(thought);
-  }
-  
-  scene.add(thoughts);
-}
+        function createThoughts() {
+            thoughts = new THREE.Group();
 
-function toggleVisibility(element) {
-  switch(element) {
-    case 'ocean':
-      oceanVisible = !oceanVisible;
-      ocean.visible = oceanVisible;
-      break;
-    case 'wind':
-      windVisible = !windVisible;
-      wind.visible = windVisible;
-      break;
-    case 'thoughts':
-      thoughtsVisible = !thoughtsVisible;
-      thoughts.visible = thoughtsVisible;
-      break;
-  }
-}
+            const geometries = [
+                new THREE.SphereGeometry(0.2, 32, 32),
+                new THREE.BoxGeometry(0.3, 0.3, 0.3),
+                new THREE.TetrahedronGeometry(0.3)
+            ];
 
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
+            for (let i = 0; i < 50; i++) {
+                const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+                const material = new THREE.MeshBasicMaterial({
+                    color: Math.random() * 0xffffff,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const thought = new THREE.Mesh(geometry, material);
+                
+                thought.position.set(
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 10
+                );
+                
+                thoughts.add(thought);
+            }
+            
+            scene.add(thoughts);
+        }
 
-function animate() {
-  requestAnimationFrame(animate);
+        function toggleVisibility(element) {
+            switch(element) {
+                case 'ocean':
+                    oceanVisible = !oceanVisible;
+                    ocean.visible = oceanVisible;
+                    break;
+                case 'wind':
+                    windVisible = !windVisible;
+                    wind.visible = windVisible;
+                    break;
+                case 'thoughts':
+                    thoughtsVisible = !thoughtsVisible;
+                    thoughts.visible = thoughtsVisible;
+                    break;
+            }
+        }
 
-  const time = performance.now() * 0.001;
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
 
-  if (ocean.visible) {
-    ocean.material.uniforms.time.value = time;
-  }
+        function animate() {
+            requestAnimationFrame(animate);
 
-  if (wind.visible) {
-    const positions = wind.geometry.attributes.position.array;
-    for (let i = 0; i < positions.length; i += 3) {
-      positions[i] += Math.sin(time + i) * 0.01;
-      positions[i + 1] += Math.cos(time + i) * 0.01;
-      positions[i + 2] += Math.sin(time + i) * 0.01;
+            const time = performance.now() * 0.001;
 
-      if (positions[i] > 10) positions[i] = -10;
-      if (positions[i] < -10) positions[i] = 10;
-      if (positions[i + 1] > 10) positions[i + 1] = -10;
-      if (positions[i + 1] < -10) positions[i + 1] = 10;
-      if (positions[i + 2] > 10) positions[i + 2] = -10;
-      if (positions[i + 2] < -10) positions[i + 2] = 10;
-    }
-    wind.geometry.attributes.position.needsUpdate = true;
-  }
+            if (ocean.visible) {
+                ocean.material.uniforms.time.value = time;
+            }
 
-  if (thoughts.visible) {
-    thoughts.children.forEach((thought, index) => {
-      thought.position.x += Math.sin(time + index) * 0.02;
-      thought.position.y += Math.cos(time + index) * 0.02;
-      thought.position.z += Math.sin(time + index * 0.5) * 0.02;
-      thought.rotation.x += 0.01;
-      thought.rotation.y += 0.01;
-    });
-  }
+            if (wind.visible) {
+                const positions = wind.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += Math.sin(time + i) * 0.01;
+                    positions[i + 1] += Math.cos(time + i) * 0.01;
+                    positions[i + 2] += Math.sin(time + i) * 0.01;
 
-  renderer.render(scene, camera);
-}
+                    if (positions[i] > 10) positions[i] = -10;
+                    if (positions[i] < -10) positions[i] = 10;
+                    if (positions[i + 1] > 10) positions[i + 1] = -10;
+                    if (positions[i + 1] < -10) positions[i + 1] = 10;
+                    if (positions[i + 2] > 10) positions[i + 2] = -10;
+                    if (positions[i + 2] < -10) positions[i + 2] = 10;
+                }
+                wind.geometry.attributes.position.needsUpdate = true;
+            }
 
-init();
-</script>
-</body></html>
+            if (thoughts.visible) {
+                thoughts.children.forEach((thought, index) => {
+                    thought.position.x += Math.sin(time + index) * 0.02;
+                    thought.position.y += Math.cos(time + index) * 0.02;
+                    thought.position.z += Math.sin(time + index * 0.5) * 0.02;
+                    thought.rotation.x += 0.01;
+                    thought.rotation.y += 0.01;
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onTouchStart(event) {
+            // Handle touch start
+            event.preventDefault();
+        }
+
+        function onTouchMove(event) {
+            // Handle touch move
+            event.preventDefault();
+        }
+
+        function onTouchEnd(event) {
+            // Handle touch end
+            event.preventDefault();
+        }
+
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        function optimizeForMobile() {
+            // Reduce ocean complexity
+            ocean.geometry = new THREE.PlaneGeometry(20, 20, 50, 50);
+            
+            // Reduce number of wind particles
+            wind.geometry.setDrawRange(0, 500);
+            
+            // Reduce number of thought objects
+            thoughts.children.length = Math.min(thoughts.children.length, 25);
+            
+            // Adjust camera
+            camera.position.z = 20;
+        }
+
+        function toggleInfoPanel() {
+            const infoPanel = document.getElementById('info-panel');
+            infoPanel.style.display = infoPanel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        init();
+    </script>
+</body>
+</html>

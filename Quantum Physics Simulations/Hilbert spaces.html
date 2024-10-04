@@ -1,60 +1,56 @@
-<html><head>
-<title>Quantum States Visualization: Finite and Infinite-Dimensional Hilbert Spaces</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background-color: #000;
-    color: #fff;
-  }
-  #canvas-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-  #info-panel {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: rgba(0,0,0,0.7);
-    padding: 15px;
-    border-radius: 10px;
-    max-width: 300px;
-    font-size: 14px;
-    overflow-y: auto;
-    max-height: 80%;
-  }
-  #controls {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  button {
-    font-size: 16px;
-    padding: 10px 20px;
-    margin: 5px;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-  }
-  button:hover {
-    background-color: #45a049;
-  }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum States Visualization: Finite and Infinite-Dimensional Hilbert Spaces</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        #info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            display: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            background: #87CEEB; /* Light blue color */
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button:hover {
+            background: #7bbcd4; /* Slightly darker blue on hover */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 </head>
 <body>
 <div id="canvas-container"></div>
@@ -66,6 +62,7 @@
   <button id="toggle-space">Toggle Hilbert Space</button>
   <button id="measure">Perform Measurement</button>
   <button id="reset">Reset</button>
+  <button id="toggle-info">Toggle Info</button>
 </div>
 
 <script>
@@ -74,6 +71,8 @@ let blochSphere, stateSphere, axes;
 let wavefunctionMesh, potentialWellMesh;
 let currentSpace = 'finite';
 let measurement = false;
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
 
 function init() {
   scene = new THREE.Scene();
@@ -91,6 +90,11 @@ function init() {
   document.getElementById('toggle-space').addEventListener('click', toggleSpace);
   document.getElementById('measure').addEventListener('click', performMeasurement);
   document.getElementById('reset').addEventListener('click', resetVisualization);
+  document.getElementById('toggle-info').addEventListener('click', toggleInfoPanel);
+
+  renderer.domElement.addEventListener('mousedown', onMouseDown, false);
+  renderer.domElement.addEventListener('mouseup', onMouseUp, false);
+  renderer.domElement.addEventListener('mousemove', onMouseMove, false);
 
   animate();
 }
@@ -261,10 +265,51 @@ function updateExplanation(space) {
   }
 }
 
+function toggleInfoPanel() {
+  const infoPanel = document.getElementById('info-panel');
+  infoPanel.style.display = infoPanel.style.display === 'none' ? 'block' : 'none';
+}
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseDown(event) {
+  isDragging = true;
+}
+
+function onMouseUp(event) {
+  isDragging = false;
+}
+
+function onMouseMove(event) {
+  if (isDragging) {
+    const deltaMove = {
+      x: event.offsetX - previousMousePosition.x,
+      y: event.offsetY - previousMousePosition.y
+    };
+
+    const deltaRotationQuaternion = new THREE.Quaternion()
+      .setFromEuler(new THREE.Euler(
+        toRadians(deltaMove.y * 1),
+        toRadians(deltaMove.x * 1),
+        0,
+        'XYZ'
+      ));
+
+    scene.quaternion.multiplyQuaternions(deltaRotationQuaternion, scene.quaternion);
+  }
+
+  previousMousePosition = {
+    x: event.offsetX,
+    y: event.offsetY
+  };
+}
+
+function toRadians(angle) {
+  return angle * (Math.PI / 180);
 }
 
 function animate() {
@@ -284,4 +329,5 @@ function animate() {
 
 init();
 </script>
-</body></html>
+</body>
+</html>

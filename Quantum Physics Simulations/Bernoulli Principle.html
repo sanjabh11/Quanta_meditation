@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bernoulli Principle Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #visualization {
+            flex-grow: 1;
+            background-color: #222;
+        }
+        #data-display {
+            background-color: #444;
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+        }
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px;
+            background-color: #555;
+        }
+        button {
+            padding: 8px;
+            margin: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #explanation {
+            display: none;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            right: 10px;
+            max-height: 60vh;
+            overflow-y: auto;
+            font-size: 12px;
+            z-index: 10;
+        }
+        .formula {
+            font-style: italic;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="visualization"></div>
+    <div id="data-display"></div>
+    <div id="controls">
+        <button id="toggle-explanation">Toggle Explanation</button>
+        <button id="toggle-flow">Toggle Flow</button>
+        <button id="change-shape">Change Shape</button>
+        <button id="add-obstacle">Add Obstacle</button>
+        <button id="toggle-streamlines">Toggle Streamlines</button>
+        <button id="toggle-pressure-map">Toggle Pressure Map</button>
+        <button id="reset">Reset</button>
+    </div>
+    <div id="explanation">
+        <h3>Bernoulli Principle</h3>
+        <p>The Bernoulli Principle is a fundamental concept in fluid dynamics that relates pressure, velocity, and elevation in a moving fluid.</p>
+        <p class="formula">p + ½ρv² + ρgh = constant</p>
+        <p>Where: p: pressure, ρ (rho): fluid density, v: fluid velocity, g: gravitational acceleration, h: elevation</p>
+        <p><strong>Key Concepts:</strong></p>
+        <ul>
+            <li>As fluid velocity increases, pressure decreases</li>
+            <li>In constricted areas, fluid velocity increases</li>
+            <li>Pressure differences create lift in airfoils</li>
+        </ul>
+        <p><strong>Visualization Guide:</strong></p>
+        <ul>
+            <li>Particles: represent fluid elements</li>
+            <li>Color: indicates pressure (blue: low, red: high)</li>
+            <li>Speed: shown by particle movement</li>
+            <li>Shapes: affect fluid flow (airfoil, venturi tube)</li>
+        </ul>
+    </div>
+
+<script>
+let particles = [];
+let flowOn = true;
+let shape;
+let obstacles = [];
+let showStreamlines = false;
+let showPressureMap = false;
+let pressureField;
+let dataDisplay;
+
+function setup() {
+    let canvas = createCanvas(windowWidth, windowHeight - 100);
+    canvas.parent('visualization');
+    shape = new Shape();
+    pressureField = new PressureField();
+    for (let i = 0; i < 2000; i++) {
+        particles.push(new Particle());
+    }
+    noStroke();
+    dataDisplay = select('#data-display');
+}
+
+function draw() {
+    background(30);
+    
+    if (showPressureMap) {
+        pressureField.display();
+    }
+    
+    shape.display();
+    
+    for (let obstacle of obstacles) {
+        obstacle.display();
+    }
+    
+    if (showStreamlines) {
+        drawStreamlines();
+    }
+    
+    for (let particle of particles) {
+        if (flowOn) {
+            particle.update();
+        }
+        particle.display();
+    }
+    
+    displayData();
+}
+
+class Particle {
+    constructor() {
+        this.reset();
+    }
+    
+    reset() {
+        this.x = random(width);
+        this.y = random(height);
+        this.vx = random(1, 3);
+        this.vy = 0;
+        this.pressure = 0;
+    }
+    
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        if (this.x > width) this.x = 0;
+        if (this.y < 0 || this.y > height) this.y = random(height);
+        
+        let shapeEffect = shape.getEffect(this.x, this.y);
+        this.vy += shapeEffect.y;
+        this.vx = constrain(this.vx + shapeEffect.x, 1, 7);
+        
+        for (let obstacle of obstacles) {
+            let obstacleEffect = obstacle.getEffect(this.x, this.y);
+            this.vx += obstacleEffect.x;
+            this.vy += obstacleEffect.y;
+        }
+        
+        this.vy *= 0.95; // damping
+        
+        this.pressure = map(this.vx, 1, 7, 0, 1);
+        pressureField.updatePressure(this.x, this.y, this.pressure);
+    }
+    
+    display() {
+        let c = lerpColor(color(0, 0, 255), color(255, 0, 0), this.pressure);
+        fill(c);
+        ellipse(this.x, this.y, 4, 4);
+    }
+}
+
+class Shape {
+    constructor() {
+        this.type = 'airfoil';
+        this.generate();
+    }
+    
+    generate() {
+        if (this.type === 'airfoil') {
+            this.points = [];
+            for (let x = 0; x < width; x += 10) {
+                let y = height/2 - 50 * sin(x * 0.02) * exp(-pow(x - width/2, 2) / 20000);
+                this.points.push(createVector(x, y));
+            }
+        } else {
+            this.top = height/2 - 50;
+            this.bottom = height/2 + 50;
+            this.left = width/4;
+            this.right = 3*width/4;
+        }
+    }
+    
+    display() {
+        stroke(255);
+        strokeWeight(2);
+        noFill();
+        if (this.type === 'airfoil') {
+            beginShape();
+            for (let p of this.points) {
+                vertex(p.x, p.y);
+            }
+            endShape();
+        } else {
+            beginShape();
+            vertex(0, this.top);
+            vertex(this.left, this.top);
+            vertex(this.left, height/2 - 100);
+            vertex(this.right, height/2 - 100);
+            vertex(this.right, this.top);
+            vertex(width, this.top);
+            endShape();
+            
+            beginShape();
+            vertex(0, this.bottom);
+            vertex(this.left, this.bottom);
+            vertex(this.left, height/2 + 100);
+            vertex(this.right, height/2 + 100);
+            vertex(this.right, this.bottom);
+            vertex(width, this.bottom);
+            endShape();
+        }
+    }
+    
+    getEffect(x, y) {
+        let effect = createVector(0, 0);
+        if (this.type === 'airfoil') {
+            for (let i = 0; i < this.points.length - 1; i++) {
+                let p1 = this.points[i];
+                let p2 = this.points[i+1];
+                if (x >= p1.x && x < p2.x) {
+                    let t = (x - p1.x) / (p2.x - p1.x);
+                    let shapeY = lerp(p1.y, p2.y, t);
+                    let distance = y - shapeY;
+                    effect.y = -distance * 0.01;
+                    effect.x = map(abs(distance), 0, 100, 0.1, -0.1);
+                    break;
+                }
+            }
+        } else {
+            if (x > this.left && x < this.right) {
+                if (y < height/2) {
+                    effect.y = (y - (height/2 - 100)) * 0.1;
+                } else {
+                    effect.y = (y - (height/2 + 100)) * 0.1;
+                }
+                effect.x = 0.1;
+            }
+        }
+        return effect;
+    }
+}
+
+class Obstacle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 20;
+    }
+    
+    display() {
+        fill(200);
+        ellipse(this.x, this.y, this.radius * 2);
+    }
+    
+    getEffect(x, y) {
+        let effect = createVector(0, 0);
+        let d = dist(x, y, this.x, this.y);
+        if (d < this.radius * 2) {
+            let angle = atan2(y - this.y, x - this.x);
+            let strength = map(d, 0, this.radius * 2, 0.5, 0);
+            effect.x = cos(angle) * strength;
+            effect.y = sin(angle) * strength;
+        }
+        return effect;
+    }
+}
+
+class PressureField {
+    constructor() {
+        this.resolution = 20;
+        this.field = [];
+        for (let i = 0; i < width / this.resolution; i++) {
+            this.field[i] = [];
+            for (let j = 0; j < height / this.resolution; j++) {
+                this.field[i][j] = 0;
+            }
+        }
+    }
+    
+    updatePressure(x, y, pressure) {
+        let i = floor(x / this.resolution);
+        let j = floor(y / this.resolution);
+        if (i >= 0 && i < this.field.length && j >= 0 && j < this.field[0].length) {
+            this.field[i][j] = lerp(this.field[i][j], pressure, 0.1);
+        }
+    }
+    
+    display() {
+        noStroke();
+        for (let i = 0; i < this.field.length; i++) {
+            for (let j = 0; j < this.field[0].length; j++) {
+                let c = lerpColor(color(0, 0, 255, 100), color(255, 0, 0, 100), this.field[i][j]);
+                fill(c);
+                rect(i * this.resolution, j * this.resolution, this.resolution, this.resolution);
+            }
+        }
+    }
+}
+
+function drawStreamlines() {
+    stroke(255, 150);
+    strokeWeight(1);
+    for (let y = 0; y < height; y += 20) {
+        beginShape();
+        for (let x = 0; x < width; x += 5) {
+            let effect = shape.getEffect(x, y);
+            for (let obstacle of obstacles) {
+                let obstacleEffect = obstacle.getEffect(x, y);
+                effect.add(obstacleEffect);
+            }
+            vertex(x, y);
+            y += effect.y;
+        }
+        endShape();
+    }
+}
+
+function displayData() {
+    let avgVelocity = particles.reduce((sum, p) => sum + p.vx, 0) / particles.length;
+    let avgPressure = particles.reduce((sum, p) => sum + p.pressure, 0) / particles.length;
+    
+    let display = `Avg Velocity: ${avgVelocity.toFixed(2)} | Avg Pressure: ${avgPressure.toFixed(2)} | Shape: ${shape.type} | Obstacles: ${obstacles.length}`;
+    
+    dataDisplay.html(display);
+}
+
+function toggleFlow() {
+    flowOn = !flowOn;
+}
+
+function changeShape() {
+    shape.type = shape.type === 'airfoil' ? 'venturi' : 'airfoil';
+    shape.generate();
+}
+
+function addObstacle() {
+    obstacles.push(new Obstacle(random(width), random(height)));
+}
+
+function toggleStreamlines() {
+    showStreamlines = !showStreamlines;
+}
+
+function togglePressureMap() {
+    showPressureMap = !showPressureMap;
+}
+
+function resetSimulation() {
+    particles = [];
+    for (let i = 0; i < 2000; i++) {
+        particles.push(new Particle());
+    }
+    obstacles = [];
+    shape.type = 'airfoil';
+    shape.generate();
+    pressureField = new PressureField();
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight - 100);
+    shape.generate();
+    pressureField = new PressureField();
+}
+
+document.getElementById('toggle-flow').addEventListener('click', toggleFlow);
+document.getElementById('change-shape').addEventListener('click', changeShape);
+document.getElementById('add-obstacle').addEventListener('click', addObstacle);
+document.getElementById('toggle-streamlines').addEventListener('click', toggleStreamlines);
+document.getElementById('toggle-pressure-map').addEventListener('click', togglePressureMap);
+document.getElementById('reset').addEventListener('click', resetSimulation);
+
+document.getElementById('toggle-explanation').addEventListener('click', function() {
+    let explanation = document.getElementById('explanation');
+    explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+});
+
+window.addEventListener('resize', windowResized);
+</script>
+
+</body>
+</html>

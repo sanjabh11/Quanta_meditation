@@ -3,289 +3,418 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quantum States Visualization</title>
+  <title>Quantum Phenomena Visualizer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   <style>
     body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #0a0a1e;
+      color: #fff;
+    }
+    .container {
       display: flex;
-      justify-content: center;
-      align-items: center;
+      flex-direction: column;
       height: 100vh;
-      background-color: #222;
-      color: white;
     }
-    canvas {
-      border: 1px solid white;
-    }
-    .info {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-family: sans-serif;
+    #canvas-container {
+      flex-grow: 1;
+      position: relative;
     }
     #description {
+      padding: 10px;
+      background-color: rgba(10, 10, 30, 0.8);
       position: absolute;
-      bottom: 10px;
-      left: 10px;
-      width: 760px;
-      color: white;
-      font-family: sans-serif;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      font-size: 14px;
+    }
+    #controls {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px;
+      background-color: #1a1a2e;
+    }
+    button {
+      padding: 10px 20px;
       font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #slider-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+    #slider {
+      width: 80%;
+      max-width: 300px;
+    }
+    @media (min-width: 768px) {
+      .container {
+        flex-direction: row;
+      }
+      #description {
+        width: 300px;
+        right: auto;
+        top: 0;
+        max-height: 100%;
+        overflow-y: auto;
+      }
     }
   </style>
 </head>
 <body>
-<div class="info">
-  <p><strong>Quantum States Visualization</strong></p>
-  <p>Use the buttons to navigate through the scenes.</p>
+<div class="container">
+  <div id="canvas-container"></div>
+  <div id="description"></div>
 </div>
-<div id="description"></div>
+<div id="controls">
+  <button id="prev">Previous</button>
+  <button id="next">Next</button>
+</div>
+<div id="slider-container">
+  <input type="range" id="slider" min="0" max="100" value="50">
+</div>
+
 <script>
 let scene = 0;
-let buttonNext, buttonPrev;
-let slider;
-let rotationAngle = 0;
-let descriptionDiv;
+let particles = [];
+let waveFunctions = [];
+let sliderValue = 50;
+let measurementProb = [];
+let entangledParticles = [];
+let qubits = [];
+const totalScenes = 6;
 
 function setup() {
-  createCanvas(800, 480, WEBGL);
+  const canvasContainer = document.getElementById('canvas-container');
+  const canvas = createCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight, WEBGL);
+  canvas.parent(canvasContainer);
+
+  document.getElementById('prev').addEventListener('click', prevScene);
+  document.getElementById('next').addEventListener('click', nextScene);
   
-  buttonNext = createButton('Next');
-  buttonNext.position(700, 550);
-  buttonNext.mousePressed(nextScene);
-  
-  buttonPrev = createButton('Previous');
-  buttonPrev.position(600, 550);
-  buttonPrev.mousePressed(prevScene);
-  
-  slider = createSlider(0, 100, 50);
-  slider.position(50, 550);
-  slider.hide();
-  
-  descriptionDiv = select('#description'); // Select the description div
+  const slider = document.getElementById('slider');
+  slider.addEventListener('input', () => {
+    sliderValue = parseInt(slider.value);
+  });
+
+  for (let i = 0; i < 100; i++) {
+    particles.push(new Particle());
+  }
+
+  for (let i = 0; i < 3; i++) {
+    waveFunctions.push(new WaveFunction(i));
+    measurementProb.push(1/3);
+  }
+
+  for (let i = 0; i < 2; i++) {
+    entangledParticles.push(new EntangledParticle(i));
+  }
+
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      qubits.push(new Qubit(i, j));
+    }
+  }
+
+  windowResized();
 }
 
 function draw() {
-  background(255);
+  background(10, 10, 30);
   
-  // Rotate only the 3D objects
-  push();
-  rotateX(rotationAngle);
-  rotateY(rotationAngle * 0.7);
-  rotateZ(rotationAngle * 0.3);
+  orbitControl(4, 4);
   
   switch(scene) {
-    case 0:
-      introductionScene();
-      break;
-    case 1:
-      observableStatesScene();
-      break;
-    case 2:
-      eigenstatesScene();
-      break;
-    case 3:
-      eigenvalueEquationScene();
-      break;
-    case 4:
-      eigenvaluesScene();
-      break;
-    case 5:
-      measurementScene();
-      break;
-    case 6:
-      examplesScene();
-      break;
-    case 7:
-      conclusionScene();
-      break;
+    case 0: quantumStateScene(); break;
+    case 1: superpositionScene(); break;
+    case 2: measurementScene(); break;
+    case 3: entanglementScene(); break;
+    case 4: quantumTunnelingScene(); break;
+    case 5: quantumComputingScene(); break;
   }
   
-  pop();
-  
-  rotationAngle += 0.01;
-  
-  // Display the text descriptions
   displayDescription();
 }
 
-function nextScene() {
-  if (scene < 7) scene++;
+class Particle {
+  constructor() {
+    this.pos = p5.Vector.random3D().mult(200);
+    this.vel = p5.Vector.random3D();
+    this.acc = createVector();
+    this.color = color(random(100, 255), random(100, 255), random(100, 255));
+  }
+
+  applyForce(force) {
+    this.acc.add(force);
+  }
+
+  update() {
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.acc.mult(0);
+    
+    if (this.pos.mag() > 200) {
+      this.pos.setMag(200);
+      this.vel.mult(-1);
+    }
+  }
+
+  display() {
+    push();
+    translate(this.pos.x, this.pos.y, this.pos.z);
+    fill(this.color);
+    noStroke();
+    sphere(3);
+    pop();
+  }
 }
 
-function prevScene() {
-  if (scene > 0) scene--;
+class WaveFunction {
+  constructor(index) {
+    this.index = index;
+    this.amplitude = 50;
+    this.frequency = 0.02;
+    this.phase = random(TWO_PI);
+  }
+
+  update() {
+    this.phase += 0.05;
+    this.amplitude = map(sin(frameCount * 0.05 + this.index), -1, 1, 30, 70);
+  }
+
+  display() {
+    push();
+    rotateY(this.index * TWO_PI / 3);
+    stroke(100, 100, 255);
+    noFill();
+    beginShape();
+    for (let x = -100; x <= 100; x += 5) {
+      let y = sin(x * this.frequency + this.phase) * this.amplitude;
+      vertex(x, y, 0);
+    }
+    endShape();
+    pop();
+  }
 }
 
-function introductionScene() {
-  // 3D objects for the introduction scene
+class EntangledParticle {
+  constructor(index) {
+    this.index = index;
+    this.angle = 0;
+    this.state = random() > 0.5 ? 1 : -1;
+  }
+
+  update() {
+    this.angle += 0.02;
+  }
+
+  display() {
+    push();
+    translate(this.index * 200 - 100, 0, 0);
+    rotateY(this.angle);
+    stroke(255);
+    noFill();
+    sphere(50);
+    fill(this.state === 1 ? color(255, 0, 0) : color(0, 255, 0));
+    rotateY(this.angle * 5);
+    translate(0, 0, 50);
+    sphere(10);
+    pop();
+  }
 }
 
-function observableStatesScene() {
-  push();
-  translate(0, 0, 100);
-  fill(255, 0, 0);
-  sphere(50);
-  pop();
+class Qubit {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.state = random() > 0.5 ? 1 : 0;
+    this.angle = 0;
+  }
+
+  update() {
+    this.angle += 0.05;
+  }
+
+  display() {
+    push();
+    translate(this.x * 100 - 100, this.y * 100 - 100, 0);
+    rotateX(this.angle);
+    rotateY(this.angle * 1.3);
+    stroke(255);
+    noFill();
+    box(50);
+    fill(this.state === 1 ? color(255, 255, 0) : color(0, 255, 255));
+    sphere(10);
+    pop();
+  }
 }
 
-function eigenstatesScene() {
-  push();
-  translate(-200, 0, 0);
-  fill(0, 255, 0);
-  sphere(30);
-  pop();
+function quantumStateScene() {
+  let center = createVector();
+  for (let particle of particles) {
+    let force = p5.Vector.sub(center, particle.pos);
+    force.setMag(0.1);
+    particle.applyForce(force);
+    particle.update();
+    particle.display();
+  }
+}
+
+function superpositionScene() {
+  rotateX(PI/6);
+  for (let waveFunction of waveFunctions) {
+    waveFunction.update();
+    waveFunction.display();
+  }
   
+  // Superposition indicator
   push();
-  fill(0, 0, 255);
-  sphere(30);
-  pop();
-  
-  push();
-  translate(200, 0, 0);
-  fill(255, 255, 0);
-  sphere(30);
-  pop();
-}
-
-function eigenvalueEquationScene() {
-  push();
-  translate(0, 0, 0);
+  translate(0, -100, 0);
   fill(255);
-  box(100);
-  pop();
-}
-
-function eigenvaluesScene() {
-  push();
-  translate(-200, 0, 0);
-  fill(255, 0, 0);
-  box(50);
-  pop();
-  
-  push();
-  fill(0, 255, 0);
-  box(50);
-  pop();
-  
-  push();
-  translate(200, 0, 0);
-  fill(0, 0, 255);
-  box(50);
+  noStroke();
+  sphere(10);
   pop();
 }
 
 function measurementScene() {
-  push();
-  translate(-200, 0, 0);
-  fill(255, 0, 0);
-  box(50);
-  pop();
+  rotateX(PI/6);
   
-  push();
-  fill(0, 255, 0);
-  box(50);
-  pop();
+  // Update probabilities based on slider
+  let totalProb = 0;
+  for (let i = 0; i < 3; i++) {
+    measurementProb[i] = exp(-pow(map(sliderValue, 0, 100, -2, 2) - (i-1), 2));
+    totalProb += measurementProb[i];
+  }
+  for (let i = 0; i < 3; i++) {
+    measurementProb[i] /= totalProb;
+  }
   
-  push();
-  translate(200, 0, 0);
-  fill(0, 0, 255);
-  box(50);
-  pop();
+  // Display probability distribution
+  for (let i = 0; i < 3; i++) {
+    push();
+    translate((i - 1) * 100, 0, 0);
+    fill(100, 100, 255, 100);
+    box(50, measurementProb[i] * 200, 50);
+    pop();
+  }
   
-  let measuredState = int(random(1, 4));
-  if (measuredState == 1) {
-    push();
-    translate(-200, 0, 0);
-    fill(255, 255, 0);
-    box(60);
-    pop();
-  } else if (measuredState == 2) {
-    push();
-    fill(255, 255, 0);
-    box(60);
-    pop();
-  } else {
-    push();
-    translate(200, 0, 0);
-    fill(255, 255, 0);
-    box(60);
-    pop();
+  // Display measurement outcome
+  if (frameCount % 60 === 0) {
+    let outcome = random();
+    let sum = 0;
+    for (let i = 0; i < 3; i++) {
+      sum += measurementProb[i];
+      if (outcome < sum) {
+        push();
+        translate((i - 1) * 100, -measurementProb[i] * 100, 0);
+        fill(255, 255, 0);
+        sphere(10);
+        pop();
+        break;
+      }
+    }
   }
 }
 
-function examplesScene() {
-  push();
-  translate(-200, 0, 0);
-  fill(255, 0, 0);
-  box(40);
-  pop();
+function entanglementScene() {
+  for (let particle of entangledParticles) {
+    particle.update();
+    particle.display();
+  }
+  stroke(255, 255, 0);
+  line(-100, 0, 0, 100, 0, 0);
   
-  push();
-  fill(0, 255, 0);
-  box(40);
-  pop();
-  
-  push();
-  translate(200, 0, 0);
-  fill(0, 0, 255);
-  box(40);
-  pop();
-  
-  push();
-  translate(-200, 200, 0);
-  fill(255, 0, 0);
-  sphere(30);
-  pop();
-  
-  push();
-  translate(0, 200, 0);
-  fill(0, 255, 0);
-  sphere(30);
-  pop();
-  
-  push();
-  translate(200, 200, 0);
-  fill(0, 0, 255);
-  sphere(30);
-  pop();
+  // Entanglement interaction
+  if (frameCount % 120 === 0) {
+    entangledParticles[0].state *= -1;
+    entangledParticles[1].state = entangledParticles[0].state;
+  }
 }
 
-function conclusionScene() {
-  // 3D objects for the conclusion scene
+function quantumTunnelingScene() {
+  let barrierWidth = map(sin(frameCount * 0.02), -1, 1, 10, 30);
+  let particleX = sin(frameCount * 0.05) * 100;
+  
+  // Barrier
+  push();
+  translate(0, 0, 0);
+  fill(255, 0, 0, 150);
+  box(barrierWidth, 100, 100);
+  pop();
+  
+  // Particle
+  push();
+  translate(particleX, 0, 0);
+  fill(0, 255, 255);
+  sphere(10);
+  pop();
+  
+  // Probability wave
+  noFill();
+  stroke(0, 255, 255);
+  beginShape();
+  for (let x = -150; x <= 150; x += 5) {
+    let y = exp(-pow(x - particleX, 2) / 1000) * 50;
+    if (abs(x) < barrierWidth / 2) {
+      y *= exp(-barrierWidth / 10);
+    }
+    vertex(x, y, 0);
+  }
+  endShape();
+}
+
+function quantumComputingScene() {
+  for (let qubit of qubits) {
+    qubit.update();
+    qubit.display();
+  }
+  
+  // Quantum gate operation
+  if (frameCount % 60 === 0) {
+    let targetQubit = random(qubits);
+    targetQubit.state = 1 - targetQubit.state;  // Flip the state
+  }
 }
 
 function displayDescription() {
-  let description = '';
-  switch(scene) {
-    case 0:
-      description = "<strong>Introduction to Quantum States and Measurements</strong><br>In this visualization, we will explore key concepts in quantum physics such as observable states, eigenstates, eigenvalue equations, eigenvalues, and measurement.";
-      break;
-    case 1:
-      description = "<strong>Observable States</strong><br>Observable states are measurable properties of a quantum system. They are represented by eigenstates and determined by eigenvalue equations.";
-      break;
-    case 2:
-      description = "<strong>Eigenstates</strong><br>Eigenstates are specific states of a quantum system. They are obtained as solutions to eigenvalue equations and represent observable states of the system.";
-      break;
-    case 3:
-      description = "<strong>Eigenvalue Equation</strong><br>The eigenvalue equation is a mathematical equation that relates eigenstates and eigenvalues. It is often referred to as the wave equation.";
-      break;
-    case 4:
-      description = "<strong>Eigenvalues</strong><br>Eigenvalues are measurable quantities associated with eigenstates. They take on discrete or quantized values, such as position, spin, and energy.";
-      break;
-    case 5:
-      description = "<strong>Measurement</strong><br>Observing a quantum system collapses it into an eigenstate. The measured value is the corresponding eigenvalue. The probability of measuring a specific eigenvalue depends on the system's state.";
-      break;
-    case 6:
-      description = "<strong>Examples</strong><br>Let's look at some real-world examples of eigenvalues and eigenstates, such as position, spin, and energy.";
-      break;
-    case 7:
-      description = "<strong>Conclusion</strong><br>We have explored key concepts in quantum physics, including observable states, eigenstates, eigenvalue equations, eigenvalues, and measurement.";
-      break;
-  }
-  descriptionDiv.html(description);
+  const descriptions = [
+    "Quantum State: Particles exist in a probabilistic cloud. Their exact position and momentum can't be known simultaneously (Heisenberg's Uncertainty Principle).",
+    "Superposition: Quantum systems can exist in multiple states at once. The sphere represents a qubit in superposition of three basis states.",
+    "Measurement: Observing a quantum system 'collapses' the superposition. The slider affects measurement probabilities. Watch for measurement outcomes!",
+    "Entanglement: Two particles can be 'entangled'. Measuring one instantly affects the other, regardless of distance. Watch for state changes!",
+    "Quantum Tunneling: Particles can pass through barriers they classically shouldn't. The wave represents the probability of finding the particle on either side.",
+    "Quantum Computing: Qubits can be in superposition and entangled. Quantum gates manipulate qubit states. Watch for state flips!"
+  ];
+  
+  document.getElementById('description').innerHTML = descriptions[scene];
 }
+
+function nextScene() {
+  scene = (scene + 1) % totalScenes;
+}
+
+function prevScene() {
+  scene = (scene - 1 + totalScenes) % totalScenes;
+}
+
+function windowResized() {
+  const canvasContainer = document.getElementById('canvas-container');
+  resizeCanvas(canvasContainer.offsetWidth, canvasContainer.offsetHeight);
+}
+
+window.addEventListener('resize', windowResized);
 </script>
 </body>
 </html>

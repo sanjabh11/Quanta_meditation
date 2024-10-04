@@ -1,236 +1,295 @@
-<!DOCTYPE html><html><head>
-<title>Cherenkov Effect Simulator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background-color: #000;
-    color: #fff;
-  }
-  #canvas-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-  #info-panel {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: rgba(0,0,0,0.7);
-    padding: 15px;
-    border-radius: 10px;
-    max-width: 300px;
-    font-size: 14px;
-  }
-  #controls {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0,0,0,0.7);
-    padding: 10px;
-    border-radius: 5px;
-    display: flex;
-    gap: 10px;
-  }
-  button {
-    background-color: #4CAF50;
-    border: none;
-    color: white;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-    border-radius: 5px;
-  }
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cherenkov Effect Interactive Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #0a0a1e;
+            color: #e0f0ff;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        #sidebar {
+            width: 300px;
+            background-color: rgba(10, 10, 30, 0.8);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        #main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #visualization {
+            flex-grow: 1;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background-color: rgba(10, 10, 30, 0.8);
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        h2 {
+            color: #4a90e2;
+            text-align: center;
+        }
+        .formula {
+            font-style: italic;
+            text-align: center;
+            font-size: 1.2em;
+            margin: 15px 0;
+            color: #ffd700;
+        }
+        #explanation {
+            margin-top: 20px;
+        }
+        #stats {
+            position: absolute;
+            top: 10px;
+            left: 310px;
+            background-color: rgba(10, 10, 30, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #slider-container {
+            margin-top: 20px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-<div id="canvas-container"></div>
-<div id="info-panel">
-  <h2>Cherenkov Effect Simulator</h2>
-  <p>Observe the Cherenkov effect as charged particles move faster than light through a medium, creating a characteristic blue glow.</p>
-  <h3>Key Concepts:</h3>
-  <ul>
-    <li>Particle Speed vs. Light Speed: In this medium, light travels at a reduced speed. When a charged particle exceeds this speed, it produces Cherenkov radiation.</li>
-    <li>Emission of Cherenkov Radiation: As the particle moves faster than light in the medium, it creates an electromagnetic shock wave, visible as a blue glow.</li>
-    <li>Cherenkov Cone: The angle of the light cone (θ) is related to the particle's speed (v) and the speed of light in the medium (c) by the formula: cos(θ) = c/v</li>
-    <li>Particle Speed Effect: As the particle's speed increases, the cone angle widens, and the intensity of the blue glow increases.</li>
-  </ul>
-  <p>Use the controls below to change the particle's speed and observe how it affects the Cherenkov radiation.</p>
-</div>
-<div id="controls">
-  <button id="slow-btn">Slow Particle</button>
-  <button id="fast-btn">Fast Particle</button>
-</div>
+    <div class="container">
+        <div id="sidebar">
+            <h2>Cherenkov Effect</h2>
+            <button id="toggle-explanation">Toggle Explanation</button>
+            <div id="explanation">
+                <p>The Cherenkov Effect occurs when a charged particle passes through a dielectric medium at a speed greater than the phase velocity of light in that medium.</p>
+                <p class="formula">cos θ = 1 / (βn)</p>
+                <p>Where:</p>
+                <ul>
+                    <li>θ is the angle of Cherenkov radiation</li>
+                    <li>β = v/c (particle velocity / speed of light in vacuum)</li>
+                    <li>n is the refractive index of the medium</li>
+                </ul>
+                <p><strong>In the Animation:</strong></p>
+                <ul>
+                    <li>Blue glow represents Cherenkov radiation</li>
+                    <li>White dot is the charged particle</li>
+                    <li>Concentric circles show light wavefronts</li>
+                    <li>Angle of radiation changes with particle speed and medium</li>
+                </ul>
+            </div>
+            <div id="slider-container">
+                <label for="speed-slider">Particle Speed:</label>
+                <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
+                <label for="medium-slider">Medium Refractive Index:</label>
+                <input type="range" id="medium-slider" min="1" max="3" step="0.1" value="1.5">
+            </div>
+        </div>
+        <div id="main">
+            <div id="visualization"></div>
+            <div id="controls">
+                <button id="toggle-animation">Start/Stop</button>
+                <button id="add-particle">Add Particle</button>
+                <button id="toggle-wavefronts">Toggle Wavefronts</button>
+                <button id="reset">Reset</button>
+            </div>
+        </div>
+    </div>
+    <div id="stats"></div>
 
-<script>
-let scene, camera, renderer, particle, lightCone, medium, wavefront;
-let particleSpeed = 0.05;
-const lightSpeed = 0.03;
+    <script>
+        let particles = [];
+        let wavefronts = [];
+        let animationOn = false;
+        let mediumIndex = 1.5;
+        let showWavefronts = true;
 
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.getElementById('canvas-container').appendChild(renderer.domElement);
+        function setup() {
+            let canvas = createCanvas(windowWidth - 300, windowHeight - 60);
+            canvas.parent('visualization');
+            particles.push(new Particle());
+            noStroke();
+        }
 
-  createMedium();
-  createParticle();
-  createLightCone();
-  createWavefront();
+        function draw() {
+            background(0, 0, 51);
+            
+            if (animationOn) {
+                particles.forEach(particle => particle.update());
+                if (frameCount % 10 === 0) {
+                    particles.forEach(particle => {
+                        wavefronts.push(new Wavefront(particle.x, particle.y));
+                    });
+                }
+            }
+            
+            if (showWavefronts) {
+                for (let i = wavefronts.length - 1; i >= 0; i--) {
+                    wavefronts[i].update();
+                    wavefronts[i].display();
+                    if (wavefronts[i].alpha <= 0) {
+                        wavefronts.splice(i, 1);
+                    }
+                }
+            }
+            
+            particles.forEach(particle => particle.display());
+            
+            displayInfo();
+        }
 
-  camera.position.z = 5;
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            
+            reset() {
+                this.x = random(width);
+                this.y = random(height);
+                this.speed = 1;
+                this.angle = random(TWO_PI);
+            }
+            
+            update() {
+                this.x += this.speed * cos(this.angle) * 3;
+                this.y += this.speed * sin(this.angle) * 3;
+                if (this.x < 0 || this.x > width) this.angle = PI - this.angle;
+                if (this.y < 0 || this.y > height) this.angle = -this.angle;
+            }
+            
+            display() {
+                fill(255);
+                ellipse(this.x, this.y, 10, 10);
+                
+                if (this.speed > 1 / mediumIndex) {
+                    let cherenkovAngle = acos(1 / (this.speed * mediumIndex));
+                    let cherenkovLength = 100;
+                    
+                    for (let i = 0; i < 10; i++) {
+                        let alpha = map(i, 0, 10, 200, 0);
+                        fill(0, 191, 255, alpha);
+                        push();
+                        translate(this.x, this.y);
+                        rotate(this.angle);
+                        triangle(
+                            0, 0,
+                            -cherenkovLength, -cherenkovLength * tan(cherenkovAngle),
+                            -cherenkovLength, cherenkovLength * tan(cherenkovAngle)
+                        );
+                        pop();
+                    }
+                }
+            }
+        }
 
-  window.addEventListener('resize', onWindowResize, false);
+        class Wavefront {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.alpha = 255;
+            }
+            
+            update() {
+                this.radius += 2;
+                this.alpha -= 2;
+            }
+            
+            display() {
+                noFill();
+                stroke(173, 216, 230, this.alpha);
+                ellipse(this.x, this.y, this.radius * 2);
+            }
+        }
 
-  document.getElementById('slow-btn').addEventListener('click', () => setParticleSpeed(0.02));
-  document.getElementById('fast-btn').addEventListener('click', () => setParticleSpeed(0.05));
+        function displayInfo() {
+            let statsDiv = document.getElementById('stats');
+            let particle = particles[0];
+            let cherenkovAngle = particle.speed > 1 / mediumIndex ? 
+                acos(1 / (particle.speed * mediumIndex)) * 180 / PI : 0;
 
-  animate();
-}
+            statsDiv.innerHTML = `
+                Medium Refractive Index: ${mediumIndex.toFixed(2)}<br>
+                Particle Speed: ${particle.speed.toFixed(2)}c<br>
+                Cherenkov Angle: ${cherenkovAngle.toFixed(2)}°<br>
+                Particles: ${particles.length}<br>
+                Wavefronts: ${wavefronts.length}
+            `;
+        }
 
-function createMedium() {
-  const geometry = new THREE.BoxGeometry(10, 10, 10);
-  const material = new THREE.MeshPhongMaterial({
-    color: 0x0077be,
-    transparent: true,
-    opacity: 0.3,
-    side: THREE.DoubleSide
-  });
-  medium = new THREE.Mesh(geometry, material);
-  scene.add(medium);
+        function toggleAnimation() {
+            animationOn = !animationOn;
+        }
 
-  const light = new THREE.PointLight(0xffffff, 1, 100);
-  light.position.set(0, 0, 10);
-  scene.add(light);
-}
+        function addParticle() {
+            particles.push(new Particle());
+        }
 
-function createParticle() {
-  const geometry = new THREE.SphereGeometry(0.1, 32, 32);
-  const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-  particle = new THREE.Mesh(geometry, material);
-  particle.position.set(-5, 0, 0);
-  scene.add(particle);
-}
+        function toggleWavefronts() {
+            showWavefronts = !showWavefronts;
+        }
 
-function createLightCone() {
-  const geometry = new THREE.ConeGeometry(0.5, 1, 32);
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      time: { value: 0 }
-    },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float time;
-      varying vec2 vUv;
-      void main() {
-        float intensity = sin(vUv.y * 10.0 + time * 5.0) * 0.5 + 0.5;
-        vec3 color = mix(vec3(0.0, 0.5, 1.0), vec3(0.0, 0.0, 0.5), intensity);
-        gl_FragColor = vec4(color, 0.7);
-      }
-    `,
-    transparent: true,
-    side: THREE.DoubleSide
-  });
-  lightCone = new THREE.Mesh(geometry, material);
-  lightCone.rotation.z = Math.PI / 2;
-  lightCone.visible = false;
-  scene.add(lightCone);
-}
+        function resetSimulation() {
+            particles = [new Particle()];
+            wavefronts = [];
+            document.getElementById('speed-slider').value = 1;
+            document.getElementById('medium-slider').value = 1.5;
+            updateParticleSpeed();
+            updateMediumIndex();
+        }
 
-function createWavefront() {
-  const geometry = new THREE.ConeGeometry(0.5, 1, 32, 1, true);
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      time: { value: 0 },
-      particlePosition: { value: new THREE.Vector3() }
-    },
-    vertexShader: `
-      uniform float time;
-      uniform vec3 particlePosition;
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        vec3 pos = position;
-        pos.x += particlePosition.x;
-        pos.y = pos.y * (1.0 + sin(time * 10.0 + position.x * 5.0) * 0.1);
-        pos.z = pos.z * (1.0 + cos(time * 10.0 + position.x * 5.0) * 0.1);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float time;
-      varying vec2 vUv;
-      void main() {
-        float intensity = sin(vUv.y * 20.0 + time * 10.0) * 0.5 + 0.5;
-        vec3 color = mix(vec3(0.0, 0.7, 1.0), vec3(0.0, 0.2, 0.8), intensity);
-        gl_FragColor = vec4(color, 0.3);
-      }
-    `,
-    transparent: true,
-    side: THREE.DoubleSide
-  });
-  wavefront = new THREE.Mesh(geometry, material);
-  wavefront.rotation.z = -Math.PI / 2;
-  wavefront.scale.set(5, 5, 5);
-  wavefront.visible = false;
-  scene.add(wavefront);
-}
+        function windowResized() {
+            resizeCanvas(windowWidth - 300, windowHeight - 60);
+        }
 
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
+        function updateParticleSpeed() {
+            let speed = parseFloat(document.getElementById('speed-slider').value);
+            particles.forEach(particle => particle.speed = speed);
+        }
 
-function setParticleSpeed(speed) {
-  particleSpeed = speed;
-  lightCone.visible = particleSpeed > lightSpeed;
-  wavefront.visible = particleSpeed > lightSpeed;
-}
+        function updateMediumIndex() {
+            mediumIndex = parseFloat(document.getElementById('medium-slider').value);
+        }
 
-function animate() {
-  requestAnimationFrame(animate);
-
-  const time = performance.now() * 0.001;
-
-  particle.position.x += particleSpeed;
-  if (particle.position.x > 5) {
-    particle.position.x = -5;
-  }
-
-  lightCone.position.copy(particle.position);
-  lightCone.material.uniforms.time.value = time;
-
-  wavefront.material.uniforms.time.value = time;
-  wavefront.material.uniforms.particlePosition.value.copy(particle.position);
-
-  if (particleSpeed > lightSpeed) {
-    const scale = (particleSpeed - lightSpeed) * 10;
-    lightCone.scale.set(scale, scale, scale);
-    wavefront.scale.set(scale * 2, scale * 2, scale * 2);
-  }
-
-  renderer.render(scene, camera);
-}
-
-init();
-</script>
-</body></html>
+        document.getElementById('toggle-animation').addEventListener('click', toggleAnimation);
+        document.getElementById('add-particle').addEventListener('click', addParticle);
+        document.getElementById('toggle-wavefronts').addEventListener('click', toggleWavefronts);
+        document.getElementById('reset').addEventListener('click', resetSimulation);
+        document.getElementById('toggle-explanation').addEventListener('click', function() {
+            let explanation = document.getElementById('explanation');
+            explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+        });
+        document.getElementById('speed-slider').addEventListener('input', updateParticleSpeed);
+        document.getElementById('medium-slider').addEventListener('input', updateMediumIndex);
+    </script>
+</body>
+</html>

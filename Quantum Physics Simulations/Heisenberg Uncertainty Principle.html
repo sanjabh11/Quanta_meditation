@@ -1,0 +1,232 @@
+<!DOCTYPE html><html> 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heisenberg Uncertainty Principle</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+        color: #e0e0e0;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+    #sidebar {
+        padding: 20px;
+        background-color: #1e1e1e;
+        color: #e0e0e0;
+        overflow-y: auto;
+    }
+    #main {
+        flex-grow: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    #visualization {
+        width: 100%;
+        height: 60vh;
+        background-color: #2c2c2c;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255,255,255,0.1);
+        margin-bottom: 20px;
+    }
+    #controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    #toggle-explanation {
+        margin-top: 20px;
+    }
+    #explanation {
+        margin-top: 20px;
+        display: none;
+    }
+    .formula {
+        font-family: "Times New Roman", Times, serif;
+        font-style: italic;
+        font-size: 18px;
+        margin: 10px 0;
+        color: #ffd700;
+    }
+    @media (min-width: 768px) {
+        .container {
+            flex-direction: row;
+        }
+        #sidebar {
+            width: 300px;
+            height: 100vh;
+        }
+        #main {
+            height: 100vh;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div id="sidebar">
+        <h2>Heisenberg Uncertainty Principle</h2>
+        <button id="toggle-explanation">Toggle Explanation</button>
+        <div id="explanation">
+            <p>The Heisenberg Uncertainty Principle states that it's impossible to know both the exact position and the exact momentum of a particle at the same time.</p>
+            <p><strong>Key Concepts:</strong></p>
+            <ul>
+                <li>As position measurement becomes more precise, momentum measurement becomes less precise, and vice versa.</li>
+                <li>This is not due to measurement limitations, but a fundamental property of quantum systems.</li>
+                <li>The principle is expressed mathematically as:</li>
+            </ul>
+            <p class="formula">ΔxΔp ≥ ℏ/2</p>
+            <p>Where:</p>
+            <ul>
+                <li>Δx is the uncertainty in position</li>
+                <li>Δp is the uncertainty in momentum</li>
+                <li>ℏ is the reduced Planck constant</li>
+            </ul>
+            <p><strong>In the Animation:</strong></p>
+            <ul>
+                <li>The particle represents a quantum object (e.g., an electron).</li>
+                <li>The blur around the particle represents uncertainty.</li>
+                <li>When position is more certain, the particle appears more localized but with a wider range of possible velocities.</li>
+                <li>When momentum is more certain, the particle's velocity is more defined, but its position becomes more uncertain.</li>
+            </ul>
+        </div>
+    </div>
+    <div id="main">
+        <div id="visualization" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;"></div>
+        <div id="controls">
+            <button id="toggle-measurement">Toggle Measurement Focus</button>
+            <button id="reset">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<script>
+let particle;
+let focusOnPosition = true;
+let measurementStrength = 0;
+
+class QuantumParticle {
+    constructor() {
+        this.position = createVector(width / 2, height / 2);
+        this.velocity = p5.Vector.random2D().mult(2);
+        this.positionUncertainty = 50;
+        this.velocityUncertainty = 0.5;
+    }
+
+    update() {
+        // Update position based on velocity
+        this.position.add(this.velocity);
+
+        // Bounce off edges
+        if (this.position.x < 0 || this.position.x > width) {
+            this.velocity.x *= -1;
+        }
+        if (this.position.y < 0 || this.position.y > height) {
+            this.velocity.y *= -1;
+        }
+
+        // Constrain position to canvas
+        this.position.x = constrain(this.position.x, 0, width);
+        this.position.y = constrain(this.position.y, 0, height);
+
+        // Update uncertainties based on measurement focus
+        if (focusOnPosition) {
+            this.positionUncertainty = lerp(this.positionUncertainty, 10, 0.1);
+            this.velocityUncertainty = lerp(this.velocityUncertainty, 2, 0.1);
+        } else {
+            this.positionUncertainty = lerp(this.positionUncertainty, 100, 0.1);
+            this.velocityUncertainty = lerp(this.velocityUncertainty, 0.1, 0.1);
+        }
+
+        // Add some quantum jitter
+        this.position.add(p5.Vector.random2D().mult(this.positionUncertainty * 0.1));
+        this.velocity.add(p5.Vector.random2D().mult(this.velocityUncertainty * 0.1));
+    }
+
+    display() {
+        noStroke();
+        
+        // Draw uncertainty cloud
+        for (let i = 0; i < 50; i++) {
+            let alpha = map(i, 0, 50, 150, 0);
+            fill(100, 100, 255, alpha);
+            let size = map(i, 0, 50, 5, this.positionUncertainty * 2);
+            ellipse(this.position.x, this.position.y, size);
+        }
+
+        // Draw particle
+        fill(255);
+        ellipse(this.position.x, this.position.y, 10);
+
+        // Draw velocity vector
+        stroke(255, 0, 0);
+        line(this.position.x, this.position.y, 
+             this.position.x + this.velocity.x * 20, 
+             this.position.y + this.velocity.y * 20);
+
+        // Display measurement focus
+        noStroke();
+        fill(255);
+        textAlign(LEFT, TOP);
+        textSize(16);
+        text(`Focus: ${focusOnPosition ? 'Position' : 'Momentum'}`, 10, 10);
+        text(`Position Uncertainty: ${this.positionUncertainty.toFixed(2)}`, 10, 30);
+        text(`Momentum Uncertainty: ${this.velocityUncertainty.toFixed(2)}`, 10, 50);
+    }
+}
+
+function setup() {
+    let canvas = createCanvas(select('#visualization').width, select('#visualization').height);
+    canvas.parent('visualization');
+    particle = new QuantumParticle();
+}
+
+function draw() {
+    background(30);
+    particle.update();
+    particle.display();
+}
+
+function toggleMeasurement() {
+    focusOnPosition = !focusOnPosition;
+}
+
+function resetSimulation() {
+    particle = new QuantumParticle();
+    focusOnPosition = true;
+}
+
+function windowResized() {
+    resizeCanvas(select('#visualization').width, select('#visualization').height);
+}
+
+document.getElementById('toggle-measurement').addEventListener('click', toggleMeasurement);
+document.getElementById('reset').addEventListener('click', resetSimulation);
+document.getElementById('toggle-explanation').addEventListener('click', function() {
+    let explanation = document.getElementById('explanation');
+    explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+});
+</script>
+
+</body></html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eternal Duration: The Intersection of Time and Timelessness</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
+        }
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #time-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+            display: none;
+        }
+        #interaction-prompt {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #dimension-display, #insight-display {
+            margin-bottom: 10px;
+        }
+        #animation-explanation {
+            font-size: 14px;
+        }
+        button {
+            padding: 10px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <canvas id="time-canvas"></canvas>
+    <div id="info-panel">
+        <div id="dimension-display">Current Dimension: Horizontal Time</div>
+        <div id="insight-display"></div>
+        <div id="animation-explanation">
+            <h3>Animation Explanation</h3>
+            <p>The particles represent moments in time. In horizontal time, they move left and right, symbolizing the linear flow of time. In vertical duration, they move up and down, representing the eternal 'now' that intersects all moments.</p>
+            <p>The intersecting line shows the current point of focus, where horizontal time meets vertical duration.</p>
+        </div>
+    </div>
+    <div id="interaction-prompt">
+        Move mouse to explore dimensions<br>
+        Click to manifest an insight
+    </div>
+    <button id="toggleInfo" style="position: absolute; top: 10px; right: 10px;">Toggle Info</button>
+</div>
+
+<script>
+const canvas = document.getElementById('time-canvas');
+const ctx = canvas.getContext('2d');
+const dimensionDisplay = document.getElementById('dimension-display');
+const insightDisplay = document.getElementById('insight-display');
+const infoPanel = document.getElementById('info-panel');
+const toggleInfoButton = document.getElementById('toggleInfo');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const insights = [
+    "Duration is the eternal 'now' intersecting all moments.",
+    "Vertical time: the unchanging backdrop of change.",
+    "In duration, past, present, and future coexist.",
+    "The 'right angle' to seriality: perspective outside time.",
+    "Eternity: not endless time, but timelessness.",
+    "Vertical cut: all moments simultaneously present.",
+    "Duration: the center of time's spinning wheel.",
+    "In duration, change is an illusion viewed from eternity.",
+    "The 'now' of duration: ever-present across time.",
+    "Vertical time: the still point of the turning world."
+];
+
+let particles = [];
+let mouseX = 0;
+let mouseY = 0;
+let inVerticalDimension = false;
+
+class Particle {
+    constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = (Math.random() - 0.5) * 2;
+        this.speedY = (Math.random() - 0.5) * 2;
+        this.color = this.getRandomColor();
+    }
+
+    getRandomColor() {
+        const hue = Math.random() * 360;
+        return `hsl(${hue}, 80%, 50%)`;
+    }
+
+    update() {
+        if (inVerticalDimension) {
+            this.y += this.speedY;
+            if (this.y < 0 || this.y > canvas.height) this.speedY = -this.speedY;
+        } else {
+            this.x += this.speedX;
+            if (this.x < 0 || this.x > canvas.width) this.speedX = -this.speedX;
+        }
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function init() {
+    particles = [];
+    for (let i = 0; i < 300; i++) {
+        particles.push(new Particle());
+    }
+}
+
+function animate() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+    });
+
+    // Draw intersection line
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (inVerticalDimension) {
+        ctx.moveTo(mouseX, 0);
+        ctx.lineTo(mouseX, canvas.height);
+    } else {
+        ctx.moveTo(0, mouseY);
+        ctx.lineTo(canvas.width, mouseY);
+    }
+    ctx.stroke();
+
+    requestAnimationFrame(animate);
+}
+
+function showInsight() {
+    const insight = insights[Math.floor(Math.random() * insights.length)];
+    insightDisplay.textContent = insight;
+    insightDisplay.style.opacity = 1;
+    setTimeout(() => {
+        insightDisplay.style.opacity = 0;
+    }, 5000);
+}
+
+function updateDimensionDisplay() {
+    dimensionDisplay.textContent = `Current Dimension: ${inVerticalDimension ? 'Vertical Duration' : 'Horizontal Time'}`;
+}
+
+canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    inVerticalDimension = mouseY < canvas.height / 2;
+    updateDimensionDisplay();
+});
+
+canvas.addEventListener('click', (e) => {
+    showInsight();
+    
+    // Create a ripple effect
+    const ripple = {
+        x: e.clientX,
+        y: e.clientY,
+        size: 0,
+        maxSize: 100,
+        opacity: 1
+    };
+
+    function drawRipple() {
+        ctx.beginPath();
+        ctx.arc(ripple.x, ripple.y, ripple.size, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${ripple.opacity})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ripple.size += 2;
+        ripple.opacity -= 0.02;
+
+        if (ripple.size < ripple.maxSize && ripple.opacity > 0) {
+            requestAnimationFrame(drawRipple);
+        }
+    }
+
+    drawRipple();
+});
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    init();
+});
+
+toggleInfoButton.addEventListener('click', () => {
+    infoPanel.style.display = infoPanel.style.display === 'none' ? 'block' : 'none';
+});
+
+init();
+animate();
+</script>
+
+</body>
+</html>
