@@ -2,81 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Quantum States Visualization & Presentation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; background-color: #f0f0f0; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
         #controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(255,255,255,0.9);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        #stateDisplay {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(255,255,255,0.9);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        #conceptDisplay {
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            background-color: rgba(255,255,255,0.9);
-            padding: 15px;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        #presentation {
-            position: absolute;
-            bottom: 0;
+            position: fixed;
+            bottom: 10px;
             left: 0;
             right: 0;
-            height: 180px;
-            background-color: rgba(0,0,0,0.8);
-            color: white;
-            padding: 20px;
-            overflow-y: auto;
-            font-size: 16px;
-            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            z-index: 10;
         }
-        #recordingCanvas {
+        #controls button {
+            margin: 0 5px;
+            padding: 10px;
+            font-size: 14px;
+            color: lightblue;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid lightblue;
+            border-radius: 5px;
+        }
+        #knowMoreBtn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 11;
+        }
+        #presentation {
+            position: fixed;
+            top: 60px;
+            left: 10px;
+            width: 250px;
+            max-height: calc(100% - 80px);
+            overflow-y: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
             display: none;
         }
-        button {
-            margin: 5px;
-            padding: 8px 12px;
-            font-size: 14px;
-            border: none;
-            border-radius: 5px;
-            background-color: #4CAF50;
+        #stateDisplay, #conceptDisplay {
+            position: fixed;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
             color: white;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            padding: 10px;
+            border-radius: 5px;
         }
-        button:hover {
-            background-color: #45a049;
+        #stateDisplay {
+            top: 10px;
         }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+        #conceptDisplay {
+            top: 120px;
+        }
+        canvas {
+            display: block;
         }
     </style>
 </head>
 <body>
+    <div id="p5Canvas"></div>
     <div id="controls"></div>
+    <button id="knowMoreBtn">Know More</button>
     <div id="stateDisplay"></div>
     <div id="conceptDisplay"></div>
     <div id="presentation"></div>
@@ -96,6 +93,8 @@
         let recordingCanvas;
         let recordingContext;
         let animator;
+        let font;
+
         let concepts = [
             { 
                 name: "Initial State |0⟩", 
@@ -141,8 +140,14 @@
             }
         ];
 
+        function preload() {
+            font = loadFont('https://cdnjs.cloudflare.com/ajax/libs/topcoat/0.8.0/font/SourceSansPro-Regular.otf');
+        }
+
         function setup() {
-            createCanvas(windowWidth, windowHeight - 180, WEBGL);
+            let canvas = createCanvas(windowWidth, windowHeight, WEBGL);
+            canvas.parent('p5Canvas');
+            textFont(font);
             qubitState = createVector(1, 0, 0);
             createControls();
             animateQuantumConcepts();
@@ -150,39 +155,35 @@
             setupRecordingCanvas();
             startRecording();
 
-            // Create a smooth animator for state transitions
-            animator = new StateAnimator(qubitState, 1000); // 1000ms animation duration
+            animator = new StateAnimator(qubitState, 1000);
+
+            select('#knowMoreBtn').mousePressed(togglePresentation);
         }
 
         function draw() {
-            background(240);
+            background(30);
             orbitControl();
 
             push();
             rotateY(sphereRotation);
             if (!isPaused) sphereRotation += 0.005;
 
-            // Draw Bloch sphere
             noFill();
             stroke(100);
             sphere(150);
 
-            // Draw axes
             drawAxis(200, 0, 0, 'X', color(255, 0, 0));
             drawAxis(0, 200, 0, 'Y', color(0, 255, 0));
             drawAxis(0, 0, 200, 'Z', color(0, 0, 255));
 
-            // Update qubit state if animating
             if (animator.isAnimating()) {
                 qubitState = animator.update();
             }
 
-            // Draw qubit state vector
             strokeWeight(8);
             stroke(concepts[currentConcept].color);
             line(0, 0, 0, qubitState.x * 150, qubitState.y * 150, qubitState.z * 150);
 
-            // Draw blinking sphere at the end of the state vector
             let blinkRate = (sin(frameCount * 0.1) + 1) / 2;
             fill(concepts[currentConcept].color[0], concepts[currentConcept].color[1], concepts[currentConcept].color[2], 255 * blinkRate);
             noStroke();
@@ -192,6 +193,7 @@
             pop();
 
             displayState();
+            displayConcept();
             updateRecordingCanvas();
         }
 
@@ -211,6 +213,7 @@
         function createControls() {
             const controlsDiv = select('#controls');
             const gates = ['X', 'Y', 'Z', 'H', 'RX', 'RY', 'RZ'];
+
             gates.forEach(gate => {
                 const button = createButton(`Apply ${gate}`);
                 button.parent(controlsDiv);
@@ -229,6 +232,10 @@
             const pauseButton = createButton('Pause/Resume');
             pauseButton.parent(controlsDiv);
             pauseButton.mousePressed(togglePause);
+
+            const recordButton = createButton('Record');
+            recordButton.parent(controlsDiv);
+            recordButton.mousePressed(toggleRecording);
         }
 
         function applyGate(gate) {
@@ -301,13 +308,17 @@
             `);
         }
 
+        function displayConcept() {
+            select('#conceptDisplay').html(concepts[currentConcept].name);
+        }
+
         function animateQuantumConcepts() {
             conceptInterval = setInterval(() => {
                 if (!isPaused) {
                     currentConcept = (currentConcept + 1) % concepts.length;
                     const newState = concepts[currentConcept].state;
                     animator.animateTo(createVector(newState[0], newState[1], newState[2]));
-                    select('#conceptDisplay').html(concepts[currentConcept].name);
+                    displayConcept();
                     updatePresentation();
 
                     if (currentConcept === concepts.length - 1) {
@@ -326,6 +337,11 @@
             `);
         }
 
+        function togglePresentation() {
+            const presentationDiv = select('#presentation');
+            presentationDiv.style('display', presentationDiv.style('display') === 'none' ? 'block' : 'none');
+        }
+
         function takeScreenshot() {
             saveCanvas('quantum_state_' + currentConcept, 'png');
         }
@@ -339,14 +355,7 @@
 
         function updateRecordingCanvas() {
             recordingContext.clearRect(0, 0, recordingCanvas.width, recordingCanvas.height);
-            
-            // Draw the Web
-// Draw the WebGL canvas
             recordingContext.drawImage(document.getElementById('defaultCanvas0'), 0, 0);
-            
-            // Draw the presentation div
-            const presentationDiv = document.getElementById('presentation');
-            html2canvas(presentationDiv, recordingContext, 0, windowHeight - 180);
         }
 
         function startRecording() {
@@ -385,7 +394,7 @@
         }
 
         function windowResized() {
-            resizeCanvas(windowWidth, windowHeight - 180);
+            resizeCanvas(windowWidth, windowHeight);
             setupRecordingCanvas();
         }
 
@@ -394,35 +403,12 @@
             select('#conceptDisplay').html(isPaused ? "PAUSED: " + concepts[currentConcept].name : concepts[currentConcept].name);
         }
 
-        // Helper function to convert HTML to canvas
-        function html2canvas(element, ctx, x, y) {
-            ctx.fillStyle = 'rgba(0,0,0,0.8)';
-            ctx.fillRect(x, y, element.offsetWidth, element.offsetHeight);
-
-            ctx.font = 'bold 24px Arial';
-            ctx.fillStyle = 'white';
-            ctx.fillText(element.querySelector('h2').innerText, x + 10, y + 30);
-
-            ctx.font = '16px Arial';
-            const description = element.querySelector('p').innerText;
-            const words = description.split(' ');
-            let line = '';
-            let lineY = y + 60;
-
-            for (let word of words) {
-                const testLine = line + word + ' ';
-                const metrics = ctx.measureText(testLine);
-                const testWidth = metrics.width;
-
-                if (testWidth > element.offsetWidth - 20 && line !== '') {
-                    ctx.fillText(line, x + 10, lineY);
-                    line = word + ' ';
-                    lineY += 20;
-                } else {
-                    line = testLine;
-                }
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
             }
-            ctx.fillText(line, x + 10, lineY);
         }
 
         class StateAnimator {
