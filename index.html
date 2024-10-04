@@ -82,65 +82,65 @@
                 { name: "index", href: "Beginning of Infinity/index.html", description: "Access the main index of 'The Beginning of Infinity'." },
                 { name: "test", href: "Beginning of Infinity/test.html", description: "Take a test on the concepts covered in 'The Beginning of Infinity'." },
             ]
-        };
+          };
 
-        function createCard(item) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <h2>${item.name}</h2>
-                <p>${item.description}</p>
-                <a href="${item.href}">View Content</a>
-            `;
-            return card;
-        }
+function createCard(item) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+        <h2>${item.name}</h2>
+        <p>${item.description}</p>
+        <a href="${item.href}">View Content</a>
+    `;
+    return card;
+}
 
-        function displaySection(sectionName) {
-            const content = document.getElementById('content');
-            content.innerHTML = '';
-            sections[sectionName].forEach(item => {
-                content.appendChild(createCard(item));
-            });
-        }
+function displaySection(sectionName) {
+    const content = document.getElementById('content');
+    content.innerHTML = '';
+    sections[sectionName].forEach(item => {
+        content.appendChild(createCard(item));
+    });
+}
 
-        function setupNavigation() {
-            const navButtons = document.querySelectorAll('.nav-button');
-            navButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    displaySection(button.dataset.section);
-                });
-            });
-        }
-
-        function setupSearch() {
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const content = document.getElementById('content');
-                content.innerHTML = '';
-                Object.values(sections).flat().forEach(item => {
-                    if (item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm)) {
-                        content.appendChild(createCard(item));
-                    }
-                });
-            });
-        }
-
-        function setupThemeToggle() {
-            const themeToggle = document.getElementById('theme-toggle');
-            themeToggle.addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setupNavigation();
-            setupSearch();
-            setupThemeToggle();
-            displaySection('mindfulness'); // Display the first section by default
+function setupNavigation() {
+    const navButtons = document.querySelectorAll('.nav-button');
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            displaySection(button.dataset.section);
         });
-    </script>
+    });
+}
+
+function setupSearch() {
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', () => {
+        const searchTerm = searchInput.value.toLowerCase();
+        const content = document.getElementById('content');
+        content.innerHTML = '';
+        Object.values(sections).flat().forEach(item => {
+            if (item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm)) {
+                content.appendChild(createCard(item));
+            }
+        });
+    });
+}
+
+function setupThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupNavigation();
+    setupSearch();
+    setupThemeToggle();
+    displaySection('mindfulness'); // Display the first section by default
+});
+</script>
 </body>
 </html>
