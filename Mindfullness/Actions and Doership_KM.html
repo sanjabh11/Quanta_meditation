@@ -1,4 +1,4 @@
-<html><head><base href="https://ai-websim.org/actions-and-doership/">
+<html><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Actions and Doership: A Mind-Expanding Journey</title>
@@ -35,13 +35,14 @@
     position: absolute;
     left: 20px;
     top: 50%;
+    border-radius: 5px;
     transform: translateY(-50%);
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(59, 56, 153, 0.5);
     color: #87CEFA;
     border: none;
-    padding: 10px;
+    padding: 15px; /* Increased padding for larger button */
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px; /* Increased font size for better readability */
   }
   #controls {
     margin-top: 20px;
@@ -53,12 +54,25 @@
     background-color: rgba(0, 0, 0, 0.5);
     color: #87CEFA;
     border: none;
-    padding: 10px 20px;
+    padding: 15px 30px; /* Increased padding for larger buttons */
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px; /* Increased font size for better readability */
   }
   #explanation-container {
     display: none;
+  }
+  #explanation {
+    font-size: 14px; /* Adjusted font size for explanations */
+    line-height: 1.5; /* Improved line height for readability */
+  }
+  @media (max-width: 600px) {
+    #toggle-button, .control-button {
+      padding: 12px 20px; /* Adjusted padding for mobile */
+      font-size: 14px; /* Adjusted font size for mobile */
+    }
+    #explanation {
+      font-size: 12px; /* Smaller font size for explanations on mobile */
+    }
   }
 </style>
 </head>
