@@ -10,6 +10,7 @@
         padding: 20px;
         border-radius: 10px;
         max-width: 300px;
+        font-size: 14px;
     }
     #controls {
         position: absolute;
@@ -33,6 +34,10 @@
     button:hover {
         background: #6a6aaa;
     }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
+    }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -43,11 +48,15 @@
     <p>This visualization demonstrates the concept of spacetime as a static, four-dimensional "block universe".</p>
     <p>Each layer represents a moment in time, stacked to form an unchanging whole where past, present, and future coexist.</p>
     <p>Use controls to explore this representation of the simultaneous existence of all moments.</p>
+    <div id="additional-info">
+        <p>The block universe theory suggests that all moments in time exist simultaneously, challenging our perception of a flowing time. This view is consistent with Einstein's theory of relativity, which treats time as a dimension similar to space.</p>
+    </div>
 </div>
 <div id="controls">
     <button id="toggleRotation">Toggle Rotation</button>
     <button id="toggleSlice">Toggle Slice View</button>
     <button id="toggleParticle">Toggle Particle</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -154,6 +163,11 @@
     document.getElementById('toggleParticle').addEventListener('click', () => {
         showParticle = !showParticle;
         particle.visible = showParticle;
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 
     window.addEventListener('resize', () => {

@@ -10,6 +10,7 @@
         padding: 20px;
         border-radius: 10px;
         max-width: 300px;
+        font-size: 14px;
     }
     #controls {
         position: absolute;
@@ -33,23 +34,28 @@
     button:hover {
         background: #6a6aaa;
     }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
+    }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 <canvas id="canvas"></canvas>
 <div id="info-panel">
-    <h2>Relativistic Spacetime Visualizer</h2>
+    <h2>Relativity of Simultaneity Visualizer</h2>
     <p>This visualization demonstrates the concept of relativity of simultaneity in spacetime.</p>
-    <p>The angled planes represent "now" slices for different observers moving at different velocities.</p>
-    <p>The red line represents a moving object's worldline through spacetime.</p>
-    <p>Use controls to change perspective and toggle different elements.</p>
+    <p>The red curve represents a worldline of an object, while the colored planes represent different observers' perspectives of simultaneous events.</p>
+    <div id="additional-info">
+        <p>The relativity of simultaneity is a key concept in Einstein's theory of special relativity. It states that simultaneous events in one frame of reference may not be simultaneous in another. This challenges our intuitive understanding of time and reinforces the idea of spacetime as a four-dimensional continuum.</p>
+    </div>
 </div>
 <div id="controls">
     <button id="toggleRotation">Toggle Rotation</button>
     <button id="toggleObserver1">Toggle Observer 1</button>
     <button id="toggleObserver2">Toggle Observer 2</button>
-    <button id="toggleWorldline">Toggle Worldline</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -169,6 +175,11 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 </script>
 </body>

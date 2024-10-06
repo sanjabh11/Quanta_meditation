@@ -33,6 +33,10 @@
     button:hover {
         background: #6a6aaa;
     }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
+    }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -40,14 +44,18 @@
 <canvas id="canvas"></canvas>
 <div id="info-panel">
     <h2>Quantum Multiverse Inconsistent Timeline Visualizer</h2>
-    <p>This visualization demonstrates why a simple sequence of snapshots with increasing clock readings is not necessarily a valid spacetime in a quantum multiverse.</p>
-    <p>The red line shows an inconsistent path through snapshots, where an observer experiences conflicting outcomes.</p>
-    <p>Green lines represent consistent quantum paths through the multiverse.</p>
+    <p>This visualization demonstrates the concept of inconsistent timelines in a quantum multiverse.</p>
+    <p>The point cloud represents different universes at various moments in time.</p>
+    <p>The red line shows an inconsistent path through the multiverse.</p>
+    <div id="additional-info">
+        <p>In quantum mechanics, the concept of consistent histories suggests that not all possible sequences of events in a multiverse are physically meaningful. This visualization explores the idea of inconsistent timelines, where a path through the multiverse doesn't follow a coherent sequence of events.</p>
+    </div>
 </div>
 <div id="controls">
     <button id="toggleRotation">Toggle Rotation</button>
-    <button id="toggleInconsistentPath">Toggle Inconsistent Path</button>
-    <button id="toggleConsistentPaths">Toggle Consistent Paths</button>
+    <button id="togglePath">Toggle Inconsistent Path</button>
+    <button id="toggleClusters">Toggle Universe Clusters</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -160,12 +168,17 @@
         rotating = !rotating;
     });
 
-    document.getElementById('toggleInconsistentPath').addEventListener('click', () => {
+    document.getElementById('togglePath').addEventListener('click', () => {
         showInconsistentPath = !showInconsistentPath;
     });
 
-    document.getElementById('toggleConsistentPaths').addEventListener('click', () => {
+    document.getElementById('toggleClusters').addEventListener('click', () => {
         showConsistentPaths = !showConsistentPaths;
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 
     window.addEventListener('resize', () => {

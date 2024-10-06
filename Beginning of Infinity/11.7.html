@@ -10,6 +10,7 @@
         padding: 20px;
         border-radius: 10px;
         max-width: 300px;
+        font-size: 14px;
     }
     #controls {
         position: absolute;
@@ -33,6 +34,10 @@
     button:hover {
         background: #6a6aaa;
     }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
+    }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -44,11 +49,15 @@
     <p>Each point represents a snapshot of a universe at a specific moment.</p>
     <p>Columns represent different clock readings, increasing from left to right.</p>
     <p>Colors indicate groups of identical universes and outcomes (heads/tails).</p>
+    <div id="additional-info">
+        <p>This visualization explores the Many-Worlds Interpretation of quantum mechanics, where each possible outcome of a quantum event creates a new universe. The coin flip represents a quantum event, with the multiverse branching into separate universes for each possible outcome.</p>
+    </div>
 </div>
 <div id="controls">
     <button id="toggleRotation">Toggle Rotation</button>
     <button id="toggleBranching">Toggle Branching</button>
     <button id="toggleTrajectories">Toggle Trajectories</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -169,6 +178,11 @@
 
     document.getElementById('toggleTrajectories').addEventListener('click', () => {
         showTrajectories = !showTrajectories;
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 
     window.addEventListener('resize', () => {

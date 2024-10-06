@@ -1,16 +1,16 @@
 <html><head><base href="https://websim.universe/%203d%20amimation%20-%20Spacetime%20is%20Static:%20Spacetime,%20the%20four-dimensional%20combination%20of%20space%20and%20time,%20is%20static%20and%20unchanging.%20What%20we%20perceive%20as%20motion%20and%20change%20are%20differences%20between%20%22snapshots%22%20of%20the%20universe%20at%20different%20points%20in%20spacetime."><title>Static Spacetime 3D Visualizer</title>
 <style>
-    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background-color: #000000; color: #ffffff; }
     #canvas { width: 100%; height: 100%; }
     #info-panel {
         position: absolute;
         top: 10px;
         left: 10px;
         background: rgba(0,0,0,0.7);
-        color: white;
         padding: 20px;
         border-radius: 10px;
         max-width: 300px;
+        font-size: 14px;
     }
     #controls {
         position: absolute;
@@ -18,16 +18,25 @@
         left: 10px;
     }
     button {
-        background: #4CAF50;
+        background: #4a4a8a;
         border: none;
         color: white;
-        padding: 15px 32px;
+        padding: 10px 20px;
         text-align: center;
         text-decoration: none;
         display: inline-block;
         font-size: 16px;
         margin: 4px 2px;
         cursor: pointer;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background: #6a6aaa;
+    }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
     }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -38,11 +47,15 @@
     <h2>Static Spacetime 3D Visualizer</h2>
     <p>This visualization demonstrates the concept of static spacetime. The cube represents a portion of spacetime, with time as the vertical axis and space as the horizontal axes.</p>
     <p>The colored lines represent the paths of objects through spacetime. Although they appear to move, remember that in this view, all of spacetime exists simultaneously.</p>
+    <div id="additional-info">
+        <p>In the block universe theory, past, present, and future exist simultaneously. This challenges our perception of time as a flowing entity and suggests that change is an illusion arising from our limited perspective within the four-dimensional spacetime continuum.</p>
+    </div>
 </div>
 <div id="controls">
     <button id="rotate">Rotate View</button>
     <button id="reset">Reset View</button>
     <button id="toggleSlice">Toggle Time Slice</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -126,6 +139,11 @@
     document.getElementById('toggleSlice').addEventListener('click', () => {
         showTimeSlice = !showTimeSlice;
         timeSlice.visible = showTimeSlice;
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 
     window.addEventListener('resize', () => {

@@ -1,0 +1,197 @@
+<html><head><base href="https://interactive-quantum-visualization.com/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space-Time Emergence: AdS/CFT Correspondence</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-x: hidden;
+    }
+    #container {
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 20px;
+    }
+    #left-panel {
+        width: 30%;
+        padding-right: 20px;
+    }
+    #animation-container {
+        width: 70%;
+        height: 600px;
+        position: relative;
+    }
+    button {
+        background-color: #000;
+        color: #add8e6;
+        border: 2px solid #add8e6;
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    button:hover {
+        background-color: #add8e6;
+        color: #000;
+    }
+    #explanation {
+        margin-top: 20px;
+        font-size: 14px;
+    }
+    #controls {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="left-panel">
+            <button id="know-more">Know More</button>
+            <div id="explanation"></div>
+        </div>
+        <div id="animation-container"></div>
+    </div>
+    <div id="controls">
+        <button id="previous">Previous</button>
+        <button id="next">Next</button>
+    </div>
+
+<script>
+let scene, camera, renderer, sphere, ripples = [];
+let currentStep = 0;
+const totalSteps = 3;
+
+const steps = [
+    {
+        title: "2D Sheet of Metal",
+        explanation: "We start with a two-dimensional sheet of metal wrapped into a sphere, like a hollow aluminum ball. This represents our initial 2D surface where quantum particles exist.",
+        setup: () => {
+            sphere.material.color.setHex(0xC0C0C0);
+            sphere.material.wireframe = false;
+            ripples.forEach(r => scene.remove(r));
+            ripples = [];
+        }
+    },
+    {
+        title: "Quantum Particles as Ripples",
+        explanation: "Quantum particles can be thought of as tiny ripples in quantum fields. These ripples follow the rules of a conformal field theory (CFT) on our 2D surface.",
+        setup: () => {
+            for (let i = 0; i < 10; i++) {
+                const ripple = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05, 32, 32),
+                    new THREE.MeshBasicMaterial({color: 0x00ff00})
+                );
+                const phi = Math.random() * Math.PI * 2;
+                const theta = Math.random() * Math.PI;
+                ripple.position.setFromSphericalCoords(1, theta, phi);
+                scene.add(ripple);
+                ripples.push(ripple);
+            }
+        }
+    },
+    {
+        title: "AdS/CFT Correspondence",
+        explanation: "The AdS/CFT correspondence suggests that this 2D conformal field theory is equivalent to a theory of quantum gravity in a 3D space with negative curvature, known as anti-de Sitter space.",
+        setup: () => {
+            sphere.material.wireframe = true;
+            const geometry = new THREE.BufferGeometry();
+            const vertices = [];
+            for (let i = 0; i < 1000; i++) {
+                const r = 1 + Math.random() * 0.5;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                vertices.push(
+                    r * Math.sin(phi) * Math.cos(theta),
+                    r * Math.sin(phi) * Math.sin(theta),
+                    r * Math.cos(phi)
+                );
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            const material = new THREE.PointsMaterial({color: 0xffffff, size: 0.01});
+            const points = new THREE.Points(geometry, material);
+            scene.add(points);
+        }
+    }
+];
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 2;
+
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setSize(window.innerWidth * 0.7, 600);
+    document.getElementById('animation-container').appendChild(renderer.domElement);
+
+    const geometry = new THREE.SphereGeometry(1, 32, 32);
+    const material = new THREE.MeshBasicMaterial({color: 0xC0C0C0});
+    sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    updateStep();
+    animate();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    sphere.rotation.x += 0.005;
+    sphere.rotation.y += 0.005;
+    ripples.forEach(r => {
+        r.position.applyAxisAngle(new THREE.Vector3(1, 0, 0), 0.01);
+        r.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.01);
+    });
+    renderer.render(scene, camera);
+}
+
+function updateStep() {
+    const step = steps[currentStep];
+    document.getElementById('explanation').innerHTML = `<h3>${step.title}</h3><p>${step.explanation}</p>`;
+    step.setup();
+}
+
+document.getElementById('next').addEventListener('click', () => {
+    currentStep = (currentStep + 1) % totalSteps;
+    updateStep();
+});
+
+document.getElementById('previous').addEventListener('click', () => {
+    currentStep = (currentStep - 1 + totalSteps) % totalSteps;
+    updateStep();
+});
+
+document.getElementById('know-more').addEventListener('click', () => {
+    alert("The AdS/CFT correspondence is a profound connection between quantum theories of gravity and quantum field theories without gravity. It suggests that certain quantum field theories in flat spacetime can be equivalent to theories of quantum gravity in curved spacetimes with an extra dimension. This correspondence has far-reaching implications for our understanding of quantum gravity, black holes, and the nature of spacetime itself.");
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth * 0.7, 600);
+});
+
+init();
+</script>
+</body>
+</html>

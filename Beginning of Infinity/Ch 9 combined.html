@@ -50,6 +50,10 @@
         border-radius: 5px;
         display: none;
     }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
+    }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -57,12 +61,14 @@
 <canvas id="canvas"></canvas>
 <div id="info-panel">
     <h2>Quantum Realm Explorer</h2>
-    <p id="scene-description">Welcome to the Quantum Realm. Use the controls below to navigate through different quantum phenomena.</p>
+    <p id="scene-description"></p>
+    <div id="additional-info"></div>
 </div>
 <div id="controls">
-    <button id="nextScene">Next Scene</button>
     <button id="toggleRotation">Toggle Rotation</button>
-    <input type="range" id="speedControl" min="0" max="100" value="50">
+    <button id="prevScene">Previous Scene</button>
+    <button id="nextScene">Next Scene</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -258,11 +264,20 @@
     function updateInfoPanel(sceneName) {
         const descriptions = {
             'mirrors': "Observe the difference between a normal mirror (left) and a semi-silvered mirror (right). The photon splits when it hits the semi-silvered mirror.",
-            'multiverse': "Visualize the branching multiverse. Each branch represents a different possible outcome of a quantum event.",
-            'interferometer': "See how photons interfere in an interferometer. The paths converge, demonstrating quantum interference.",
-            'quantumChange': "Watch the continuous nature of quantum change. The transition from blue (0 state) to red (1 state) is smooth in the multiverse view."
+            'multiverse': "Explore the concept of a multiverse, where multiple universes branch out from quantum events.",
+            'interferometer': "This setup demonstrates quantum interference, a key principle in quantum mechanics.",
+            'quantumChange': "Watch how quantum states can change abruptly, unlike classical systems that change smoothly."
         };
+
+        const additionalInfo = {
+            'mirrors': "Semi-silvered mirrors are crucial in many quantum experiments, allowing for the creation of superposition states.",
+            'multiverse': "The Many-Worlds Interpretation suggests that every quantum event creates new universes, leading to a vast multiverse.",
+            'interferometer': "Interferometers are used in various quantum experiments, including the famous double-slit experiment.",
+            'quantumChange': "The discrete nature of quantum states is fundamental to quantum computing and other quantum technologies."
+        };
+
         document.getElementById('scene-description').textContent = descriptions[sceneName];
+        document.getElementById('additional-info').textContent = additionalInfo[sceneName];
     }
 
     function animate(time) {
@@ -332,6 +347,11 @@
         element.addEventListener('mouseout', () => {
             tooltip.style.display = 'none';
         });
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 </script></body>
 </html>

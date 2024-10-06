@@ -10,6 +10,7 @@
         padding: 20px;
         border-radius: 10px;
         max-width: 300px;
+        font-size: 14px;
     }
     #controls {
         position: absolute;
@@ -33,6 +34,10 @@
     button:hover {
         background: #6a6aaa;
     }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
+    }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -44,11 +49,15 @@
     <p>Each column represents a distinct universe's spacetime.</p>
     <p>Horizontal slices represent "moments" across multiple universes.</p>
     <p>Use controls to explore different aspects of this multiverse representation.</p>
+    <div id="additional-info">
+        <p>In the multiverse theory, different universes exist alongside our own, each with its own set of physical laws and constants. This visualization explores the concept of a multiverse and the potential interactions between these parallel universes.</p>
+    </div>
 </div>
 <div id="controls">
     <button id="toggleRotation">Toggle Rotation</button>
     <button id="toggleMomentSlice">Toggle Moment Slice</button>
     <button id="toggleInteractions">Toggle Interactions</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -172,6 +181,11 @@
 
     document.getElementById('toggleInteractions').addEventListener('click', () => {
         showInteractions = !showInteractions;
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 
     window.addEventListener('resize', () => {

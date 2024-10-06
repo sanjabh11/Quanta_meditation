@@ -1,6 +1,6 @@
 <html><head><base href="https://websim.universe/%203d%20amimation%20-%20A%20moving%20object%20as%20a%20sequence%20of%20%22snapshots,%22%20which%20become%20the%20present%20moment%20one%20by%20one."><title>Time Paradox Visualizer</title>
 <style>
-    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background-color: #1a1a1a; color: #ffffff; }
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background-color: #000000; color: #ffffff; }
     #canvas { width: 100%; height: 100%; }
     #info-panel {
         position: absolute;
@@ -10,6 +10,7 @@
         padding: 20px;
         border-radius: 10px;
         max-width: 300px;
+        font-size: 14px;
     }
     #controls {
         position: absolute;
@@ -17,7 +18,7 @@
         left: 10px;
     }
     button {
-        background: #4CAF50;
+        background: #4a4a8a;
         border: none;
         color: white;
         padding: 10px 20px;
@@ -28,6 +29,14 @@
         margin: 4px 2px;
         cursor: pointer;
         border-radius: 5px;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background: #6a6aaa;
+    }
+    #additional-info {
+        display: none;
+        margin-top: 10px;
     }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -35,14 +44,17 @@
 <body>
 <canvas id="canvas"></canvas>
 <div id="info-panel">
-    <h2>Time Paradox Visualizer</h2>
-    <p>This visualization demonstrates the paradoxical nature of representing time as a sequence of static snapshots.</p>
-    <p>The rotating arrow represents a moving object, shown as multiple static instances at different moments in time.</p>
-    <p>The glowing sphere (N) represents the "present moment", highlighting the contradiction in depicting a moving present within a static framework.</p>
+    <h2>Time's Arrow Visualizer</h2>
+    <p>This visualization demonstrates the concept of time's arrow and the present moment in spacetime.</p>
+    <p>The rotating arrows represent the flow of time, while the yellow sphere shows the "present" moment.</p>
+    <div id="additional-info">
+        <p>The arrow of time is a concept that distinguishes the past from the future. It's closely related to the second law of thermodynamics and the idea of increasing entropy. This visualization challenges our perception of a "moving present" in the context of a block universe theory.</p>
+    </div>
 </div>
 <div id="controls">
-    <button id="toggleAnimation">Play/Pause</button>
-    <button id="togglePresent">Toggle Present Moment</button>
+    <button id="toggleAnimation">Toggle Animation</button>
+    <button id="togglePresent">Toggle Present</button>
+    <button id="knowMore">Know More</button>
 </div>
 
 <script>
@@ -137,6 +149,11 @@
 
     document.getElementById('togglePresent').addEventListener('click', () => {
         showPresent = !showPresent;
+    });
+
+    document.getElementById('knowMore').addEventListener('click', () => {
+        const additionalInfo = document.getElementById('additional-info');
+        additionalInfo.style.display = additionalInfo.style.display === 'none' ? 'block' : 'none';
     });
 
     window.addEventListener('resize', () => {
