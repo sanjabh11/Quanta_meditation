@@ -1,283 +1,322 @@
-<html><head>
-<title>3D Rössler Attractor Animation with Toggle Explanation</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
-<style>
-  body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-  canvas { display: block; }
-  #info {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    color: white;
-    font-size: 14px;
-    background-color: rgba(0,0,0,0.5);
-    padding: 10px;
-    border-radius: 5px;
-  }
-  #controls {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
-  }
-  button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    transition: background-color 0.3s, transform 0.1s;
-  }
-  button:hover {
-    background-color: #45a049;
-  }
-  button:active {
-    transform: scale(0.95);
-  }
-  button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
-  #explanation {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 80%;
-    max-height: 80%;
-    overflow-y: auto;
-  }
-  #explanation h2 {
-    margin-top: 0;
-  }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced 3D Rössler Attractor Animation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.1s;
+            touch-action: manipulation;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        #explanation {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        #explanation h2 {
+            margin-top: 0;
+        }
+        #closeExplanation {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            #info {
+                font-size: 12px;
+                max-width: 80%;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        }
+    </style>
 </head>
 <body>
-<div id="info">
-  <h2>3D Rössler Attractor</h2>
-  <p>dx/dt = -y - z</p>
-  <p>dy/dt = x + ay</p>
-  <p>dz/dt = b + z(x - c)</p>
-</div>
-<div id="controls">
-  <button id="startBtn">Start</button>
-  <button id="resetBtn">Reset</button>
-  <button id="knowMoreBtn">Know More</button>
-</div>
-<div id="explanation">
-  <h2>The Rössler Attractor</h2>
-  <p>The Rössler attractor is a system of three non-linear ordinary differential equations originally studied by Otto Rössler. These equations define a continuous-time dynamical system that exhibits chaotic dynamics associated with the fractal properties of the attractor.</p>
-  <h3>The Equations:</h3>
-  <p>
-    dx/dt = -y - z<br>
-    dy/dt = x + ay<br>
-    dz/dt = b + z(x - c)
-  </p>
-  <p>Where x, y, and z are the system state variables, and a, b, and c are parameters that control the system behavior.</p>
-  <h3>Key Features:</h3>
-  <ul>
-    <li><strong>Chaos:</strong> The system demonstrates chaotic behavior for certain parameter values.</li>
-    <li><strong>Strange Attractor:</strong> The solution of these equations, when plotted, forms a strange attractor, a fractal structure.</li>
-    <li><strong>Sensitivity to Initial Conditions:</strong> Small changes in starting conditions can lead to vastly different trajectories, a hallmark of chaotic systems.</li>
-  </ul>
-  <h3>Applications:</h3>
-  <p>The Rössler system has been used to model various phenomena in chemical kinetics, fluid dynamics, and even in the study of brain activity patterns.</p>
-  <p>This visualization allows you to explore the Rössler attractor in 3D space, observing how changes in parameters affect the system's behavior.</p>
-</div>
-<script>
-  let scene, camera, renderer, attractor, controls;
-  const points = [];
-  let params = {
-    a: 0.2,
-    b: 0.2,
-    c: 5.7,
-    speed: 1,
-    maxPoints: 5000,
-    pointSize: 0.3,
-    trailOpacity: 0.8
-  };
-  let x = 1, y = 1, z = 1;
-  const dt = 0.01;
-  let isAnimating = false;
+    <div id="info">
+        <h2>3D Rössler Attractor</h2>
+        <p>dx/dt = -y - z</p>
+        <p>dy/dt = x + ay</p>
+        <p>dz/dt = b + z(x - c)</p>
+    </div>
+    <div id="controls">
+        <button id="startBtn">Start</button>
+        <button id="resetBtn">Reset</button>
+        <button id="knowMoreBtn">Know More</button>
+    </div>
+    <div id="explanation">
+        <button id="closeExplanation">&times;</button>
+        <h2>The Rössler Attractor</h2>
+        <p>The Rössler attractor is a system of three non-linear ordinary differential equations originally studied by Otto Rössler. These equations define a continuous-time dynamical system that exhibits chaotic dynamics associated with the fractal properties of the attractor.</p>
+        <h3>The Equations:</h3>
+        <p>
+            dx/dt = -y - z<br>
+            dy/dt = x + ay<br>
+            dz/dt = b + z(x - c)
+        </p>
+        <p>Where x, y, and z are the system state variables, and a, b, and c are parameters that control the system behavior.</p>
+        <h3>Key Features:</h3>
+        <ul>
+            <li><strong>Chaos:</strong> The system demonstrates chaotic behavior for certain parameter values.</li>
+            <li><strong>Strange Attractor:</strong> The solution of these equations, when plotted, forms a strange attractor, a fractal structure.</li>
+            <li><strong>Sensitivity to Initial Conditions:</strong> Small changes in starting conditions can lead to vastly different trajectories, a hallmark of chaotic systems.</li>
+        </ul>
+        <h3>Applications:</h3>
+        <p>The Rössler system has been used to model various phenomena in chemical kinetics, fluid dynamics, and even in the study of brain activity patterns.</p>
+        <p>This visualization allows you to explore the Rössler attractor in 3D space, observing how changes in parameters affect the system's behavior.</p>
+    </div>
+    <script>
+        let scene, camera, renderer, attractor, controls;
+        const points = [];
+        let params = {
+            a: 0.2,
+            b: 0.2,
+            c: 5.7,
+            speed: 1,
+            maxPoints: 5000,
+            pointSize: 0.3,
+            trailOpacity: 0.8
+        };
+        let x = 1, y = 1, z = 1;
+        const dt = 0.01;
+        let isAnimating = false;
 
-  function init() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(30, 30, 30);
-    camera.lookAt(0, 0, 0);
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(30, 30, 30);
+            camera.lookAt(0, 0, 0);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
 
-    const geometry = new THREE.BufferGeometry();
-    const material = new THREE.PointsMaterial({
-      size: params.pointSize,
-      vertexColors: true,
-      transparent: true,
-      opacity: params.trailOpacity,
-      sizeAttenuation: true,
-      blending: THREE.AdditiveBlending
-    });
+            const geometry = new THREE.BufferGeometry();
+            const material = new THREE.PointsMaterial({
+                size: params.pointSize,
+                vertexColors: true,
+                transparent: true,
+                opacity: params.trailOpacity,
+                sizeAttenuation: true,
+                blending: THREE.AdditiveBlending
+            });
 
-    const positions = new Float32Array(params.maxPoints * 3);
-    const colors = new Float32Array(params.maxPoints * 3);
+            const positions = new Float32Array(params.maxPoints * 3);
+            const colors = new Float32Array(params.maxPoints * 3);
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    attractor = new THREE.Points(geometry, material);
-    scene.add(attractor);
+            attractor = new THREE.Points(geometry, material);
+            scene.add(attractor);
 
-    // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
 
-    // Add directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
+            // Add directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
 
-    // Add OrbitControls
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+            // Add OrbitControls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
 
-    window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('resize', onWindowResize, false);
 
-    setupGUI();
-    setupButtons();
-  }
+            setupGUI();
+            setupButtons();
+        }
 
-  function setupGUI() {
-    const gui = new dat.GUI();
-    gui.add(params, 'a', 0, 1).name('a');
-    gui.add(params, 'b', 0, 1).name('b');
-    gui.add(params, 'c', 0, 10).name('c');
-    gui.add(params, 'speed', 0.1, 5).name('Speed');
-    gui.add(params, 'maxPoints', 1000, 10000).step(1000).name('Max Points');
-    gui.add(params, 'pointSize', 0.1, 1).name('Point Size');
-    gui.add(params, 'trailOpacity', 0, 1).name('Trail Opacity');
-  }
+        function setupGUI() {
+            const gui = new dat.GUI();
+            gui.add(params, 'a', 0, 1).name('a');
+            gui.add(params, 'b', 0, 1).name('b');
+            gui.add(params, 'c', 0, 10).name('c');
+            gui.add(params, 'speed', 0.1, 5).name('Speed');
+            gui.add(params, 'maxPoints', 1000, 10000).step(1000).name('Max Points');
+            gui.add(params, 'pointSize', 0.1, 1).name('Point Size');
+            gui.add(params, 'trailOpacity', 0, 1).name('Trail Opacity');
+        }
 
-  function setupButtons() {
-    const startBtn = document.getElementById('startBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const knowMoreBtn = document.getElementById('knowMoreBtn');
-    const explanation = document.getElementById('explanation');
+        function setupButtons() {
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const knowMoreBtn = document.getElementById('knowMoreBtn');
+            const explanation = document.getElementById('explanation');
+            const closeExplanation = document.getElementById('closeExplanation');
 
-    startBtn.addEventListener('click', () => {
-      if (!isAnimating) {
-        isAnimating = true;
-        startBtn.textContent = 'Pause';
-        animate();
-      } else {
-        isAnimating = false;
-        startBtn.textContent = 'Resume';
-      }
-    });
+            startBtn.addEventListener('click', () => {
+                if (!isAnimating) {
+                    isAnimating = true;
+                    startBtn.textContent = 'Pause';
+                    animate();
+                } else {
+                    isAnimating = false;
+                    startBtn.textContent = 'Resume';
+                }
+            });
 
-    resetBtn.addEventListener('click', () => {
-      isAnimating = false;
-      startBtn.textContent = 'Start';
-      resetAttractor();
-    });
+            resetBtn.addEventListener('click', () => {
+                isAnimating = false;
+                startBtn.textContent = 'Start';
+                resetAttractor();
+            });
 
-    knowMoreBtn.addEventListener('click', () => {
-      if (explanation.style.display === 'none' || explanation.style.display === '') {
-        explanation.style.display = 'block';
-        knowMoreBtn.textContent = 'Hide Info';
-      } else {
-        explanation.style.display = 'none';
-        knowMoreBtn.textContent = 'Know More';
-      }
-    });
-  }
+            knowMoreBtn.addEventListener('click', () => {
+                explanation.style.display = 'block';
+            });
 
-  function resetAttractor() {
-    x = 1;
-    y = 1;
-    z = 1;
-    points.length = 0;
-    const positions = attractor.geometry.attributes.position.array;
-    const colors = attractor.geometry.attributes.color.array;
-    for (let i = 0; i < params.maxPoints * 3; i++) {
-      positions[i] = 0;
-      colors[i] = 0;
-    }
-    attractor.geometry.attributes.position.needsUpdate = true;
-    attractor.geometry.attributes.color.needsUpdate = true;
-  }
+            closeExplanation.addEventListener('click', () => {
+                explanation.style.display = 'none';
+            });
+        }
 
-  function animate() {
-    if (!isAnimating) return;
-    requestAnimationFrame(animate);
+        function resetAttractor() {
+            x = 1;
+            y = 1;
+            z = 1;
+            points.length = 0;
+            const positions = attractor.geometry.attributes.position.array;
+            const colors = attractor.geometry.attributes.color.array;
+            for (let i = 0; i < params.maxPoints * 3; i++) {
+                positions[i] = 0;
+                colors[i] = 0;
+            }
+            attractor.geometry.attributes.position.needsUpdate = true;
+            attractor.geometry.attributes.color.needsUpdate = true;
+        }
 
-    for (let i = 0; i < params.speed; i++) {
-      updatePoints();
-    }
+        function animate() {
+            if (!isAnimating) return;
+            requestAnimationFrame(animate);
 
-    attractor.geometry.attributes.position.needsUpdate = true;
-    attractor.geometry.attributes.color.needsUpdate = true;
-    attractor.material.size = params.pointSize;
-    attractor.material.opacity = params.trailOpacity;
+            for (let i = 0; i < params.speed; i++) {
+                updatePoints();
+            }
 
-    controls.update();
-    renderer.render(scene, camera);
-  }
+            attractor.geometry.attributes.position.needsUpdate = true;
+            attractor.geometry.attributes.color.needsUpdate = true;
+            attractor.material.size = params.pointSize;
+            attractor.material.opacity = params.trailOpacity;
 
-  function updatePoints() {
-    // Rössler equations
-    const dx = -y - z;
-    const dy = x + params.a * y;
-    const dz = params.b + z * (x - params.c);
+            controls.update();
+            renderer.render(scene, camera);
+        }
 
-    x += dx * dt;
-    y += dy * dt;
-    z += dz * dt;
+        function updatePoints() {
+            // Rössler equations
+            const dx = -y - z;
+            const dy = x + params.a * y;
+            const dz = params.b + z * (x - params.c);
 
-    points.push(new THREE.Vector3(x, y, z));
+            x += dx * dt;
+            y += dy * dt;
+            z += dz * dt;
 
-    if (points.length > params.maxPoints) {
-      points.shift();
-    }
+            points.push(new THREE.Vector3(x, y, z));
 
-    const positions = attractor.geometry.attributes.position.array;
-    const colors = attractor.geometry.attributes.color.array;
+            if (points.length > params.maxPoints) {
+                points.shift();
+            }
 
-    for (let i = 0; i < points.length; i++) {
-      const index = i * 3;
-      positions[index] = points[i].x;
-      positions[index + 1] = points[i].y;
-      positions[index + 2] = points[i].z;
+            const positions = attractor.geometry.attributes.position.array;
+            const colors = attractor.geometry.attributes.color.array;
 
-      const color = new THREE.Color();
-      color.setHSL(i / params.maxPoints, 1, 0.5);
-      colors[index] = color.r;
-      colors[index + 1] = color.g;
-      colors[index + 2] = color.b;
-    }
-  }
+            for (let i = 0; i < points.length; i++) {
+                const index = i * 3;
+                positions[index] = points[i].x;
+                positions[index + 1] = points[i].y;
+                positions[index + 2] = points[i].z;
 
-  function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }
+                const color = new THREE.Color();
+                color.setHSL(i / params.maxPoints, 1, 0.5);
+                colors[index] = color.r;
+                colors[index + 1] = color.g;
+                colors[index + 2] = color.b;
+            }
+        }
 
-  init();
-</script>
-</body></html>
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+        }
+
+        init();
+    </script>
+</body>
+</html>
