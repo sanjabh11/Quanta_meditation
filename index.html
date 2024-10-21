@@ -1,369 +1,69 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quanta Meditation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #00ffff;
-            --secondary-color: #ff00ff;
-            --background-color: #0a0a2a;
-            --card-color: rgba(255, 255, 255, 0.1);
-            --text-color: #ffffff;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(45deg, var(--background-color), #000033);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        #particles-js {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-
-        header {
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3rem;
-            text-align: center;
-            margin-bottom: 20px;
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow {
-            from {
-                text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--primary-color), 0 0 20px var(--primary-color);
-            }
-            to {
-                text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px var(--primary-color), 0 0 40px var(--primary-color);
-            }
-        }
-
-        nav {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .glow-button {
-            background: transparent;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            padding: 10px 20px;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            font-family: 'Orbitron', sans-serif;
-            text-decoration: none;
-        }
-
-        .glow-button:hover {
-            box-shadow: 0 0 10px var(--primary-color);
-            background: rgba(0, 255, 255, 0.1);
-        }
-
-        .search-input {
-            display: block;
-            width: 80%;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 10px;
-            border: none;
-            border-radius: 25px;
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-color);
-            font-family: 'Roboto', sans-serif;
-        }
-
-        .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        main {
-            padding: 40px 20px;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: var(--card-color);
-            border-radius: 15px;
-            padding: 25px;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        .card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0, 255, 255, 0.2);
-        }
-
-        .card h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            margin-top: 15px;
-            margin-bottom: 10px;
-        }
-
-        .card p {
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-        }
-
-        .card .icon {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
-
-        .view-content {
-            color: var(--secondary-color);
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .view-content:hover {
-            text-shadow: 0 0 10px var(--secondary-color);
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-        }
-
-        .cursor, .cursor-follower {
-            position: fixed;
-            border-radius: 50%;
-            pointer-events: none;
-            left: -100px;
-            top: 50%;
-            z-index: 10000;
-            transition: all 0.1s ease;
-        }
-
-        .cursor {
-            background-color: var(--primary-color);
-            height: 10px;
-            width: 10px;
-            z-index: 10001;
-        }
-
-        .cursor-follower {
-            height: 40px;
-            width: 40px;
-            border: 2px solid var(--primary-color);
-            transition: 0.2s ease-out;
-        }
-
-        @media (max-width: 768px) {
-            nav {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .glow-button {
-                width: 80%;
-                text-align: center;
-            }
-
-            .cursor, .cursor-follower {
-                display: none;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quanta Meditation</title>
+  <style>
+      .folder { font-weight: bold; }
+      ul { padding-left: 20px; }
+  </style>
 </head>
 <body>
-    <div id="particles-js"></div>
-    <header>
-        <h1>Quanta Meditation</h1>
-        <nav>
-            
-            <a href="#" class="glow-button" data-section="mindfulness">Mindfulness</a>
-            <a href="#" class="glow-button" data-section="quantum-physics">Quantum Physics Simulations</a>
-            <a href="#" class="glow-button" data-section="beginning-of-infinity">Beginning of Infinity</a>
-        </nav>
-        <input type="text" placeholder="Search..." class="search-input" id="search-input">
-    </header>
-    <main>
-        <div class="grid-container" id="content">
-            <!-- Content will be dynamically inserted here -->
-        </div>
-    </main>
-    <footer>
-        <p>© 2024 Quanta Meditation. All rights reserved.</p>
-    </footer>
-    <div class="cursor"></div>
-    <div class="cursor-follower"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
-    <script>
-        const sections = {
-             'mindfulness': [
-                { name: "Actions and Doership", href: "Mindfullness/Actions and Doership.html", description: "Explore the futility of assumed activity and deep sleep.", icon: "cloud" },
-                { name: "Activity and Deep Sleep", href: "Mindfullness/Activity and Deep Sleep.html", description: "Explore the relationship between activity and deep sleep.", icon: "bed" },
-                { name: "Decision making & Observer", href: "Mindfullness/Decision making & Observer.html", description: "Learn about decision making and the role of the observer.", icon: "eye" },
-                { name: "Dynamic Potentiality to Manifestation", href: "Mindfullness/Dynamic Potentiality to Manifestation.html", description: "Understand the process from potential to manifestation.", icon: "seedling" },
-                { name: "Energy Flow", href: "Mindfullness/Energy Flow.html", description: "Explore the concept of energy flow in mindfulness.", icon: "wind" },
-                { name: "Fullness of Being", href: "Mindfullness/Fullness of Being.html", description: "Discover the fullness of being in mindfulness practice.", icon: "heart" },
-                { name: "Interactive 10th man", href: "Mindfullness/Interactive 10th man.html", description: "Explore the concept of the interactive 10th man.", icon: "users" },
-                { name: "Intersection of Time with Timelessness", href: "Mindfullness/Intersection of Time with Timelessness.html", description: "Understand the intersection of time and timelessness.", icon: "clock" },
-                { name: "Journey to the Real", href: "Mindfullness/Journey to the Real.html", description: "Embark on a journey to discover the real.", icon: "map-signs" },
-                { name: "Noumenon to Phenomena", href: "Mindfullness/Noumenon to Phenomena.html", description: "Explore the transition from noumenon to phenomena.", icon: "lightbulb" },
-                { name: "Observer's Holographic World & Void", href: "Mindfullness/Observer's Holographic World & Void.html", description: "Discover the observer's holographic world and the void.", icon: "globe" },
-                { name: "The Illusion of Separation", href: "Mindfullness/The Illusion of Separation.html", description: "Understand the illusion of separation in mindfulness.", icon: "puzzle-piece" },
-                { name: "Waves of Cosmic Consciousness", href: "Mindfullness/Waves of Cosmic Consciousness.html", description: "Explore waves of cosmic consciousness.", icon: "wave-square" },
-            ],
-            'quantum-physics': [
-                { name: "10 QP Simulations", href: "Quantum Physics Simulations/10 QP Simulations.html", description: "Explore 10 quantum physics simulations.", icon: "atom" },
-                { name: "Bernoulli Principle", href: "Quantum Physics Simulations/Bernoulli Principle.html", description: "Understand the Bernoulli Principle.", icon: "wind" },
-                { name: "Bloch sphere", href: "Quantum Physics Simulations/Bloch sphere.html", description: "Explore the Bloch sphere representation.", icon: "globe" },
-                { name: "Bose-Einstein Statistics & Quantum Field", href: "Quantum Physics Simulations/Bose-Einstein Statistics & Quantum Field.html", description: "Learn about Bose-Einstein statistics and quantum fields.", icon: "chart-bar" },
-                { name: "Cherenkov Effect Simulator", href: "Quantum Physics Simulations/Cherenkov Effect Simulator.html", description: "Simulate the Cherenkov effect.", icon: "bolt" },
-                { name: "Double-Slit Experiment", href: "Quantum Physics Simulations/Double-Slit Experiment.html", description: "Explore the famous double-slit experiment.", icon: "wave-square" },
-                { name: "Eigenstates & eigenvalue equations", href: "Quantum Physics Simulations/Eigenstates & eigenvalue equations.html", description: "Understand eigenstates and eigenvalue equations.", icon: "square-root-alt" },
-                { name: "Electrons, Positrons & Magnetic Monopoles", href: "Quantum Physics Simulations/Electrons, Positrons & Magnetic Monopoles.html", description: "Learn about electrons, positrons, and magnetic monopoles.", icon: "magnet" },
-                { name: "Feynman Cloud Chamber", href: "Quantum Physics Simulations/Feynman Cloud Chamber.html", description: "Explore the Feynman Cloud Chamber.", icon: "cloud" },
-                { name: "Gradient Flow & KL Inequality Dashboard", href: "Quantum Physics Simulations/Gradient Flow & KL Inequality Dashboard.html", description: "Understand gradient flow and KL inequality.", icon: "chart-line" },
-                { name: "Gödel Incompleteness Interactive", href: "Quantum Physics Simulations/Gödel Incompleteness Interactive.html", description: "Interact with Gödel's Incompleteness Theorem.", icon: "infinity" },
-                { name: "Heisenberg Uncertainty Principle", href: "Quantum Physics Simulations/Heisenberg Uncertainty Principle.html", description: "Explore the Heisenberg Uncertainty Principle.", icon: "question-circle" },
-                { name: "Higgs Boson & Higgs Field", href: "Quantum Physics Simulations/Higgs Boson & Higgs Field.html", description: "Learn about the Higgs Boson and Higgs Field.", icon: "atom" },
-                { name: "Hilbert spaces", href: "Quantum Physics Simulations/Hilbert spaces.html", description: "Understand Hilbert spaces in quantum mechanics.", icon: "cube" },
-                { name: "Interactive Quantum Playground", href: "Quantum Physics Simulations/Interactive Quantum Playground.html", description: "Explore an interactive quantum playground.", icon: "play" },
-                { name: "Quantum Simulations", href: "Quantum Physics Simulations/Quantum Simulations.html", description: "Various quantum physics simulations.", icon: "laptop-code" },
-                { name: "Quantum Stereogram Experiment", href: "Quantum Physics Simulations/Quantum Stereogram Experiment.html", description: "Experience a quantum stereogram experiment.", icon: "eye" },
-                { name: "Quantum World", href: "Quantum Physics Simulations/Quantum World.html", description: "Explore the quantum world.", icon: "globe" },
-                { name: "Quantum Zeno Effect", href: "Quantum Physics Simulations/Quantum Zeno Effect.html", description: "Understand the Quantum Zeno Effect.", icon: "hourglass-half" },
-                { name: "Schrödinger Equation", href: "Quantum Physics Simulations/Schrödinger Equation.html", description: "Explore the Schrödinger Equation.", icon: "wave-square" },
-                { name: "Superposition, Bell & GHZ state", href: "Quantum Physics Simulations/Superposition, Bell & GHZ state.html", description: "Learn about superposition, Bell states, and GHZ states.", icon: "layer-group" },
-                { name: "Time-energy theory", href: "Quantum Physics Simulations/Time-energy theory.html", description: "Explore time-energy theory in quantum physics.", icon: "clock" },
-                { name: "Uncertainty, Entropy & Dirac Delta", href: "Quantum Physics Simulations/Uncertainty, Entropy & Dirac Delta.html", description: "Understand uncertainty, entropy, and the Dirac delta function.", icon: "random" },
-            ],
-            'beginning-of-infinity': [
-                { name: "11.2", href: "Beginning of Infinity/11.2.html", description: "Explore concept 11.2 from 'The Beginning of Infinity'.", icon: "atom" },
-                { name: "11.3", href: "Beginning of Infinity/11.3.html", description: "Explore concept 11.3 from 'The Beginning of Infinity'.", icon: "atom" },
-                { name: "11.4", href: "Beginning of Infinity/11.4.html", description: "Explore concept 11.4 from 'The Beginning of Infinity'.", icon: "atom" },
-                { name: "11.5", href: "Beginning of Infinity/11.5.html", description: "Explore concept 11.5 from 'The Beginning of Infinity'.", icon: "atom" },
-                { name: "11.6", href: "Beginning of Infinity/11.6.html", description: "Explore concept 11.6 from 'The Beginning of Infinity'.", icon: "atom" },
-                { name: "11.7", href: "Beginning of Infinity/11.7.html", description: "Explore concept 11.7 from 'The Beginning of Infinity'.", icon: "atom" },
-                { name: "11.8", href: "Beginning of Infinity/11.8.html", description: "Explore concept 11.8 from 'The Beginning of Infinity'.", icon: "atom" },
-                { name: "Ch 9 combined", href: "Beginning of Infinity/Ch 9 combined.html", description: "Combined content from Chapter 9 of 'The Beginning of Infinity'.", icon: "book" },
-                { name: "Index", href: "Beginning of Infinity/index.html", description: "Index of 'The Beginning of Infinity' content.", icon: "list" },
-            ],
-        };
-
-        function createCard(item) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <i class="fas fa-${item.icon} icon"></i>
-                <h2>${item.name}</h2>
-                <p>${item.description}</p>
-                <a href="${item.href}" class="view-content">View Content</a>
-            `;
-            return card;
-        }
-
-        function displaySection(sectionName) {
-            const content = document.getElementById('content');
-            content.innerHTML = '';
-            sections[sectionName].forEach(item => {
-                content.appendChild(createCard(item));
-            });
-        }
-
-        function setupNavigation() {
-            const navButtons = document.querySelectorAll('.glow-button');
-            navButtons.forEach(button => {
-                button.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    displaySection(button.dataset.section);
-                });
-            });
-        }
-
-        function setupSearch() {
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', () => {
-                const searchTerm = searchInput.value.toLowerCase();
-                const content = document.getElementById('content');
-                content.innerHTML = '';
-                Object.values(sections).flat().forEach(item => {
-                    if (item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm)) {
-                        content.appendChild(createCard(item));
-                    }
-                });
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            setupNavigation();
-            setupSearch();
-            displaySection('mindfulness'); // Display the first section by default
-
-            // Custom cursor
-            const cursor = document.querySelector('.cursor');
-            const follower = document.querySelector('.cursor-follower');
-
-            document.addEventListener('mousemove', (e) => {
-                cursor.style.left = e.clientX + 'px';
-                cursor.style.top = e.clientY + 'px';
-                
-                follower.style.left = e.clientX + 'px';
-                follower.style.top = e.clientY + 'px';
-            });
-
-            // Particle.js configuration
-            particlesJS('particles-js', {
-                particles: {
-                    number: { value: 80, density: { enable: true, value_area: 800 } },
-                    color: { value: "#ffffff" },
-                    shape: { type: "circle" },
-                    opacity: { value: 0.5, random: true },
-                    size: { value: 3, random: true },
-                    move: { enable: true, speed: 1, direction: "none", random: true, out_mode: "out" }
-                },
-                interactivity: {
-                    detect_on: "canvas",
-                    events: { onhover: { enable: true, mode: "repulse" }, onclick: { enable: true, mode: "push" } },
-                    modes: { repulse: { distance: 100, duration: 0.4 }, push: { particles_nb: 4 } }
-                }
-            });
-        });
-    </script>
-    <script src="https://kit.fontawesome.com/d0f160b4f1.js" crossorigin="anonymous"></script>
-</body>
-</html>
+  <h1>Quanta Meditation</h1>
+<h2>Beginning of Infinity</h2><ul>    <li><a href='Beginning of Infinity/11.2.html'>11.2.html</a></li>
+    <li><a href='Beginning of Infinity/11.3.html'>11.3.html</a></li>
+    <li><a href='Beginning of Infinity/11.4.html'>11.4.html</a></li>
+    <li><a href='Beginning of Infinity/11.5.html'>11.5.html</a></li>
+    <li><a href='Beginning of Infinity/11.6.html'>11.6.html</a></li>
+    <li><a href='Beginning of Infinity/11.7.html'>11.7.html</a></li>
+    <li><a href='Beginning of Infinity/11.8.html'>11.8.html</a></li>
+    <li><a href='Beginning of Infinity/Ch 9 combined.html'>Ch 9 combined.html</a></li>
+    <li><a href='Beginning of Infinity/Rössler Attractor.html'>Rössler Attractor.html</a></li>
+    <li><a href='Beginning of Infinity/test.html'>test.html</a></li>
+</ul><h2>Mindfullness</h2><ul>    <li><a href='Mindfullness/Actions and Doership_KM.html'>Actions and Doership_KM.html</a></li>
+    <li><a href='Mindfullness/Activity and Deep Sleep.html'>Activity and Deep Sleep.html</a></li>
+    <li><a href='Mindfullness/Decision making & Observer.html'>Decision making & Observer.html</a></li>
+    <li><a href='Mindfullness/Dynamic Potentiality to Manifestation.html'>Dynamic Potentiality to Manifestation.html</a></li>
+    <li><a href='Mindfullness/Ego, the self.html'>Ego, the self.html</a></li>
+    <li><a href='Mindfullness/Energy Flow.html'>Energy Flow.html</a></li>
+    <li><a href='Mindfullness/Fullness of Being.html'>Fullness of Being.html</a></li>
+    <li><a href='Mindfullness/Interactive 10th man.html'>Interactive 10th man.html</a></li>
+    <li><a href='Mindfullness/Intersection of Time with Timelessness.html'>Intersection of Time with Timelessness.html</a></li>
+    <li><a href='Mindfullness/Journey to the Real.html'>Journey to the Real.html</a></li>
+    <li><a href='Mindfullness/Noumenon to Phenomena.html'>Noumenon to Phenomena.html</a></li>
+    <li><a href='Mindfullness/Observer's Holographic World & Void.html'>Observer's Holographic World & Void.html</a></li>
+    <li><a href='Mindfullness/The Illusion of Separation.html'>The Illusion of Separation.html</a></li>
+    <li><a href='Mindfullness/Waves of Cosmic Consciousness.html'>Waves of Cosmic Consciousness.html</a></li>
+    <li><a href='Mindfullness/background.html'>background.html</a></li>
+</ul><h2>Quantum Physics Simulations</h2><ul>    <li><a href='Quantum Physics Simulations/10 QP Simulations.html'>10 QP Simulations.html</a></li>
+    <li><a href='Quantum Physics Simulations/AdS_CFT correspondence.html'>AdS_CFT correspondence.html</a></li>
+    <li><a href='Quantum Physics Simulations/BSphear.html'>BSphear.html</a></li>
+    <li><a href='Quantum Physics Simulations/Bernoulli Principle.html'>Bernoulli Principle.html</a></li>
+    <li><a href='Quantum Physics Simulations/Bloch sphere.html'>Bloch sphere.html</a></li>
+    <li><a href='Quantum Physics Simulations/Bose-Einstein Statistics & Quantum Field.html'>Bose-Einstein Statistics & Quantum Field.html</a></li>
+    <li><a href='Quantum Physics Simulations/Cherenkov Effect Simulator.html'>Cherenkov Effect Simulator.html</a></li>
+    <li><a href='Quantum Physics Simulations/Double-Slit Experiment.html'>Double-Slit Experiment.html</a></li>
+    <li><a href='Quantum Physics Simulations/Eigenstates & eigenvalue equations.html'>Eigenstates & eigenvalue equations.html</a></li>
+    <li><a href='Quantum Physics Simulations/Electrons, Positrons & Magnetic Monopoles.html'>Electrons, Positrons & Magnetic Monopoles.html</a></li>
+    <li><a href='Quantum Physics Simulations/Few qunatum simulations.html'>Few qunatum simulations.html</a></li>
+    <li><a href='Quantum Physics Simulations/Feynman Cloud Chamber.html'>Feynman Cloud Chamber.html</a></li>
+    <li><a href='Quantum Physics Simulations/Gradient Flow & KL Inequality Dashboard.html'>Gradient Flow & KL Inequality Dashboard.html</a></li>
+    <li><a href='Quantum Physics Simulations/Gödel Incompleteness Interactive.html'>Gödel Incompleteness Interactive.html</a></li>
+    <li><a href='Quantum Physics Simulations/Heisenberg Uncertainty Principle.html'>Heisenberg Uncertainty Principle.html</a></li>
+    <li><a href='Quantum Physics Simulations/Higgs Boson & Higgs Field.html'>Higgs Boson & Higgs Field.html</a></li>
+    <li><a href='Quantum Physics Simulations/Hilbert spaces.html'>Hilbert spaces.html</a></li>
+    <li><a href='Quantum Physics Simulations/Interactive Quantum Playground.html'>Interactive Quantum Playground.html</a></li>
+    <li><a href='Quantum Physics Simulations/Quantum Simulations.html'>Quantum Simulations.html</a></li>
+    <li><a href='Quantum Physics Simulations/Quantum Stereogram Experiment.html'>Quantum Stereogram Experiment.html</a></li>
+    <li><a href='Quantum Physics Simulations/Quantum Superposition Journey.html'>Quantum Superposition Journey.html</a></li>
+    <li><a href='Quantum Physics Simulations/Quantum World.html'>Quantum World.html</a></li>
+    <li><a href='Quantum Physics Simulations/Quantum Zeno Effect.html'>Quantum Zeno Effect.html</a></li>
+    <li><a href='Quantum Physics Simulations/Schrödinger Equation.html'>Schrödinger Equation.html</a></li>
+    <li><a href='Quantum Physics Simulations/Superposition, Bell & GHZ state.html'>Superposition, Bell & GHZ state.html</a></li>
+    <li><a href='Quantum Physics Simulations/Time-energy theory.html'>Time-energy theory.html</a></li>
+    <li><a href='Quantum Physics Simulations/Uncertainty, Entropy & Dirac Delta.html'>Uncertainty, Entropy & Dirac Delta.html</a></li>
+    <li><a href='Quantum Physics Simulations/Zel'dovich Effect.html'>Zel'dovich Effect.html</a></li>
+    <li><a href='Quantum Physics Simulations/Zeno effect.html'>Zeno effect.html</a></li>
+</ul></body></html>
