@@ -3,100 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced 3D Rössler Attractor Animation</title>
+    <title>3D Rössler Attractor Animation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            touch-action: none;
-        }
-        canvas {
-            display: block;
-        }
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
         #info {
             position: absolute;
             top: 10px;
             left: 10px;
             color: white;
-            font-size: 14px;
-            background-color: rgba(0,0,0,0.7);
-            padding: 10px;
+            font-size: 12px;
+            background-color: rgba(0,0,0,0.5);
+            padding: 8px;
             border-radius: 5px;
-            max-width: 300px;
         }
         #controls {
             position: absolute;
-            bottom: 20px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
+            gap: 5px;
         }
         button {
-            padding: 12px 24px;
-            font-size: 18px;
+            padding: 8px 12px;
+            font-size: 14px;
             cursor: pointer;
-            background-color: #3498db;
+            background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 3px;
             transition: background-color 0.3s, transform 0.1s;
-            touch-action: manipulation;
         }
-        button:hover {
-            background-color: #2980b9;
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
+        button:hover { background-color: #45a049; }
+        button:active { transform: scale(0.95); }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
         #explanation {
             display: none;
-            position: fixed;
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 90%;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 80%;
             max-height: 80%;
             overflow-y: auto;
-            z-index: 1000;
+            font-size: 14px;
         }
-        #explanation h2 {
-            margin-top: 0;
-        }
-        #closeExplanation {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        @media (max-width: 600px) {
-            #info {
-                font-size: 12px;
-                max-width: 80%;
-            }
-            button {
-                padding: 10px 20px;
-                font-size: 16px;
-            }
-        }
+        #explanation h2 { margin-top: 0; font-size: 18px; }
+        #explanation h3 { font-size: 16px; }
     </style>
 </head>
 <body>
@@ -112,25 +73,20 @@
         <button id="knowMoreBtn">Know More</button>
     </div>
     <div id="explanation">
-        <button id="closeExplanation">&times;</button>
         <h2>The Rössler Attractor</h2>
-        <p>The Rössler attractor is a system of three non-linear ordinary differential equations originally studied by Otto Rössler. These equations define a continuous-time dynamical system that exhibits chaotic dynamics associated with the fractal properties of the attractor.</p>
-        <h3>The Equations:</h3>
-        <p>
-            dx/dt = -y - z<br>
-            dy/dt = x + ay<br>
-            dz/dt = b + z(x - c)
-        </p>
-        <p>Where x, y, and z are the system state variables, and a, b, and c are parameters that control the system behavior.</p>
+        <p>The Rössler attractor is a chaotic system defined by three differential equations. It demonstrates complex behavior and forms a distinctive shape in 3D space.</p>
         <h3>Key Features:</h3>
         <ul>
-            <li><strong>Chaos:</strong> The system demonstrates chaotic behavior for certain parameter values.</li>
-            <li><strong>Strange Attractor:</strong> The solution of these equations, when plotted, forms a strange attractor, a fractal structure.</li>
-            <li><strong>Sensitivity to Initial Conditions:</strong> Small changes in starting conditions can lead to vastly different trajectories, a hallmark of chaotic systems.</li>
+            <li><strong>Chaos:</strong> Exhibits sensitive dependence on initial conditions.</li>
+            <li><strong>Strange Attractor:</strong> Forms a fractal structure in phase space.</li>
         </ul>
-        <h3>Applications:</h3>
-        <p>The Rössler system has been used to model various phenomena in chemical kinetics, fluid dynamics, and even in the study of brain activity patterns.</p>
-        <p>This visualization allows you to explore the Rössler attractor in 3D space, observing how changes in parameters affect the system's behavior.</p>
+        <h3>Animation Details:</h3>
+        <ul>
+            <li><strong>Visualization:</strong> Each point represents a state of the system.</li>
+            <li><strong>Color Gradient:</strong> Indicates the time evolution of the system.</li>
+            <li><strong>Controls:</strong> Adjust parameters to see how they affect the attractor's shape.</li>
+        </ul>
+        <p>Explore the Rössler attractor by adjusting parameters and observing the resulting changes in the 3D visualization.</p>
     </div>
     <script>
         let scene, camera, renderer, attractor, controls;
@@ -140,7 +96,7 @@
             b: 0.2,
             c: 5.7,
             speed: 1,
-            maxPoints: 5000,
+            maxPoints: 1000,
             pointSize: 0.3,
             trailOpacity: 0.8
         };
@@ -158,7 +114,6 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
             document.body.appendChild(renderer.domElement);
 
             const geometry = new THREE.BufferGeometry();
@@ -180,16 +135,13 @@
             attractor = new THREE.Points(geometry, material);
             scene.add(attractor);
 
-            // Add ambient light
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambientLight);
 
-            // Add directional light
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
             directionalLight.position.set(1, 1, 1);
             scene.add(directionalLight);
 
-            // Add OrbitControls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
@@ -201,12 +153,12 @@
         }
 
         function setupGUI() {
-            const gui = new dat.GUI();
+            const gui = new dat.GUI({ width: 300 });
             gui.add(params, 'a', 0, 1).name('a');
             gui.add(params, 'b', 0, 1).name('b');
             gui.add(params, 'c', 0, 10).name('c');
             gui.add(params, 'speed', 0.1, 5).name('Speed');
-            gui.add(params, 'maxPoints', 1000, 10000).step(1000).name('Max Points');
+            gui.add(params, 'maxPoints', 100, 2000).step(100).name('Max Points');
             gui.add(params, 'pointSize', 0.1, 1).name('Point Size');
             gui.add(params, 'trailOpacity', 0, 1).name('Trail Opacity');
         }
@@ -216,7 +168,6 @@
             const resetBtn = document.getElementById('resetBtn');
             const knowMoreBtn = document.getElementById('knowMoreBtn');
             const explanation = document.getElementById('explanation');
-            const closeExplanation = document.getElementById('closeExplanation');
 
             startBtn.addEventListener('click', () => {
                 if (!isAnimating) {
@@ -236,18 +187,13 @@
             });
 
             knowMoreBtn.addEventListener('click', () => {
-                explanation.style.display = 'block';
-            });
-
-            closeExplanation.addEventListener('click', () => {
-                explanation.style.display = 'none';
+                explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+                knowMoreBtn.textContent = explanation.style.display === 'none' ? 'Know More' : 'Hide Info';
             });
         }
 
         function resetAttractor() {
-            x = 1;
-            y = 1;
-            z = 1;
+            x = 1; y = 1; z = 1;
             points.length = 0;
             const positions = attractor.geometry.attributes.position.array;
             const colors = attractor.geometry.attributes.color.array;
@@ -277,7 +223,6 @@
         }
 
         function updatePoints() {
-            // Rössler equations
             const dx = -y - z;
             const dy = x + params.a * y;
             const dz = params.b + z * (x - params.c);
@@ -313,7 +258,6 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
         }
 
         init();
