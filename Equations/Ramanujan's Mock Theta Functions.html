@@ -104,6 +104,29 @@ input[type="range"] {
         display: block;
     }
 }
+
+#apply-changes {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px 0;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+#apply-changes:hover {
+    background: #555;
+}
+
+/* Optional: Add animation for the apply feedback */
+@keyframes apply-flash {
+    0% { background-color: #444; }
+    50% { background-color: #4CAF50; }
+    100% { background-color: #444; }
+}
 </style>
 </head>
 <body>
@@ -119,6 +142,7 @@ input[type="range"] {
         <label>|q| range: <span id="q-value">0.5</span></label>
         <input type="range" id="q-range" min="1" max="100" value="50">
     </div>
+    <button id="apply-changes">Apply Changes</button>
     <button id="reset">Reset View</button>
     <button id="toggle-rotation">Pause Rotation</button>
     <button id="toggle-info">Know More</button>
@@ -281,12 +305,23 @@ function animate() {
 // Event Listeners
 document.getElementById('terms').addEventListener('input', (e) => {
     document.getElementById('terms-value').textContent = e.target.value;
-    createSurface();
 });
 
 document.getElementById('q-range').addEventListener('input', (e) => {
     document.getElementById('q-value').textContent = (e.target.value / 100).toFixed(2);
+});
+
+// Add new Apply Changes button event listener
+document.getElementById('apply-changes').addEventListener('click', () => {
     createSurface();
+    // Optional: Add visual feedback
+    const applyBtn = document.getElementById('apply-changes');
+    applyBtn.textContent = 'Applied!';
+    applyBtn.style.backgroundColor = '#4CAF50';
+    setTimeout(() => {
+        applyBtn.textContent = 'Apply Changes';
+        applyBtn.style.backgroundColor = '#444';
+    }, 1000);
 });
 
 document.getElementById('reset').addEventListener('click', () => {
