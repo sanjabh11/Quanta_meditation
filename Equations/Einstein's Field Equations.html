@@ -1,0 +1,314 @@
+<html><head>
+<title>Einstein's Field Equations - 3D Visualization</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    background-color: #000;
+    color: #fff;
+  }
+  #canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+  #ui {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    width: 280px;
+  }
+  #info {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 400px;
+    max-height: 60%;
+    overflow-y: auto;
+    display: none;
+  }
+  .control-group {
+    margin: 10px 0;
+  }
+  button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+  }
+  button:hover {
+    background: #555;
+  }
+  label {
+    display: block;
+    margin: 5px 0;
+  }
+  .slider-container {
+    margin: 10px 0;
+  }
+  input[type="range"] {
+    width: 100%;
+  }
+  .equations {
+    font-family: "Times New Roman", serif;
+    font-size: 1.2em;
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="ui">
+  <div class="equations">
+    Gμν = 8πG/c⁴ Tμν
+  </div>
+  <div class="control-group">
+    <label>Mass Distribution</label>
+    <input type="range" id="mass-density" min="0" max="100" value="50">
+  </div>
+  <div class="control-group">
+    <label>Spacetime Curvature</label>
+    <input type="range" id="curvature-scale" min="10" max="200" value="100">
+  </div>
+  <div class="control-group">
+    <label>Light Ray Density</label>
+    <input type="range" id="light-density" min="5" max="50" value="20">
+  </div>
+  <div class="control-group">
+    <label>Wave Amplitude</label>
+    <input type="range" id="wave-amplitude" min="0" max="100" value="50">
+  </div>
+  <div class="control-group">
+    <label>Reference Frame</label>
+    <select id="reference-frame">
+      <option value="static">Static Observer</option>
+      <option value="falling">Free-falling Observer</option>
+      <option value="orbiting">Orbiting Observer</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <button id="toggle-dynamic">Toggle Dynamic/Static</button>
+    <button id="reset">Reset View</button>
+    <button id="toggleInfo">Know More</button>
+  </div>
+</div>
+
+<div id="info">
+  <h3>Einstein's Field Equations</h3>
+  <h4>Spacetime Curvature</h4>
+  <p>Mass and energy curve spacetime geometry. The more massive an object, the more it warps the fabric of spacetime around it.</p>
+  
+  <h4>Gravitational Lensing</h4>
+  <p>Light follows geodesics (shortest paths) in curved spacetime, leading to the bending of light around massive objects.</p>
+  
+  <h4>Event Horizons</h4>
+  <p>Regions where spacetime curvature becomes so extreme that nothing, not even light, can escape once past this boundary.</p>
+  
+  <h4>Gravitational Waves</h4>
+  <p>Ripples in spacetime caused by accelerating massive objects, propagating at the speed of light.</p>
+  
+  <h4>Relationship to Newton</h4>
+  <p>Einstein's theory reduces to Newton's gravity in weak fields and low velocities, but correctly predicts phenomena like:
+    <ul>
+      <li>Mercury's orbital precession</li>
+      <li>Gravitational time dilation</li>
+      <li>Black holes</li>
+      <li>Gravitational waves</li>
+      <li>Expanding universe</li>
+    </ul>
+  </p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000);
+
+// New group objects
+const spacetimeMeshGroup = new THREE.Group();
+const massGroup = new THREE.Group();
+const lightPathGroup = new THREE.Group();
+const wavesGroup = new THREE.Group();
+
+scene.add(spacetimeMeshGroup);
+scene.add(massGroup);
+scene.add(lightPathGroup);
+scene.add(wavesGroup);
+
+camera.position.set(0, 0, 20);
+camera.lookAt(0, 0, 0);
+
+// Create spacetime mesh
+function createSpacetimeMesh() {
+    const geometry = new THREE.PlaneGeometry(20, 20, 50, 50);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0x444444,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.8
+    });
+    return new THREE.Mesh(geometry, material);
+}
+
+// Create mass object
+function createMassObject(position, mass) {
+    const geometry = new THREE.SphereGeometry(mass, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xffaa00,
+        emissive: 0x884400,
+        transparent: true,
+        opacity: 0.9
+    });
+    const massObj = new THREE.Mesh(geometry, material);
+    massObj.position.copy(position);
+    return massObj;
+}
+
+// Create light path
+function createLightPath(start, end, curvature) {
+    const curve = new THREE.QuadraticBezierCurve3(
+        start,
+        new THREE.Vector3().lerpVectors(start, end, 0.5).add(new THREE.Vector3(0, curvature, 0)),
+        end
+    );
+    const geometry = new THREE.TubeGeometry(curve, 20, 0.05, 8, false);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xffff00,
+        emissive: 0x888800
+    });
+    return new THREE.Mesh(geometry, material);
+}
+
+// Update wave pattern
+function updateGravitationalWaves(amplitude, time) {
+    wavesGroup.children.forEach(wave => {
+        const vertices = wave.geometry.vertices;
+        vertices.forEach(vertex => {
+            vertex.z = amplitude * Math.sin(0.5 * vertex.x + time) * 
+                      Math.sin(0.5 * vertex.y + time);
+        });
+        wave.geometry.verticesNeedUpdate = true;
+    });
+}
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0x404040);
+scene.add(ambientLight);
+const light = new THREE.PointLight(0xffffff, 1, 100);
+light.position.set(10, 10, 10);
+scene.add(light);
+
+// Animation variables
+let isDynamic = true;
+let time = 0;
+const animate = () => {
+    requestAnimationFrame(animate);
+    
+    if(isDynamic) {
+        time += parseFloat(document.getElementById('wave-amplitude').value) / 1000;
+        
+        // Update spacetime mesh deformation
+        // Function call to update spacetime mesh deformation goes here
+        
+        // Update gravitational waves
+        updateGravitationalWaves(
+            document.getElementById('wave-amplitude').value / 100,
+            time
+        );
+        
+        // Update light paths
+        // Function call to update light paths goes here
+    }
+    
+    renderer.render(scene, camera);
+};
+
+// UI Controls
+document.getElementById('mass-density').addEventListener('input', (e) => {
+    // Update logic for mass-density
+});
+
+document.getElementById('curvature-scale').addEventListener('input', (e) => {
+    // Update logic for curvature-scale
+});
+
+document.getElementById('light-density').addEventListener('input', (e) => {
+    // Update logic for light-density
+});
+
+document.getElementById('wave-amplitude').addEventListener('input', (e) => {
+    // Update logic for wave-amplitude
+});
+
+document.getElementById('toggle-dynamic').addEventListener('click', () => {
+    isDynamic = !isDynamic;
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(0, 0, 20);
+    camera.lookAt(0, 0, 0);
+    time = 0;
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+        input.value = input.defaultValue;
+    });
+    // Reset logic goes here
+});
+
+document.getElementById('toggleInfo').addEventListener('click', () => {
+    const info = document.getElementById('info');
+    info.style.display = info.style.display === 'none' ? 'block' : 'none';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initialize
+const spacetimeMesh = createSpacetimeMesh();
+spacetimeMeshGroup.add(spacetimeMesh);
+
+// Add some mass objects
+for(let i = 0; i < 3; i++) {
+    const massObj = createMassObject(
+        new THREE.Vector3(
+            Math.random() * 10 - 5,
+            Math.random() * 10 - 5,
+            Math.random() * 10 - 5
+        ),
+        Math.random() * 2 + 1
+    );
+    massGroup.add(massObj);
+}
+
+// Add light paths and waves
+for(let i = 0; i < 20; i++) {
+    // Logic to create light paths goes here
+}
+
+// Set initial values for controls
+updateGravitationalWaves(0.5, 0);
+animate();
+</script>
+</body></html>

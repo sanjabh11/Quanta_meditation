@@ -1,0 +1,256 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan's Pi Series Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 100;
+    max-width: 250px;
+}
+#info-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    z-index: 100;
+}
+.slider-container {
+    margin: 10px 0;
+}
+input[type="range"] {
+    width: 100%;
+    margin: 5px 0;
+}
+button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+    transition: background 0.3s;
+}
+button:hover {
+    background: #666;
+}
+.hidden {
+    display: none;
+}
+#current-value {
+    font-family: monospace;
+    margin: 10px 0;
+}
+.formula {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    margin: 10px 0;
+    font-size: 1.1em;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3>Controls</h3>
+    <div class="slider-container">
+        <label for="terms">Number of Terms: <span id="term-value">10</span></label>
+        <input type="range" id="terms" min="1" max="50" value="10">
+    </div>
+    <div class="slider-container">
+        <label for="speed">Rotation Speed: <span id="speed-value">1</span></label>
+        <input type="range" id="speed" min="0" max="2" step="0.1" value="1">
+    </div>
+    <div id="current-value">π ≈ 3.14159...</div>
+    <button id="reset">Reset View</button>
+</div>
+<div id="info-panel">
+    <h3>Ramanujan's Pi Series</h3>
+    <div class="formula">1/π = (2√2 / 9801) * Σ (4k)! * (1103 + 26390k) / ((k!)^4 * 396^(4k))</div>
+    <button id="toggle-info">Know More</button>
+    <div id="extended-info" class="hidden">
+        <p>This visualization represents Srinivasa Ramanujan's remarkable infinite series for calculating π. Each turn in the helix represents one term of the series, with:</p>
+        <ul>
+            <li>Radius: Converges to 1/π as more terms are added</li>
+            <li>Color: Indicates term magnitude (red = larger contribution, blue = smaller)</li>
+            <li>Height: Represents cumulative sum of terms</li>
+        </ul>
+        <p>This series is notable for its rapid convergence - each term adds roughly 8 decimal places of accuracy to π. Ramanujan discovered this series in 1914, and it has been used in computer algorithms for calculating π.</p>
+    </div>
+</div>
+
+<script>
+let scene, camera, renderer, helix;
+let terms = 10;
+let rotationSpeed = 1;
+const PI = Math.PI;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    camera.position.set(5, 5, 5);
+    camera.lookAt(0, 0, 0);
+
+    createHelix();
+    addLighting();
+}
+
+function calculateTerm(k) {
+    const numerator = math.multiply(
+        math.factorial(4 * k),
+        math.add(1103, math.multiply(26390, k))
+    );
+    const denominator = math.multiply(
+        math.pow(math.factorial(k), 4),
+        math.pow(396, 4 * k)
+    );
+    return math.divide(numerator, denominator);
+}
+
+function createHelix() {
+    if (helix) scene.remove(helix);
+    
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const colors = [];
+    
+    let sum = 0;
+    const coefficient = (2 * Math.sqrt(2)) / 9801;
+    
+    for (let k = 0; k < terms; k++) {
+        const term = calculateTerm(k);
+        sum += term;
+        const piApprox = 1 / (coefficient * sum);
+        
+        // Calculate color based on term magnitude
+        const termMagnitude = Math.log10(Math.abs(term));
+        const hue = (1 - Math.min(Math.max(termMagnitude / 10, 0), 1)) * 0.7; // Range from red to blue
+        const color = new THREE.Color().setHSL(hue, 1, 0.5);
+        
+        // Create helix points
+        const turns = 4;
+        const pointsPerTerm = 50;
+        for (let i = 0; i < pointsPerTerm; i++) {
+            const t = (k + i/pointsPerTerm) / terms;
+            const angle = t * turns * Math.PI * 2;
+            const radius = 2 * (1 - t) + 1/piApprox;
+            
+            positions.push(
+                radius * Math.cos(angle),
+                t * 5,
+                radius * Math.sin(angle)
+            );
+            colors.push(color.r, color.g, color.b);
+        }
+    }
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    const material = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        linewidth: 2
+    });
+
+    helix = new THREE.Line(geometry, material);
+    scene.add(helix);
+}
+
+function addLighting() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    if (helix) {
+        helix.rotation.y += 0.01 * rotationSpeed;
+    }
+    
+    renderer.render(scene, camera);
+}
+
+function updateDisplay() {
+    const coefficient = (2 * Math.sqrt(2)) / 9801;
+    let sum = 0;
+    for (let k = 0; k < terms; k++) {
+        sum += calculateTerm(k);
+    }
+    const piApprox = 1 / (coefficient * sum);
+    document.getElementById('current-value').textContent = `π ≈ ${piApprox.toFixed(8)}`;
+}
+
+// Event Listeners
+document.getElementById('terms').addEventListener('input', (e) => {
+    terms = parseInt(e.target.value);
+    document.getElementById('term-value').textContent = terms;
+    createHelix();
+    updateDisplay();
+});
+
+document.getElementById('speed').addEventListener('input', (e) => {
+    rotationSpeed = parseFloat(e.target.value);
+    document.getElementById('speed-value').textContent = rotationSpeed.toFixed(1);
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(5, 5, 5);
+    camera.lookAt(0, 0, 0);
+    helix.rotation.y = 0;
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const info = document.getElementById('extended-info');
+    info.classList.toggle('hidden');
+    document.getElementById('toggle-info').textContent = 
+        info.classList.contains('hidden') ? 'Know More' : 'Show Less';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initialize and start animation
+init();
+updateDisplay();
+animate();
+</script>
+</body>
+</html>

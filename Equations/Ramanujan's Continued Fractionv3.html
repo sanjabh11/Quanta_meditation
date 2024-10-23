@@ -1,0 +1,239 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan's Continued Fraction</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 100;
+    width: 280px;
+    backdrop-filter: blur(5px);
+}
+#info-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+.slider-container {
+    margin: 10px 0;
+}
+button {
+    margin: 5px;
+    padding: 8px 12px;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+button:hover {
+    background: #444;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3>Ramanujan's Continued Fraction</h3>
+    <div class="slider-container">
+        <label>q value: <span id="q-value">0.5</span></label>
+        <input type="range" id="q-slider" min="0" max="1" step="0.01" value="0.5">
+    </div>
+    <div class="slider-container">
+        <label>Levels: <span id="levels-value">8</span></label>
+        <input type="range" id="levels-slider" min="1" max="20" value="8">
+    </div>
+    <div class="slider-container">
+        <label>Rotation Speed: <span id="speed-value">1x</span></label>
+        <input type="range" id="speed-slider" min="0" max="2" step="0.1" value="1">
+    </div>
+    <button id="toggle-animation">Pause Animation</button>
+    <button id="reset-view">Reset View</button>
+    <button id="toggle-info">Know More</button>
+</div>
+
+<div id="info-panel">
+    <h3>Ramanujan's Continued Fraction</h3>
+    <p>This remarkable continued fraction, discovered by Srinivasa Ramanujan, is related to the Rogers-Ramanujan identities and has deep connections to partition theory and modular forms.</p>
+    <p>The visualization represents each term in the continued fraction as a branch in a 3D tree structure. The branching angles and lengths correspond to the values of q^n at each level, creating a mathematical sculpture that captures the recursive nature of the expression.</p>
+    <p>The colors transition from cool (at the root) to warm (at the outer branches) to indicate the depth of the fraction, while the overall structure reveals patterns in the way the fraction converges.</p>
+</div>
+
+<script>
+let scene, camera, renderer, controls;
+let treeGroup;
+let isAnimating = true;
+let rotationSpeed = 1;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    camera.position.set(15, 15, 15);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
+
+    createTree(0.5, 8);
+    animate();
+}
+
+function calculateBranch(q, level, maxLevel) {
+    if (level === 0) return q ** (1/5);
+    return q ** level / (1 + calculateBranch(q, level - 1, maxLevel));
+}
+
+function createCylinderBetweenPoints(start, end, radius, color) {
+    const direction = new THREE.Vector3().subVectors(end, start);
+    const length = direction.length();
+    const center = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+
+    const cylinder = new THREE.CylinderGeometry(radius, radius * 0.8, length, 8);
+    const material = new THREE.MeshPhongMaterial({ 
+        color: color,
+        shininess: 100,
+        specular: 0x444444
+    });
+
+    const mesh = new THREE.Mesh(cylinder, material);
+
+    mesh.position.copy(center);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+
+    return mesh;
+}
+
+function createTree(q, levels) {
+    if (treeGroup) scene.remove(treeGroup);
+    treeGroup = new THREE.Group();
+
+    function buildBranch(startPoint, level, angle, parentRadius) {
+        if (level >= levels) return;
+
+        const branchLength = 2 * Math.pow(0.8, level);
+        const branchRadius = parentRadius * 0.8;
+        const value = calculateBranch(q, level, levels);
+
+        // Calculate end point based on spherical coordinates
+        const phi = angle + value * Math.PI;
+        const theta = level * Math.PI / 4;
+        
+        const endPoint = new THREE.Vector3(
+            startPoint.x + branchLength * Math.sin(theta) * Math.cos(phi),
+            startPoint.y + branchLength * Math.cos(theta),
+            startPoint.z + branchLength * Math.sin(theta) * Math.sin(phi)
+        );
+
+        // Color interpolation from cool to warm
+        const hue = 0.7 - (level / levels) * 0.7;
+        const color = new THREE.Color().setHSL(hue, 1, 0.5);
+
+        const branch = createCylinderBetweenPoints(startPoint, endPoint, branchRadius, color);
+        treeGroup.add(branch);
+
+        // Create sub-branches
+        const numSubBranches = 3;
+        for (let i = 0; i < numSubBranches; i++) {
+            const newAngle = angle + (2 * Math.PI * i) / numSubBranches;
+            buildBranch(endPoint, level + 1, newAngle, branchRadius);
+        }
+    }
+
+    const startPoint = new THREE.Vector3(0, -5, 0);
+    buildBranch(startPoint, 0, 0, 0.3);
+
+    scene.add(treeGroup);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (isAnimating && treeGroup) {
+        treeGroup.rotation.y += 0.005 * rotationSpeed;
+    }
+    renderer.render(scene, camera);
+}
+
+// Event Listeners
+document.getElementById('q-slider').addEventListener('input', (e) => {
+    const q = parseFloat(e.target.value);
+    document.getElementById('q-value').textContent = q.toFixed(2);
+    const levels = parseInt(document.getElementById('levels-slider').value);
+    createTree(q, levels);
+});
+
+document.getElementById('levels-slider').addEventListener('input', (e) => {
+    const levels = parseInt(e.target.value);
+    document.getElementById('levels-value').textContent = levels;
+    const q = parseFloat(document.getElementById('q-slider').value);
+    createTree(q, levels);
+});
+
+document.getElementById('speed-slider').addEventListener('input', (e) => {
+    rotationSpeed = parseFloat(e.target.value);
+    document.getElementById('speed-value').textContent = `${rotationSpeed.toFixed(1)}x`;
+});
+
+document.getElementById('toggle-animation').addEventListener('click', (e) => {
+    isAnimating = !isAnimating;
+    e.target.textContent = isAnimating ? 'Pause Animation' : 'Resume Animation';
+});
+
+document.getElementById('reset-view').addEventListener('click', () => {
+    camera.position.set(15, 15, 15);
+    controls.target.set(0, 0, 0);
+    controls.update();
+    if (treeGroup) treeGroup.rotation.set(0, 0, 0);
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const panel = document.getElementById('info-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>

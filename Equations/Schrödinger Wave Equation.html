@@ -1,0 +1,381 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Schrödinger Wave Equation Visualizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 100;
+    width: 300px;
+    backdrop-filter: blur(5px);
+    border: 1px solid #333;
+}
+#info-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 800px;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    border: 1px solid #333;
+    line-height: 1.6;
+}
+.slider-container {
+    margin: 10px 0;
+}
+.slider-container label {
+    display: block;
+    margin-bottom: 5px;
+    color: #0af;
+}
+button {
+    margin: 5px;
+    padding: 8px 12px;
+    background: linear-gradient(45deg, #1a1a1a, #333);
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+button:hover {
+    background: linear-gradient(45deg, #333, #444);
+    border-color: #0af;
+}
+select {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid #333;
+    border-radius: 5px;
+    cursor: pointer;
+}
+input[type="range"] {
+    width: 100%;
+    background: #1a1a1a;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #0af;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.section {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: rgba(0, 170, 255, 0.1);
+    border-radius: 5px;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3 style="color: #0af; text-align: center;">Schrödinger Wave Equation</h3>
+    <div class="slider-container">
+        <label>Potential Well Depth:</label>
+        <input type="range" id="potential-depth" min="0" max="20" step="0.5" value="5">
+    </div>
+    <div class="slider-container">
+        <label>Well Width:</label>
+        <input type="range" id="well-width" min="1" max="10" step="0.5" value="3">
+    </div>
+    <select id="energy-level">
+        <option value="0">Ground State (n=1)</option>
+        <option value="1">First Excited (n=2)</option>
+        <option value="2">Second Excited (n=3)</option>
+        <option value="3">n=4</option>
+        <option value="4">n=5</option>
+    </select>
+    <div class="slider-container">
+        <label>Time Evolution Speed:</label>
+        <input type="range" id="time-speed" min="0" max="2" step="0.1" value="1">
+    </div>
+    <div class="slider-container">
+        <label>Wave Packet Width:</label>
+        <input type="range" id="packet-width" min="0.1" max="2" step="0.1" value="0.5">
+    </div>
+    <select id="viz-mode">
+        <option value="probability">Probability Density</option>
+        <option value="real">Real Part</option>
+        <option value="imaginary">Imaginary Part</option>
+    </select>
+    <button id="reset">Reset</button>
+    <button id="toggle-animation">Pause</button>
+    <button id="toggle-info">Know More</button>
+</div>
+
+<div id="info-panel">
+    <h3 style="color: #0af;">Understanding the Schrödinger Wave Equation Visualization</h3>
+    
+    <div class="section">
+        <h4>The Wave Function (ψ)</h4>
+        <p>The animated surface represents the wave function ψ, where:</p>
+        <ul>
+            <li>Height represents the amplitude of the wave function</li>
+            <li>Colors indicate the probability density (|ψ|²)</li>
+            <li>Blue regions show low probability</li>
+            <li>Red regions show high probability</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h4>Visualization Modes</h4>
+        <p><strong>Probability Density Mode:</strong> Shows |ψ|², representing the probability of finding the particle at each point</p>
+        <p><strong>Real Part Mode:</strong> Shows Re(ψ), the real component of the wave function</p>
+        <p><strong>Imaginary Part Mode:</strong> Shows Im(ψ), the imaginary component</p>
+    </div>
+
+    <div class="section">
+        <h4>Animation Features</h4>
+        <p>The animation demonstrates several quantum phenomena:</p>
+        <ul>
+            <li><strong>Wave Packet Evolution:</strong> The wave packet spreads over time, showing quantum uncertainty</li>
+            <li><strong>Energy Levels:</strong> Different states show distinct node patterns</li>
+            <li><strong>Tunneling:</strong> Wave function penetration into classically forbidden regions</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h4>Controls Explained</h4>
+        <ul>
+            <li><strong>Potential Well Depth:</strong> Controls the strength of confinement</li>
+            <li><strong>Well Width:</strong> Adjusts the spatial extent of the potential</li>
+            <li><strong>Energy Level:</strong> Changes between quantum states</li>
+            <li><strong>Time Evolution:</strong> Controls the speed of wave function evolution</li>
+            <li><strong>Wave Packet Width:</strong> Adjusts the spatial spread of the wave packet</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h4>Mathematical Background</h4>
+        <p>The time-dependent Schrödinger equation:</p>
+        <p style="font-family: 'Times New Roman', serif; font-size: 1.2em;">
+            iℏ∂ψ/∂t = -ℏ²/2m ∇²ψ + Vψ
+        </p>
+        <p>This equation describes how quantum states evolve in time, combining kinetic energy (-ℏ²/2m ∇²) and potential energy (V) terms.</p>
+    </div>
+</div>
+
+<script>
+let scene, camera, renderer, controls;
+let waveFunction, potentialWell;
+let time = 0;
+let isAnimating = true;
+let timeSpeed = 1;
+let composer;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    renderer.shadowMap.enabled = true;
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    camera.position.set(5, 5, 5);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Enhanced lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    const pointLight = new THREE.PointLight(0x0088ff, 1);
+    pointLight.position.set(-5, 5, -5);
+    scene.add(pointLight);
+
+    createWaveFunction();
+    createPotentialWell();
+    animate();
+}
+
+function createWaveFunction() {
+    const geometry = new THREE.PlaneGeometry(10, 10, 200, 200); // Increased resolution
+    const material = new THREE.MeshPhongMaterial({
+        side: THREE.DoubleSide,
+        vertexColors: true,
+        wireframe: false,
+        transparent: true,
+        opacity: 0.9,
+        shininess: 50
+    });
+
+    waveFunction = new THREE.Mesh(geometry, material);
+    waveFunction.rotation.x = -Math.PI / 2;
+    waveFunction.castShadow = true;
+    waveFunction.receiveShadow = true;
+    scene.add(waveFunction);
+
+    // Add wireframe overlay
+    const wireframeMaterial = new THREE.MeshBasicMaterial({
+        wireframe: true,
+        color: 0x0088ff,
+        transparent: true,
+        opacity: 0.1
+    });
+    const wireframe = new THREE.Mesh(geometry, wireframeMaterial);
+    wireframe.rotation.x = -Math.PI / 2;
+    scene.add(wireframe);
+
+    updateWaveFunction();
+}
+
+function createPotentialWell() {
+    const geometry = new THREE.BoxGeometry(10, 2, 10);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xffaa00,
+        transparent: true,
+        opacity: 0.15,
+        shininess: 100
+    });
+
+    potentialWell = new THREE.Mesh(geometry, material);
+    potentialWell.position.y = -1;
+    potentialWell.receiveShadow = true;
+    scene.add(potentialWell);
+}
+
+function updateWaveFunction() {
+    const geometry = waveFunction.geometry;
+    const positions = geometry.attributes.position.array;
+    const colors = new Float32Array(positions.length);
+
+    const energyLevel = parseInt(document.getElementById('energy-level').value);
+    const wellDepth = parseFloat(document.getElementById('potential-depth').value);
+    const packetWidth = parseFloat(document.getElementById('packet-width').value);
+    const vizMode = document.getElementById('viz-mode').value;
+
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const z = positions[i + 2];
+
+        const r = Math.sqrt(x * x + z * z);
+        const k = (energyLevel + 1) * Math.PI;
+        const phase = time * timeSpeed;
+        
+        let psi;
+        if (vizMode === 'probability') {
+            psi = Math.exp(-r * r / (2 * packetWidth)) * 
+                  Math.cos(k * r + phase) * 
+                  Math.exp(-0.1 * time * timeSpeed);
+            psi *= Math.sin(5 * time * timeSpeed) * 0.2; // Added oscillation
+        } else if (vizMode === 'real') {
+            psi = Math.cos(k * r - phase) * 
+                  Math.exp(-r * r / (2 * packetWidth)) *
+                  Math.cos(2 * time * timeSpeed); // Added temporal modulation
+        } else {
+            psi = Math.sin(k * r - phase) * 
+                  Math.exp(-r * r / (2 * packetWidth)) *
+                  Math.sin(2 * time * timeSpeed); // Added temporal modulation
+        }
+
+        // Add some interesting interference patterns
+        psi += 0.3 * Math.sin(3 * r - 0.5 * phase) * Math.exp(-r * r / (4 * packetWidth));
+
+        positions[i + 1] = psi * 1.5; // Amplified height
+
+        // Enhanced color mapping
+        const intensity = (psi + 1) / 2;
+        colors[i] = Math.pow(intensity, 1.5); // Red
+        colors[i + 1] = Math.pow(intensity, 2) * 0.5; // Green
+        colors[i + 2] = 1 - Math.pow(intensity, 0.5); // Blue
+    }
+
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (isAnimating) {
+        time += 0.01;
+        updateWaveFunction();
+    }
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Enhanced Event Listeners
+document.getElementById('potential-depth').addEventListener('input', updateWaveFunction);
+document.getElementById('well-width').addEventListener('input', () => {
+    const width = parseFloat(document.getElementById('well-width').value);
+    potentialWell.scale.set(width, 1, width);
+    updateWaveFunction();
+});
+document.getElementById('energy-level').addEventListener('change', updateWaveFunction);
+document.getElementById('time-speed').addEventListener('input', (e) => {
+    timeSpeed = parseFloat(e.target.value);
+});
+document.getElementById('packet-width').addEventListener('input', updateWaveFunction);
+document.getElementById('viz-mode').addEventListener('change', updateWaveFunction);
+
+document.getElementById('reset').addEventListener('click', () => {
+    time = 0;
+    camera.position.set(5, 5, 5);
+    controls.target.set(0, 0, 0);
+    controls.update();
+    updateWaveFunction();
+});
+
+document.getElementById('toggle-animation').addEventListener('click', (e) => {
+    isAnimating = !isAnimating;
+    e.target.textContent = isAnimating ? 'Pause' : 'Resume';
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const panel = document.getElementById('info-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>

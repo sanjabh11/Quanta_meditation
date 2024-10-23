@@ -1,0 +1,374 @@
+<html><head>
+<title>Maxwell's Electromagnetic Field Equations - 3D Visualization</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    background-color: #000;
+    color: #fff;
+  }
+  #canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+  #ui {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    width: 280px;
+  }
+  #info {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 400px;
+    max-height: 60%;
+    overflow-y: auto;
+    display: none;
+  }
+  .control-group {
+    margin: 10px 0;
+  }
+  button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+  }
+  button:hover {
+    background: #555;
+  }
+  label {
+    display: block;
+    margin: 5px 0;
+  }
+  .slider-container {
+    margin: 10px 0;
+  }
+  input[type="range"] {
+    width: 100%;
+  }
+  .equations {
+    font-family: "Times New Roman", serif;
+    font-size: 1.2em;
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="ui">
+  <div class="equations">
+    ∇ · E = ρ/ε₀<br>
+    ∇ · B = 0<br>
+    ∇ × E = -∂B/∂t<br>
+    ∇ × B = μ₀(J + ε₀∂E/∂t)
+  </div>
+  <div class="control-group">
+    <label>Charge Distribution</label>
+    <input type="range" id="charge-density" min="0" max="100" value="50">
+  </div>
+  <div class="control-group">
+    <label>Current Density</label>
+    <input type="range" id="current-density" min="0" max="100" value="50">
+  </div>
+  <div class="control-group">
+    <label>Field Line Density</label>
+    <input type="range" id="field-density" min="10" max="100" value="50">
+  </div>
+  <div class="control-group">
+    <label>Animation Speed</label>
+    <input type="range" id="animation-speed" min="0" max="100" value="50">
+  </div>
+  <div class="control-group">
+    <button id="toggle-dynamic">Toggle Dynamic/Static</button>
+    <button id="reset">Reset View</button>
+    <button id="toggleInfo">Know More</button>
+  </div>
+</div>
+
+<div id="info">
+  <h3>Maxwell's Electromagnetic Field Equations</h3>
+  <h4>Field Line Interpretation</h4>
+  <p>Electric field lines (blue) show the direction of force on positive charges. Magnetic field lines (red) form closed loops and show the direction of magnetic force on moving charges.</p>
+  
+  <h4>Wave Propagation</h4>
+  <p>Changes in electric fields create magnetic fields, and changes in magnetic fields create electric fields, leading to self-propagating electromagnetic waves.</p>
+  
+  <h4>E and B Field Relationship</h4>
+  <p>In electromagnetic waves, E and B fields are perpendicular to each other and to the direction of wave propagation. Their magnitudes are related by c (speed of light).</p>
+  
+  <h4>Charge and Current Effects</h4>
+  <p>Static charges create electric fields radiating outward. Moving charges (currents) create magnetic fields circulating around the current direction according to the right-hand rule.</p>
+  
+  <h4>Modern Applications</h4>
+  <ul>
+    <li>Radio and wireless communication</li>
+    <li>Electric motors and generators</li>
+    <li>Electromagnetic radiation therapy</li>
+    <li>Particle accelerators</li>
+    <li>MRI machines</li>
+  </ul>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000);
+
+// Create field visualization groups
+const electricFieldGroup = new THREE.Group();
+const magneticFieldGroup = new THREE.Group();
+const chargeGroup = new THREE.Group();
+const currentGroup = new THREE.Group();
+
+scene.add(electricFieldGroup);
+scene.add(magneticFieldGroup);
+scene.add(chargeGroup);
+scene.add(currentGroup);
+
+camera.position.set(0, 0, 20);
+camera.lookAt(0, 0, 0);
+
+// Create arrow helper function
+function createArrow(origin, direction, length, color, headLength = 0.5) {
+    const arrowHelper = new THREE.ArrowHelper(
+        direction.normalize(),
+        origin,
+        length,
+        color,
+        headLength,
+        headLength * 0.5
+    );
+    return arrowHelper;
+}
+
+// Create charge visualization
+function createCharge(position, magnitude) {
+    const geometry = new THREE.SphereGeometry(Math.abs(magnitude), 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+        color: magnitude > 0 ? 0xff0000 : 0x0000ff,
+        emissive: magnitude > 0 ? 0x600000 : 0x000060,
+        transparent: true,
+        opacity: 0.8
+    });
+    const charge = new THREE.Mesh(geometry, material);
+    charge.position.copy(position);
+    return charge;
+}
+
+// Create current stream
+function createCurrentParticle() {
+    const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const material = new THREE.MeshPhongMaterial({
+        color: 0xffff00,
+        emissive: 0x666600
+    });
+    const particle = new THREE.Mesh(geometry, material);
+    return particle;
+}
+
+// Update field visualization
+function updateFields(chargeDensity, currentDensity, fieldDensity) {
+    // Clear existing fields
+    while(electricFieldGroup.children.length > 0) {
+        electricFieldGroup.remove(electricFieldGroup.children[0]);
+    }
+    while(magneticFieldGroup.children.length > 0) {
+        magneticFieldGroup.remove(magneticFieldGroup.children[0]);
+    }
+
+    const gridSize = fieldDensity / 10;
+    const spacing = 10 / gridSize;
+
+    // Create electric field arrows
+    for(let x = -5; x <= 5; x += spacing) {
+        for(let y = -5; y <= 5; y += spacing) {
+            for(let z = -5; z <= 5; z += spacing) {
+                const origin = new THREE.Vector3(x, y, z);
+                const E = calculateEField(origin, chargeDensity);
+                const B = calculateBField(origin, currentDensity);
+                
+                if(E.length() > 0.1) {
+                    const eArrow = createArrow(
+                        origin,
+                        E,
+                        E.length() * 2,
+                        0x00ffff,
+                        spacing * 0.4
+                    );
+                    electricFieldGroup.add(eArrow);
+                }
+                
+                if(B.length() > 0.1) {
+                    const bArrow = createArrow(
+                        origin,
+                        B,
+                        B.length() * 2,
+                        0xff0000,
+                        spacing * 0.4
+                    );
+                    magneticFieldGroup.add(bArrow);
+                }
+            }
+        }
+    }
+}
+
+// Calculate electric field at a point
+function calculateEField(point, chargeDensity) {
+    const field = new THREE.Vector3();
+    chargeGroup.children.forEach(charge => {
+        const r = new THREE.Vector3().subVectors(point, charge.position);
+        const rSquared = r.lengthSq();
+        if(rSquared > 0.1) {
+            field.add(r.normalize().multiplyScalar(charge.scale.x / rSquared));
+        }
+    });
+    return field.multiplyScalar(chargeDensity / 50);
+}
+
+// Calculate magnetic field at a point
+function calculateBField(point, currentDensity) {
+    const field = new THREE.Vector3();
+    currentGroup.children.forEach(current => {
+        const r = new THREE.Vector3().subVectors(point, current.position);
+        const j = new THREE.Vector3(0, 1, 0); // Current direction
+        const bField = new THREE.Vector3().crossVectors(j, r);
+        const rSquared = r.lengthSq();
+        if(rSquared > 0.1) {
+            field.add(bField.multiplyScalar(currentDensity / (50 * rSquared)));
+        }
+    });
+    return field;
+}
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0x404040);
+scene.add(ambientLight);
+const light = new THREE.PointLight(0xffffff, 1, 100);
+light.position.set(10, 10, 10);
+scene.add(light);
+
+// Animation variables
+let isDynamic = true;
+let time = 0;
+const animate = () => {
+    requestAnimationFrame(animate);
+    
+    if(isDynamic) {
+        time += parseFloat(document.getElementById('animation-speed').value) / 1000;
+        
+        // Rotate field groups
+        electricFieldGroup.rotation.y = Math.sin(time * 0.5) * 0.1;
+        magneticFieldGroup.rotation.x = Math.cos(time * 0.5) * 0.1;
+        
+        // Update current particles
+        currentGroup.children.forEach((particle, i) => {
+            particle.position.y = (Math.sin(time + i) * 5) % 10 - 5;
+        });
+    }
+    
+    renderer.render(scene, camera);
+};
+
+// UI Controls
+document.getElementById('charge-density').addEventListener('input', (e) => {
+    updateFields(
+        parseFloat(e.target.value),
+        parseFloat(document.getElementById('current-density').value),
+        parseFloat(document.getElementById('field-density').value)
+    );
+});
+
+document.getElementById('current-density').addEventListener('input', (e) => {
+    updateFields(
+        parseFloat(document.getElementById('charge-density').value),
+        parseFloat(e.target.value),
+        parseFloat(document.getElementById('field-density').value)
+    );
+});
+
+document.getElementById('field-density').addEventListener('input', (e) => {
+    updateFields(
+        parseFloat(document.getElementById('charge-density').value),
+        parseFloat(document.getElementById('current-density').value),
+        parseFloat(e.target.value)
+    );
+});
+
+document.getElementById('toggle-dynamic').addEventListener('click', () => {
+    isDynamic = !isDynamic;
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(0, 0, 20);
+    camera.lookAt(0, 0, 0);
+    time = 0;
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+        input.value = input.defaultValue;
+    });
+    updateFields(50, 50, 50);
+});
+
+document.getElementById('toggleInfo').addEventListener('click', () => {
+    const info = document.getElementById('info');
+    info.style.display = info.style.display === 'none' ? 'block' : 'none';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initialize
+// Add some charges
+for(let i = 0; i < 3; i++) {
+    const charge = createCharge(
+        new THREE.Vector3(
+            Math.random() * 10 - 5,
+            Math.random() * 10 - 5,
+            Math.random() * 10 - 5
+        ),
+        Math.random() * 2 - 1
+    );
+    chargeGroup.add(charge);
+}
+
+// Add current particles
+for(let i = 0; i < 20; i++) {
+    const particle = createCurrentParticle();
+    particle.position.set(
+        Math.random() * 6 - 3,
+        Math.random() * 10 - 5,
+        Math.random() * 6 - 3
+    );
+    currentGroup.add(particle);
+}
+
+updateFields(50, 50, 50);
+animate();
+</script>
+</body></html>

@@ -1,0 +1,314 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan's Taxi Number 1729</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 100;
+    max-width: 300px;
+    backdrop-filter: blur(5px);
+}
+#info-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+    transition: background 0.3s;
+    width: 100%;
+}
+button:hover {
+    background: #666;
+}
+.slider-container {
+    margin: 10px 0;
+}
+#explode-slider {
+    width: 100%;
+    margin: 10px 0;
+}
+.formula {
+    font-family: "Times New Roman", serif;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-align: center;
+}
+.hidden {
+    display: none;
+}
+#number-display {
+    font-size: 1.5em;
+    text-align: center;
+    margin: 10px 0;
+    color: #4CAF50;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3>1729 Visualization</h3>
+    <div id="number-display">1³ + 12³ = 1729</div>
+    <button id="toggle-representation">Switch to 9³ + 10³</button>
+    <div class="slider-container">
+        <label for="explode-slider">Explode View:</label>
+        <input type="range" id="explode-slider" min="0" max="100" value="0">
+    </div>
+    <button id="reset">Reset View</button>
+    <button id="toggle-rotation">Pause Rotation</button>
+</div>
+
+<div id="info-panel">
+    <h3>Ramanujan's Taxi Number 1729</h3>
+    <button id="toggle-info">Know More</button>
+    <div id="extended-info" class="hidden">
+        <h4>The Famous Taxi Story</h4>
+        <p>When mathematician G.H. Hardy visited Ramanujan in the hospital, he mentioned that he had taken taxi number 1729, remarking that it seemed rather dull. Ramanujan immediately responded that it was quite the contrary - it was a very interesting number, being the smallest number expressible as the sum of two cubes in two different ways:</p>
+        <div class="formula">1729 = 1³ + 12³ = 9³ + 10³</div>
+        
+        <h4>Mathematical Properties:</h4>
+        <ul>
+            <li>1729 is known as the Hardy-Ramanujan number</li>
+            <li>It's the smallest taxicab number (also called Ta(2))</li>
+            <li>1³ = 1</li>
+            <li>12³ = 1,728</li>
+            <li>9³ = 729</li>
+            <li>10³ = 1,000</li>
+        </ul>
+        
+        <h4>Visualization Guide:</h4>
+        <ul>
+            <li>Purple cube represents 1³</li>
+            <li>Blue cubes represent 12³</li>
+            <li>Orange cubes represent 9³</li>
+            <li>Green cubes represent 10³</li>
+        </ul>
+        
+        <h4>Historical Significance:</h4>
+        <p>This incident demonstrates Ramanujan's exceptional mathematical intuition and his ability to see deep properties in numbers that others might overlook. The number 1729 has since become one of the most famous numbers in mathematics.</p>
+    </div>
+</div>
+
+<script>
+let scene, camera, renderer, controls;
+let cubeGroups = [];
+let isFirstRepresentation = true;
+let isRotating = true;
+const rotationSpeed = 0.005;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    camera.position.set(20, 20, 20);
+    controls.update();
+
+    addLighting();
+    createCubeRepresentations();
+}
+
+function addLighting() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 0.5);
+    pointLight.position.set(-5, -5, -5);
+    scene.add(pointLight);
+}
+
+function createCubeRepresentations() {
+    // First representation: 1³ + 12³
+    const group1 = new THREE.Group();
+    
+    // Create 1³ cube (purple)
+    const cube1 = createCube(1, 0x800080);
+    cube1.position.x = -8;
+    group1.add(cube1);
+    
+    // Create 12³ structure (blue)
+    const cube12 = createStructuredCube(12, 0x0000ff);
+    cube12.position.x = 8;
+    group1.add(cube12);
+
+    // Second representation: 9³ + 10³
+    const group2 = new THREE.Group();
+    
+    // Create 9³ structure (orange)
+    const cube9 = createStructuredCube(9, 0xffa500);
+    cube9.position.x = -8;
+    group2.add(cube9);
+    
+    // Create 10³ structure (green)
+    const cube10 = createStructuredCube(10, 0x00ff00);
+    cube10.position.x = 8;
+    group2.add(cube10);
+
+    group2.visible = false;
+    
+    scene.add(group1);
+    scene.add(group2);
+    
+    cubeGroups = [group1, group2];
+}
+
+function createCube(size, color) {
+    const geometry = new THREE.BoxGeometry(size, size, size);
+    const material = new THREE.MeshPhongMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.8,
+        specular: 0x444444,
+        shininess: 30
+    });
+    return new THREE.Mesh(geometry, material);
+}
+
+function createStructuredCube(size, color) {
+    const group = new THREE.Group();
+    const unitSize = 1;
+    
+    for(let x = 0; x < size; x++) {
+        for(let y = 0; y < size; y++) {
+            for(let z = 0; z < size; z++) {
+                const cube = createCube(unitSize, color);
+                cube.position.set(
+                    x * unitSize - (size * unitSize) / 2,
+                    y * unitSize - (size * unitSize) / 2,
+                    z * unitSize - (size * unitSize) / 2
+                );
+                cube.originalPosition = cube.position.clone();
+                group.add(cube);
+            }
+        }
+    }
+    
+    return group;
+}
+
+function explodeView(amount) {
+    cubeGroups.forEach(group => {
+        group.children.forEach(subGroup => {
+            if (subGroup instanceof THREE.Group) {
+                subGroup.children.forEach(cube => {
+                    const direction = cube.position.clone().normalize();
+                    cube.position.copy(cube.originalPosition.clone().add(direction.multiplyScalar(amount)));
+                });
+            }
+        });
+    });
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    TWEEN.update();
+    
+    if (isRotating) {
+        cubeGroups.forEach(group => {
+            group.rotation.y += rotationSpeed;
+        });
+    }
+    
+    renderer.render(scene, camera);
+}
+
+// Event Listeners
+document.getElementById('toggle-representation').addEventListener('click', () => {
+    isFirstRepresentation = !isFirstRepresentation;
+    cubeGroups[0].visible = isFirstRepresentation;
+    cubeGroups[1].visible = !isFirstRepresentation;
+    
+    const button = document.getElementById('toggle-representation');
+    const display = document.getElementById('number-display');
+    
+    if (isFirstRepresentation) {
+        button.textContent = "Switch to 9³ + 10³";
+        display.textContent = "1³ + 12³ = 1729";
+    } else {
+        button.textContent = "Switch to 1³ + 12³";
+        display.textContent = "9³ + 10³ = 1729";
+    }
+});
+
+document.getElementById('explode-slider').addEventListener('input', (e) => {
+    explodeView(e.target.value * 0.1);
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(20, 20, 20);
+    controls.reset();
+    document.getElementById('explode-slider').value = 0;
+    explodeView(0);
+    cubeGroups.forEach(group => {
+        group.rotation.set(0, 0, 0);
+    });
+});
+
+document.getElementById('toggle-rotation').addEventListener('click', (e) => {
+    isRotating = !isRotating;
+    e.target.textContent = isRotating ? 'Pause Rotation' : 'Resume Rotation';
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const info = document.getElementById('extended-info');
+    info.classList.toggle('hidden');
+    document.getElementById('toggle-info').textContent = 
+        info.classList.contains('hidden') ? 'Know More' : 'Show Less';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initialize and start animation
+init();
+animate();
+</script>
+</body>
+</html>

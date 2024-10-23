@@ -1,0 +1,281 @@
+<html><head><base href="https://ramanujan.sim/mock-theta/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan's Mock Theta Function</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 100;
+    width: 250px;
+    backdrop-filter: blur(5px);
+}
+#info-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    display: none;
+}
+.slider-container {
+    margin: 10px 0;
+}
+button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+    transition: background 0.3s;
+}
+button:hover {
+    background: #666;
+}
+input[type="range"] {
+    width: 100%;
+    margin: 5px 0;
+}
+.formula {
+    font-family: "Times New Roman", serif;
+    font-style: italic;
+    font-size: 1.2em;
+    margin: 10px 0;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3>Mock Theta Function</h3>
+    <div class="slider-container">
+        <label>Terms: <span id="terms-value">10</span></label>
+        <input type="range" id="terms" min="1" max="50" value="10">
+    </div>
+    <div class="slider-container">
+        <label>|q| range: <span id="q-value">0.5</span></label>
+        <input type="range" id="q-range" min="1" max="100" value="50">
+    </div>
+    <button id="reset">Reset View</button>
+    <button id="toggle-rotation">Pause Rotation</button>
+    <button id="toggle-info">Know More</button>
+</div>
+
+<div id="info-panel">
+    <h3>Ramanujan's Mock Theta Functions</h3>
+    <div class="formula">
+        f(q) = 1 + Σ (q^(n²) / (1+q)²(1+q²)²...(1+q^n)²)
+    </div>
+    <p>Mock theta functions, introduced by Ramanujan in his last letter to Hardy in 1920, are mysterious q-series that mimic the behavior of classical theta functions but are not quite modular forms.</p>
+    <p>In this visualization:</p>
+    <ul>
+        <li>The circular base represents the complex q-plane</li>
+        <li>The angle around the circle represents the phase of q</li>
+        <li>The radius from the center represents |q|</li>
+        <li>The height represents the magnitude of f(q)</li>
+        <li>Colors indicate the function's value (blue for low, red for high)</li>
+    </ul>
+    <p>Mock theta functions have deep connections to modular forms, quantum black holes, and partition functions. They continue to be an active area of research in modern mathematics.</p>
+</div>
+
+<script>
+class Complex {
+    constructor(re, im) {
+        this.re = re;
+        this.im = im;
+    }
+
+    static add(a, b) {
+        return new Complex(a.re + b.re, a.im + b.im);
+    }
+
+    multiply(b) {
+        return new Complex(
+            this.re * b.re - this.im * b.im,
+            this.re * b.im + this.im * b.re
+        );
+    }
+
+    divide(b) {
+        const denom = b.re * b.re + b.im * b.im;
+        return new Complex(
+            (this.re * b.re + this.im * b.im) / denom,
+            (this.im * b.re - this.re * b.im) / denom
+        );
+    }
+
+    pow(n) {
+        let r = Math.sqrt(this.re * this.re + this.im * this.im);
+        let theta = Math.atan2(this.im, this.re);
+        r = Math.pow(r, n);
+        theta = theta * n;
+        return new Complex(r * Math.cos(theta), r * Math.sin(theta));
+    }
+
+    abs() {
+        return Math.sqrt(this.re * this.re + this.im * this.im);
+    }
+}
+
+let scene, camera, renderer, controls;
+let surface;
+let isRotating = true;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    camera.position.set(3, 3, 3);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 0.8);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    createSurface();
+    animate();
+}
+
+function mockThetaFunction(q, terms) {
+    let sum = new Complex(1, 0);
+    for (let n = 1; n <= terms; n++) {
+        let term = q.pow(n * n);
+        let denom = new Complex(1, 0);
+        for (let k = 1; k <= n; k++) {
+            let qk = q.pow(k);
+            let factor = Complex.add(new Complex(1, 0), qk);
+            denom = denom.multiply(factor.pow(2));
+        }
+        sum = Complex.add(sum, term.divide(denom));
+    }
+    return sum;
+}
+
+function createSurface() {
+    if (surface) scene.remove(surface);
+
+    const terms = parseInt(document.getElementById('terms').value);
+    const maxQ = document.getElementById('q-range').value / 100;
+
+    const radialSegments = 50;
+    const heightSegments = 50;
+    
+    const geometry = new THREE.ParametricBufferGeometry((u, v, target) => {
+        const theta = u * Math.PI * 2;
+        const r = v * maxQ;
+        const q = new Complex(r * Math.cos(theta), r * Math.sin(theta));
+        const value = mockThetaFunction(q, terms);
+        const height = Math.min(Math.log(1 + value.abs()), 2);
+        
+        target.set(
+            r * Math.cos(theta) * 3,
+            height * 2,
+            r * Math.sin(theta) * 3
+        );
+    }, radialSegments, heightSegments);
+
+    const colors = new Float32Array(geometry.attributes.position.count * 3);
+    const positions = geometry.attributes.position.array;
+
+    for (let i = 0; i < positions.length; i += 3) {
+        const height = positions[i + 1];
+        const color = new THREE.Color();
+        color.setHSL(0.7 - height * 0.3, 1, 0.5);
+        const idx = i;
+        colors[idx] = color.r;
+        colors[idx + 1] = color.g;
+        colors[idx + 2] = color.b;
+    }
+
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        shininess: 50
+    });
+
+    surface = new THREE.Mesh(geometry, material);
+    scene.add(surface);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (isRotating && surface) {
+        surface.rotation.y += 0.005;
+    }
+    renderer.render(scene, camera);
+}
+
+// Event Listeners
+document.getElementById('terms').addEventListener('input', (e) => {
+    document.getElementById('terms-value').textContent = e.target.value;
+    createSurface();
+});
+
+document.getElementById('q-range').addEventListener('input', (e) => {
+    document.getElementById('q-value').textContent = (e.target.value / 100).toFixed(2);
+    createSurface();
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(3, 3, 3);
+    controls.reset();
+    if (surface) surface.rotation.set(0, 0, 0);
+});
+
+document.getElementById('toggle-rotation').addEventListener('click', (e) => {
+    isRotating = !isRotating;
+    e.target.textContent = isRotating ? 'Pause Rotation' : 'Resume Rotation';
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const panel = document.getElementById('info-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>

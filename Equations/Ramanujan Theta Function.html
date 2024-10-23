@@ -1,0 +1,328 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan Theta Function Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 100;
+    max-width: 300px;
+    backdrop-filter: blur(5px);
+}
+#info-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+.param-container {
+    margin: 10px 0;
+}
+input[type="range"] {
+    width: 100%;
+    margin: 5px 0;
+}
+input[type="number"] {
+    width: 60px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 3px;
+}
+button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+    transition: background 0.3s;
+}
+button:hover {
+    background: #666;
+}
+.hidden {
+    display: none;
+}
+.formula {
+    font-family: 'Times New Roman', serif;
+    font-style: italic;
+    margin: 10px 0;
+    font-size: 1.1em;
+    text-align: center;
+}
+.parameter-group {
+    border: 1px solid #444;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+.parameter-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #0f0;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3>Controls</h3>
+    <div class="parameter-group">
+        <div class="parameter-title">Parameter a</div>
+        <div class="param-container">
+            <label>Real part: <input type="number" id="a-real" value="0.5" step="0.1"></label>
+        </div>
+        <div class="param-container">
+            <label>Imaginary part: <input type="number" id="a-imag" value="0" step="0.1"></label>
+        </div>
+    </div>
+    
+    <div class="parameter-group">
+        <div class="parameter-title">Parameter b</div>
+        <div class="param-container">
+            <label>Real part: <input type="number" id="b-real" value="0.5" step="0.1"></label>
+        </div>
+        <div class="param-container">
+            <label>Imaginary part: <input type="number" id="b-imag" value="0" step="0.1"></label>
+        </div>
+    </div>
+
+    <div class="param-container">
+        <label for="terms">Number of Terms: <span id="term-value">10</span></label>
+        <input type="range" id="terms" min="1" max="100" value="10">
+    </div>
+
+    <button id="reset">Reset View</button>
+    <button id="animate-toggle">Pause Rotation</button>
+</div>
+
+<div id="info-panel">
+    <h3>Ramanujan Theta Function</h3>
+    <div class="formula">f(a,b) = Σ (-1)^n * a^(n(n+1)/2) * b^(n(n-1)/2)</div>
+    <button id="toggle-info">Know More</button>
+    <div id="extended-info" class="hidden">
+        <p>The Ramanujan Theta Function is a powerful mathematical tool that plays a crucial role in number theory and modular forms. This visualization shows:</p>
+        <ul>
+            <li>Surface height (z-axis): Magnitude of the function</li>
+            <li>X-axis: Real part of input</li>
+            <li>Y-axis: Imaginary part of input</li>
+            <li>Colors: Function value (blue=low, red=high)</li>
+        </ul>
+        <p>This function was extensively studied by Srinivasa Ramanujan and has deep connections to partition functions, elliptic functions, and string theory. The rapid convergence of this series makes it particularly useful in computational mathematics.</p>
+        <p>The visualization demonstrates how the function value changes as you vary the complex parameters a and b, revealing intricate patterns and symmetries in the complex plane.</p>
+    </div>
+</div>
+
+<script>
+let scene, camera, renderer, controls, surface;
+let isAnimating = true;
+const resolution = 50; // points per axis
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    camera.position.set(5, 5, 5);
+    controls.update();
+
+    addLighting();
+    createSurface();
+}
+
+function computeThetaFunction(a, b, terms) {
+    let sum = math.complex(0, 0);
+    for(let n = 0; n < terms; n++) {
+        const power1 = (n * (n + 1)) / 2;
+        const power2 = (n * (n - 1)) / 2;
+        const term = math.multiply(
+            Math.pow(-1, n),
+            math.pow(a, power1),
+            math.pow(b, power2)
+        );
+        sum = math.add(sum, term);
+    }
+    return sum;
+}
+
+function createSurface() {
+    if (surface) scene.remove(surface);
+
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const colors = [];
+    const indices = [];
+
+    const xMin = -2, xMax = 2;
+    const yMin = -2, yMax = 2;
+    const dx = (xMax - xMin) / resolution;
+    const dy = (yMax - yMin) / resolution;
+
+    const a = math.complex(
+        parseFloat(document.getElementById('a-real').value),
+        parseFloat(document.getElementById('a-imag').value)
+    );
+    const b = math.complex(
+        parseFloat(document.getElementById('b-real').value),
+        parseFloat(document.getElementById('b-imag').value)
+    );
+    const terms = parseInt(document.getElementById('terms').value);
+
+    // Calculate function values and store max for normalization
+    let maxMagnitude = 0;
+    const values = [];
+    for(let i = 0; i <= resolution; i++) {
+        values[i] = [];
+        for(let j = 0; j <= resolution; j++) {
+            const x = xMin + i * dx;
+            const y = yMin + j * dy;
+            const z = computeThetaFunction(
+                math.multiply(a, math.complex(x, y)),
+                b,
+                terms
+            );
+            const magnitude = math.abs(z);
+            values[i][j] = magnitude;
+            maxMagnitude = Math.max(maxMagnitude, magnitude);
+        }
+    }
+
+    // Create vertices and colors
+    for(let i = 0; i <= resolution; i++) {
+        for(let j = 0; j <= resolution; j++) {
+            const x = xMin + i * dx;
+            const y = yMin + j * dy;
+            const z = values[i][j];
+            
+            positions.push(x, y, z/5); // Scale down z for better visualization
+
+            // Color based on magnitude
+            const normalizedValue = z / maxMagnitude;
+            const color = new THREE.Color();
+            color.setHSL(0.7 * (1 - normalizedValue), 1, 0.5);
+            colors.push(color.r, color.g, color.b);
+        }
+    }
+
+    // Create faces
+    for(let i = 0; i < resolution; i++) {
+        for(let j = 0; j < resolution; j++) {
+            const a = i * (resolution + 1) + j;
+            const b = a + 1;
+            const c = (i + 1) * (resolution + 1) + j;
+            const d = c + 1;
+
+            indices.push(a, b, c);
+            indices.push(b, d, c);
+        }
+    }
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+
+    const material = new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        shininess: 50
+    });
+
+    surface = new THREE.Mesh(geometry, material);
+    scene.add(surface);
+}
+
+function addLighting() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    if (isAnimating && surface) {
+        surface.rotation.y += 0.005;
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Event Listeners
+['a-real', 'a-imag', 'b-real', 'b-imag'].forEach(id => {
+    document.getElementById(id).addEventListener('change', createSurface);
+});
+
+document.getElementById('terms').addEventListener('input', (e) => {
+    document.getElementById('term-value').textContent = e.target.value;
+    createSurface();
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(5, 5, 5);
+    controls.reset();
+    if(surface) surface.rotation.set(0, 0, 0);
+});
+
+document.getElementById('animate-toggle').addEventListener('click', (e) => {
+    isAnimating = !isAnimating;
+    e.target.textContent = isAnimating ? 'Pause Rotation' : 'Resume Rotation';
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const info = document.getElementById('extended-info');
+    info.classList.toggle('hidden');
+    document.getElementById('toggle-info').textContent = 
+        info.classList.contains('hidden') ? 'Know More' : 'Show Less';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initialize and start animation
+init();
+animate();
+</script>
+</body>
+</html>

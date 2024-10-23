@@ -1,0 +1,279 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Navier-Stokes Fluid Simulation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 100;
+    width: 300px;
+    backdrop-filter: blur(5px);
+    border: 1px solid #333;
+}
+#info-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 800px;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    border: 1px solid #333;
+}
+.slider-container {
+    margin: 10px 0;
+}
+.slider-container label {
+    display: block;
+    margin-bottom: 5px;
+    color: #0af;
+}
+button, select {
+    margin: 5px;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid #333;
+    border-radius: 5px;
+    cursor: pointer;
+}
+button:hover, select:hover {
+    background: #333;
+    border-color: #0af;
+}
+input[type="range"] {
+    width: 100%;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3 style="color: #0af; text-align: center;">Navier-Stokes Simulation</h3>
+    <div class="slider-container">
+        <label>Reynolds Number:</label>
+        <input type="range" id="reynolds" min="1" max="1000" value="100">
+    </div>
+    <div class="slider-container">
+        <label>Viscosity:</label>
+        <input type="range" id="viscosity" min="0.001" max="1" step="0.001" value="0.01">
+    </div>
+    <div class="slider-container">
+        <label>Simulation Speed:</label>
+        <input type="range" id="speed" min="0" max="2" step="0.1" value="1">
+    </div>
+    <select id="vizMode">
+        <option value="both">Both Streamlines & Particles</option>
+        <option value="streamlines">Streamlines Only</option>
+        <option value="particles">Particles Only</option>
+    </select>
+    <button id="resetBtn">Reset</button>
+    <button id="pauseBtn">Pause</button>
+    <button id="infoBtn">Know More</button>
+</div>
+
+<div id="info-panel">
+    <h3>Navier-Stokes Equations</h3>
+    <p>The animation visualizes the famous Navier-Stokes equations that govern fluid flow:</p>
+    <p style="font-family: 'Courier New', monospace;">
+        ρ(∂v/∂t + v·∇v) = -∇p + μ∇²v + f<br>
+        ∇ · v = 0
+    </p>
+    <h4>Visualization Elements:</h4>
+    <ul>
+        <li>Particles show fluid motion</li>
+        <li>Streamlines indicate flow direction</li>
+        <li>Colors represent velocity magnitude</li>
+        <li>Turbulence appears at high Reynolds numbers</li>
+    </ul>
+    <h4>Controls:</h4>
+    <ul>
+        <li>Reynolds Number: Controls flow regime (laminar to turbulent)</li>
+        <li>Viscosity: Fluid thickness/resistance to flow</li>
+        <li>Speed: Animation speed control</li>
+    </ul>
+</div>
+
+<script>
+let scene, camera, renderer, controls;
+let particles = [], streamlines = [];
+let time = 0;
+let isAnimating = true;
+let simulationSpeed = 1;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    
+    camera.position.set(15, 15, 15);
+    
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(ambientLight, directionalLight);
+    
+    createSimulation();
+    setupEventListeners();
+    animate();
+}
+
+function createSimulation() {
+    // Create particles
+    const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+    const particleMaterial = new THREE.MeshPhongMaterial({
+        color: 0x00aaff,
+        transparent: true,
+        opacity: 0.7
+    });
+
+    for (let i = 0; i < 1000; i++) {
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        resetParticle(particle);
+        particles.push(particle);
+        scene.add(particle);
+    }
+
+    // Create streamlines
+    const streamlineMaterial = new THREE.LineBasicMaterial({
+        color: 0xff5500,
+        transparent: true,
+        opacity: 0.5
+    });
+
+    for (let i = 0; i < 50; i++) {
+        const points = [];
+        for (let j = 0; j < 100; j++) {
+            points.push(new THREE.Vector3(
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 20
+            ));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, streamlineMaterial);
+        streamlines.push(line);
+        scene.add(line);
+    }
+}
+
+function resetParticle(particle) {
+    particle.position.set(
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20,
+        (Math.random() - 0.5) * 20
+    );
+    particle.velocity = new THREE.Vector3(0, 0, 0);
+}
+
+function updateSimulation() {
+    if (!isAnimating) return;
+
+    const reynolds = document.getElementById('reynolds').value;
+    const viscosity = document.getElementById('viscosity').value;
+    simulationSpeed = document.getElementById('speed').value;
+    time += 0.016 * simulationSpeed;
+
+    // Update particles
+    particles.forEach(particle => {
+        const pos = particle.position;
+        
+        // Fluid dynamics calculation
+        const vx = Math.sin(pos.y * 0.1 + time) * Math.cos(pos.z * 0.1) / reynolds;
+        const vy = Math.sin(pos.z * 0.1 + time) * Math.cos(pos.x * 0.1) / reynolds;
+        const vz = Math.sin(pos.x * 0.1 + time) * Math.cos(pos.y * 0.1) / reynolds;
+
+        particle.velocity = new THREE.Vector3(vx, vy, vz);
+        particle.position.add(particle.velocity.multiplyScalar(simulationSpeed));
+
+        // Boundary check
+        if (Math.abs(pos.x) > 10 || Math.abs(pos.y) > 10 || Math.abs(pos.z) > 10) {
+            resetParticle(particle);
+        }
+    });
+
+    // Update streamlines
+    streamlines.forEach((line, i) => {
+        const positions = line.geometry.attributes.position.array;
+        for (let j = 0; j < positions.length; j += 3) {
+            positions[j] += Math.sin(positions[j + 1] * 0.1 + time + i) * 0.03 * simulationSpeed;
+            positions[j + 1] += Math.cos(positions[j] * 0.1 + time + i) * 0.03 * simulationSpeed;
+            positions[j + 2] += Math.sin(positions[j + 2] * 0.1 + time + i) * 0.03 * simulationSpeed;
+
+            // Keep within bounds
+            if (Math.abs(positions[j]) > 10) positions[j] *= -0.9;
+            if (Math.abs(positions[j + 1]) > 10) positions[j + 1] *= -0.9;
+            if (Math.abs(positions[j + 2]) > 10) positions[j + 2] *= -0.9;
+        }
+        line.geometry.attributes.position.needsUpdate = true;
+    });
+}
+
+function setupEventListeners() {
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        particles.forEach(resetParticle);
+        time = 0;
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', function() {
+        isAnimating = !isAnimating;
+        this.textContent = isAnimating ? 'Pause' : 'Resume';
+    });
+
+    document.getElementById('infoBtn').addEventListener('click', () => {
+        const panel = document.getElementById('info-panel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    updateSimulation();
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Start the simulation
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<html><head>
+<title>Fibonacci Spiral & Golden Ratio - Interactive 3D Visualization</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    overflow: hidden;
+    background-color: #000;
+    color: #fff;
+  }
+  #canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+  #ui {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    width: 280px;
+    backdrop-filter: blur(5px);
+  }
+  #info {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: none;
+    backdrop-filter: blur(5px);
+  }
+  .control-group {
+    margin: 12px 0;
+  }
+  .formula {
+    font-family: "Times New Roman", serif;
+    font-size: 1.2em;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 5px;
+    margin: 10px 0;
+    text-align: center;
+  }
+  button {
+    background: linear-gradient(45deg, #4a90e2, #63b3ed);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+    transition: all 0.3s ease;
+  }
+  button:hover {
+    background: linear-gradient(45deg, #63b3ed, #4a90e2);
+    transform: scale(1.05);
+  }
+  label {
+    display: block;
+    margin: 8px 0;
+    color: #e2e8f0;
+  }
+  input[type="range"] {
+    width: 100%;
+    margin: 8px 0;
+  }
+  select {
+    width: 100%;
+    padding: 5px;
+    background: #2d3748;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  .value-display {
+    font-family: monospace;
+    color: #63b3ed;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <div class="formula">
+    Fₙ = Fₙ₋₁ + Fₙ₋₂<br>
+    φ = (1 + √5)/2 ≈ 1.618034
+  </div>
+  
+  <div class="control-group">
+    <label>Sequence Length: <span id="length-value" class="value-display">20</span></label>
+    <input type="range" id="sequence-length" min="3" max="34" value="20">
+  </div>
+  
+  <div class="control-group">
+    <label>Animation Speed: <span id="speed-value" class="value-display">1.0x</span></label>
+    <input type="range" id="animation-speed" min="0.1" max="2" step="0.1" value="1">
+  </div>
+  
+  <div class="control-group">
+    <label>Pattern Type:</label>
+    <select id="pattern-type">
+      <option value="spiral">Spiral Only</option>
+      <option value="rectangles">Golden Rectangles</option>
+      <option value="both">Combined View</option>
+    </select>
+  </div>
+  
+  <div class="control-group">
+    <label>Natural Example:</label>
+    <select id="natural-example">
+      <option value="nautilus">Nautilus Shell</option>
+      <option value="sunflower">Sunflower</option>
+      <option value="galaxy">Galaxy</option>
+      <option value="pinecone">Pine Cone</option>
+    </select>
+  </div>
+  
+  <div class="control-group">
+    <label>Zoom Level: <span id="zoom-value" class="value-display">100%</span></label>
+    <input type="range" id="zoom-level" min="50" max="200" value="100">
+  </div>
+  
+  <div class="control-group">
+    <button id="reset">Reset View</button>
+    <button id="toggleInfo">Know More</button>
+  </div>
+</div>
+
+<div id="info">
+  <h3>The Fibonacci Sequence & Golden Ratio</h3>
+  
+  <h4>Mathematical Relationship</h4>
+  <p>The ratio of consecutive Fibonacci numbers converges to the Golden Ratio (φ ≈ 1.618034). This irrational number appears when we solve the equation x² = x + 1.</p>
+  
+  <h4>Natural Occurrence</h4>
+  <p>Found extensively in nature:</p>
+  <ul>
+    <li>Spiral arrangement of leaves (phyllotaxis)</li>
+    <li>Shell growth patterns</li>
+    <li>Flower petal arrangements</li>
+    <li>Pine cone spiral patterns</li>
+    <li>Galaxy spiral arms</li>
+  </ul>
+  
+  <h4>Geometric Properties</h4>
+  <p>The Golden Ratio creates aesthetically pleasing proportions:</p>
+  <ul>
+    <li>Self-similar spiral growth</li>
+    <li>Golden rectangle divisions</li>
+    <li>Pentagonal symmetry</li>
+  </ul>
+  
+  <h4>Historical Significance</h4>
+  <p>Known since ancient times, studied by mathematicians from Euclid to Kepler. Named "Divine Proportion" during Renaissance.</p>
+  
+  <h4>Applications</h4>
+  <p>Used in:</p>
+  <ul>
+    <li>Classical architecture</li>
+    <li>Art composition</li>
+    <li>Modern design</li>
+    <li>Financial markets</li>
+    <li>Music composition</li>
+  </ul>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas'), antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x000000);
+
+// Create groups for different elements
+const spiralGroup = new THREE.Group();
+const rectanglesGroup = new THREE.Group();
+const numbersGroup = new THREE.Group();
+const naturalExampleGroup = new THREE.Group();
+
+scene.add(spiralGroup);
+scene.add(rectanglesGroup);
+scene.add(numbersGroup);
+scene.add(naturalExampleGroup);
+
+// Initialize camera position
+camera.position.z = 15;
+
+// Fibonacci sequence generator
+function* fibonacciGenerator() {
+    let prev = 0, curr = 1;
+    while (true) {
+        yield curr;
+        [prev, curr] = [curr, prev + curr];
+    }
+}
+
+// Create spiral curve
+function createFibonacciSpiral(segments) {
+    const points = [];
+    const fib = fibonacciGenerator();
+    let angle = 0;
+    
+    for (let i = 0; i < segments; i++) {
+        const radius = Math.sqrt(fib.next().value);
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        points.push(new THREE.Vector3(x, y, 0));
+        angle += Math.PI / 2;
+    }
+    
+    const curve = new THREE.CatmullRomCurve3(points);
+    return curve;
+}
+
+// Create rainbow colored spiral
+function createColoredSpiral(segments) {
+    const curve = createFibonacciSpiral(segments);
+    const geometry = new THREE.TubeGeometry(curve, segments * 10, 0.1, 8, false);
+    
+    // Create rainbow gradient material
+    const colors = new Float32Array(geometry.attributes.position.count * 3);
+    for (let i = 0; i < colors.length; i += 3) {
+        const hue = i / colors.length;
+        const color = new THREE.Color().setHSL(hue, 1, 0.5);
+        colors[i] = color.r;
+        colors[i + 1] = color.g;
+        colors[i + 2] = color.b;
+    }
+    
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const material = new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        shininess: 100,
+        transparent: true,
+        opacity: 0.8
+    });
+    
+    return new THREE.Mesh(geometry, material);
+}
+
+// Create golden rectangles
+function createGoldenRectangles(count) {
+    const phi = (1 + Math.sqrt(5)) / 2;
+    const group = new THREE.Group();
+    let width = 1;
+    let height = width * phi;
+    
+    for (let i = 0; i < count; i++) {
+        const geometry = new THREE.BoxGeometry(width, height, 0.01);
+        const material = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.5
+        });
+        const rectangle = new THREE.LineSegments(
+            new THREE.EdgesGeometry(geometry),
+            material
+        );
+        
+        rectangle.position.x = width / 2;
+        rectangle.position.y = height / 2;
+        group.add(rectangle);
+        
+        // Rotate and scale for next rectangle
+        [width, height] = [height, width * phi];
+        group.rotateZ(Math.PI / 2);
+    }
+    
+    return group;
+}
+
+// Animation loop
+let time = 0;
+function animate() {
+    requestAnimationFrame(animate);
+    
+    time += parseFloat(document.getElementById('animation-speed').value) * 0.01;
+    
+    // Rotate the entire scene
+    spiralGroup.rotation.z = time * 0.2;
+    rectanglesGroup.rotation.z = time * 0.2;
+    
+    // Pulse the Fibonacci numbers
+    numbersGroup.children.forEach((number, i) => {
+        number.scale.setScalar(1 + 0.1 * Math.sin(time * 2 + i));
+    });
+    
+    renderer.render(scene, camera);
+}
+
+// UI Controls
+document.getElementById('sequence-length').addEventListener('input', (e) => {
+    const length = parseInt(e.target.value);
+    document.getElementById('length-value').textContent = length;
+    updateSpiral(length);
+});
+
+document.getElementById('animation-speed').addEventListener('input', (e) => {
+    document.getElementById('speed-value').textContent = `${e.target.value}x`;
+});
+
+document.getElementById('pattern-type').addEventListener('change', (e) => {
+    spiralGroup.visible = e.target.value !== 'rectangles';
+    rectanglesGroup.visible = e.target.value !== 'spiral';
+});
+
+document.getElementById('zoom-level').addEventListener('input', (e) => {
+    const zoom = parseInt(e.target.value);
+    document.getElementById('zoom-value').textContent = `${zoom}%`;
+    camera.position.z = 15 * (100 / zoom);
+});
+
+document.getElementById('toggleInfo').addEventListener('click', () => {
+    const info = document.getElementById('info');
+    info.style.display = info.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(0, 0, 15);
+    time = 0;
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+        input.value = input.defaultValue;
+        input.dispatchEvent(new Event('input'));
+    });
+});
+
+// Window resize handler
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initialize the scene
+function init() {
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+    
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(10, 10, 10);
+    scene.add(pointLight);
+    
+    // Create initial spiral
+    const spiral = createColoredSpiral(20);
+    spiralGroup.add(spiral);
+    
+    // Create initial rectangles
+    const rectangles = createGoldenRectangles(10);
+    rectanglesGroup.add(rectangles);
+    
+    animate();
+}
+
+init();
+
+// Helper function to update spiral
+function updateSpiral(segments) {
+    spiralGroup.clear();
+    spiralGroup.add(createColoredSpiral(segments));
+}
+</script>
+</body></html>

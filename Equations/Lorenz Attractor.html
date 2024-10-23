@@ -1,0 +1,198 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>3D Lorenz Attractor Animation with Controls</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+canvas { display: block; }
+#info {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    pointer-events: none;
+}
+#controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+}
+#controls input {
+    width: 50px;
+    margin-right: 10px;
+}
+#explanation {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+    color: white;
+    max-height: 30%;
+    overflow-y: auto;
+}
+.hidden { display: none; }
+button { margin-top: 10px; }
+</style>
+</head>
+<body>
+<div id="info">Lorenz Attractor<br>dx/dt = σ(y - x)<br>dy/dt = x(ρ - z) - y<br>dz/dt = xy - βz</div>
+<div id="controls">
+    <label>σ: <input type="number" id="sigma" value="10" step="0.1"></label><br>
+    <label>ρ: <input type="number" id="rho" value="28" step="0.1"></label><br>
+    <label>β: <input type="number" id="beta" value="2.66666" step="0.00001"></label><br>
+    <button id="reset">Reset</button>
+</div>
+<div id="explanation">
+    <h3>Lorenz Attractor</h3>
+    <p>The Lorenz Attractor is a set of chaotic solutions of the Lorenz system. It was first studied by Edward Lorenz, a mathematician and meteorologist, in 1963.</p>
+    <button id="toggleMore">Know More</button>
+    <div id="moreInfo" class="hidden">
+        <p>The system is defined by three coupled differential equations:</p>
+        <ul>
+            <li>dx/dt = σ(y - x)</li>
+            <li>dy/dt = x(ρ - z) - y</li>
+            <li>dz/dt = xy - βz</li>
+        </ul>
+        <p>Where:</p>
+        <ul>
+            <li>σ (sigma) is the Prandtl number</li>
+            <li>ρ (rho) is the Rayleigh number</li>
+            <li>β (beta) is related to the physical dimensions of the layer</li>
+        </ul>
+        <p>The Lorenz system is notable for having chaotic solutions for certain parameter values and initial conditions. In particular, the Lorenz attractor is a set of chaotic solutions of the Lorenz system which, when plotted, resemble a butterfly or figure-eight pattern.</p>
+        <p>This system demonstrates the phenomenon known as deterministic chaos, where a deterministic system exhibits aperiodic behavior that depends sensitively on the precise initial conditions, hence making long-term prediction impossible in general.</p>
+    </div>
+</div>
+<script>
+// Set up the scene, camera, and renderer
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Create a geometry for the Lorenz attractor
+const geometry = new THREE.BufferGeometry();
+const maxPoints = 10000;
+const positions = new Float32Array(maxPoints * 3);
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+// Create a line material with a gradient color
+const material = new THREE.ShaderMaterial({
+    vertexShader: `
+        varying vec3 vColor;
+        void main() {
+            vColor = vec3(position.z / 50.0 + 0.5, position.x / 50.0 + 0.5, position.y / 50.0 + 0.5);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+            gl_FragColor = vec4(vColor, 1.0);
+        }
+    `,
+});
+
+// Create the line
+const line = new THREE.Line(geometry, material);
+scene.add(line);
+
+// Lorenz attractor parameters
+let sigma = 10;
+let rho = 28;
+let beta = 8/3;
+
+// Initial conditions
+let x = 0.1;
+let y = 0;
+let z = 0;
+let t = 0;
+const dt = 0.01;
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+
+    // Update Lorenz attractor
+    const dx = sigma * (y - x) * dt;
+    const dy = (x * (rho - z) - y) * dt;
+    const dz = (x * y - beta * z) * dt;
+
+    x += dx;
+    y += dy;
+    z += dz;
+
+    // Add new point to the line
+    positions[t * 3] = x;
+    positions[t * 3 + 1] = y;
+    positions[t * 3 + 2] = z;
+
+    t = (t + 1) % maxPoints;
+
+    // Update the entire buffer
+    line.geometry.attributes.position.needsUpdate = true;
+
+    // Rotate the camera around the attractor
+    const angle = Date.now() * 0.001;
+    camera.position.x = Math.sin(angle) * 50;
+    camera.position.z = Math.cos(angle) * 50;
+    camera.position.y = Math.sin(angle * 0.5) * 30;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+}
+
+// Handle window resizing
+window.addEventListener('resize', onWindowResize, false);
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// Control panel functionality
+const sigmaInput = document.getElementById('sigma');
+const rhoInput = document.getElementById('rho');
+const betaInput = document.getElementById('beta');
+const resetButton = document.getElementById('reset');
+
+sigmaInput.addEventListener('input', updateParams);
+rhoInput.addEventListener('input', updateParams);
+betaInput.addEventListener('input', updateParams);
+resetButton.addEventListener('click', resetSimulation);
+
+function updateParams() {
+    sigma = parseFloat(sigmaInput.value);
+    rho = parseFloat(rhoInput.value);
+    beta = parseFloat(betaInput.value);
+}
+
+function resetSimulation() {
+    x = 0.1;
+    y = 0;
+    z = 0;
+    t = 0;
+    positions.fill(0);
+    line.geometry.attributes.position.needsUpdate = true;
+}
+
+// Toggle more info
+const toggleMoreButton = document.getElementById('toggleMore');
+const moreInfo = document.getElementById('moreInfo');
+
+toggleMoreButton.addEventListener('click', () => {
+    moreInfo.classList.toggle('hidden');
+    toggleMoreButton.textContent = moreInfo.classList.contains('hidden') ? 'Know More' : 'Show Less';
+});
+
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<html><head><base href="https://www.websimcreationengine.com/triple-hoberman-heart-linkage/">
+<title>Triple Hoberman Mechanism with Extended Heart-Shaped Linkage</title>
+<style>
+    body {
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #1a1a1a;
+        font-family: Arial, sans-serif;
+        color: #f0f0f0;
+    }
+    #canvas-container {
+        border: 2px solid #4a4a4a;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    #controls {
+        margin-top: 20px;
+        text-align: center;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+        margin: 0 10px;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    #info {
+        margin-top: 20px;
+        text-align: center;
+        max-width: 800px;
+    }
+</style>
+</head>
+<body>
+<div>
+    <div id="canvas-container">
+        <canvas id="mechanismCanvas" width="1000" height="800"></canvas>
+    </div>
+    <div id="controls">
+        <button id="startStopBtn">Start/Stop</button>
+        <button id="resetBtn">Reset</button>
+    </div>
+    <div id="info">
+        <h2>Triple Hoberman Mechanism with Extended Heart-Shaped Linkage</h2>
+        <p>This visualization combines three Hoberman mechanisms interconnected by sharing triangles, along with an extended heart-shaped linkage mechanism. Each Hoberman triangle is an isosceles triangle with a vertex angle of 120 degrees. The mechanism demonstrates rotational motion at intervals of 30 degrees, creating geometric shapes such as regular hexagons and hexagrams. The extended heart-shaped linkage, now with four Wittgenstein's rods, adds an artistic and complex touch to this mathematical demonstration.</p>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('mechanismCanvas');
+const ctx = canvas.getContext('2d');
+const startStopBtn = document.getElementById('startStopBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let isAnimating = false;
+let animationId = null;
+
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const scale = 120;
+
+let angle = 0;
+const speed = 0.02;
+
+// Heart-shaped linkage parameters
+const r1 = 0.5; // Radius of the circular motion
+const r2 = 1; // Length of the first Wittgenstein's rod
+const r3 = 0.75; // Length of the second Wittgenstein's rod
+const r4 = 0.6; // Length of the third Wittgenstein's rod
+
+let tracedPoints = [];
+
+function drawMechanism() {
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Hoberman mechanisms
+    drawHobermanMechanism(centerX - 250, centerY, angle);
+    drawHobermanMechanism(centerX, centerY, -angle * 1.2);
+    drawHobermanMechanism(centerX + 250, centerY, angle * 0.8);
+
+    // Draw heart-shaped linkage
+    drawHeartLinkage();
+
+    angle += speed;
+}
+
+function drawHobermanMechanism(cx, cy, currentAngle) {
+    const triangleHeight = Math.sqrt(3) / 2;
+    
+    for (let i = 0; i < 6; i++) {
+        const rotationAngle = i * Math.PI / 3 + currentAngle;
+        
+        // Calculate triangle vertices
+        const x1 = cx + Math.cos(rotationAngle) * scale;
+        const y1 = cy + Math.sin(rotationAngle) * scale;
+        
+        const x2 = cx + Math.cos(rotationAngle + Math.PI/3) * scale;
+        const y2 = cy + Math.sin(rotationAngle + Math.PI/3) * scale;
+        
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        
+        const tipX = midX + (midY - cy) * triangleHeight;
+        const tipY = midY - (midX - cx) * triangleHeight;
+
+        // Draw triangle
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(tipX, tipY);
+        ctx.closePath();
+        ctx.strokeStyle = `hsl(${i * 60}, 100%, 50%)`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Draw connecting lines
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(tipX, tipY);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+}
+
+function drawHeartLinkage() {
+    // Draw the traced heart shape
+    ctx.beginPath();
+    ctx.strokeStyle = '#ff3366';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < tracedPoints.length; i++) {
+        ctx.lineTo(tracedPoints[i].x, tracedPoints[i].y);
+    }
+    ctx.stroke();
+
+    // Calculate positions
+    const x1 = centerX + r1 * Math.cos(angle) * scale;
+    const y1 = centerY + r1 * Math.sin(angle) * scale;
+
+    const x2 = x1 + r2 * Math.cos(2 * angle) * scale;
+    const y2 = y1 + r2 * Math.sin(2 * angle) * scale;
+
+    const x3 = x2 + r3 * Math.cos(3 * angle) * scale;
+    const y3 = y2 + r3 * Math.sin(3 * angle) * scale;
+
+    const x4 = x3 + r4 * Math.cos(4 * angle) * scale;
+    const y4 = y3 + r4 * Math.sin(4 * angle) * scale;
+
+    // Draw connecting lines (rods)
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(x1, y1);
+    ctx.strokeStyle = '#ff9933'; // Orange color for the first rod
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = '#66c2ff'; // Light blue color for the second rod
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x3, y3);
+    ctx.strokeStyle = '#ff3366'; // Pink color for the third rod
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x3, y3);
+    ctx.lineTo(x4, y4);
+    ctx.strokeStyle = '#33ff66'; // Light green color for the fourth rod
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Draw points
+    drawPoint(centerX, centerY, '#4a4a4a');
+    drawPoint(x1, y1, '#ff9933');
+    drawPoint(x2, y2, '#66c2ff');
+    drawPoint(x3, y3, '#ff3366');
+    drawPoint(x4, y4, '#33ff66');
+
+    // Add point to traced points
+    tracedPoints.push({x: x4, y: y4});
+    if (tracedPoints.length > 1000) {
+        tracedPoints.shift();
+    }
+}
+
+function drawPoint(x, y, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
+
+function animate() {
+    drawMechanism();
+    if (isAnimating) {
+        animationId = requestAnimationFrame(animate);
+    }
+}
+
+function toggleAnimation() {
+    isAnimating = !isAnimating;
+    if (isAnimating) {
+        animate();
+    } else {
+        cancelAnimationFrame(animationId);
+    }
+}
+
+function resetAnimation() {
+    isAnimating = false;
+    cancelAnimationFrame(animationId);
+    angle = 0;
+    tracedPoints = [];
+    drawMechanism();
+}
+
+startStopBtn.addEventListener('click', toggleAnimation);
+resetBtn.addEventListener('click', resetAnimation);
+
+// Initial draw
+drawMechanism();
+</script>
+</body></html>

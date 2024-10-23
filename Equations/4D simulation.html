@@ -1,0 +1,1000 @@
+<html><head>
+<title>Fluid 4D Fractal Animation Explorer - Random Each Time</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    font-family: Arial, sans-serif;
+  }
+  #canvas {
+    width: 100%;
+    height: 100%;
+  }
+  #controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 300px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+  }
+  #controls:hover, #controls.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .slider-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .slider-label {
+    flex: 1;
+    margin-right: 10px;
+  }
+  input[type="range"] {
+    flex: 2;
+  }
+  .slider-value {
+    flex: 0 0 40px;
+    text-align: right;
+  }
+  .color-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .color-label {
+    flex: 1;
+    margin-right: 10px;
+  }
+  input[type="color"] {
+    width: 50px;
+    height: 25px;
+  }
+  button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="controls">
+  <button id="play">Play/Pause</button>
+  <button id="randomize">Randomize</button>
+  <div class="preset-container">
+    <label for="preset-select">Preset:</label>
+    <select id="preset-select">
+      <option value="">Custom</option>
+      <option value="0">Liquid Gold</option>
+      <option value="1">Mercury Flow</option>
+      <option value="2">Rose Gold Dream</option>
+      <option value="3">Cosmic Silver</option>
+      <option value="4">Bronze Age</option>
+      <option value="5">Platinum Swirl</option>
+      <option value="6">Copper River</option>
+      <option value="7">Titanium Tempest</option>
+      <option value="8">Iridescent Pearl</option>
+      <option value="9">Molten Steel</option>
+      <option value="10">Aurora Borealis</option>
+      <option value="11">Ethereal Mist</option>
+      <option value="12">Deep Ocean</option>
+      <option value="13">Sunset Glow</option>
+      <option value="14">Emerald Dream</option>
+      <option value="15">Purple Haze</option>
+      <option value="16">Firestorm</option>
+      <option value="17">Velvet Night</option>
+      <option value="18">Crimson Tide</option>
+      <option value="19">Golden Sands</option>
+    </select>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Speed:</span>
+    <input type="range" id="speed" min="0.1" max="2" step="0.1" value="1">
+    <span class="slider-value" id="speedValue">1x</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Fluidity:</span>
+    <input type="range" id="fluidity" min="0" max="1" step="0.05" value="0.3">
+    <span class="slider-value" id="fluidityValue">0.3</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Iterations:</span>
+    <input type="range" id="iterations" min="5" max="30" step="1" value="20">
+    <span class="slider-value" id="iterationsValue">20</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Zoom:</span>
+    <input type="range" id="zoom" min="0.5" max="5" step="0.1" value="2.5">
+    <span class="slider-value" id="zoomValue">2.5</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Rotation Speed:</span>
+    <input type="range" id="rotationSpeed" min="0" max="0.5" step="0.01" value="0.3">
+    <span class="slider-value" id="rotationSpeedValue">0.3</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Glow Intensity:</span>
+    <input type="range" id="glowIntensity" min="0" max="2" step="0.1" value="0.5">
+    <span class="slider-value" id="glowIntensityValue">0.5</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Color Speed:</span>
+    <input type="range" id="colorSpeed" min="0.1" max="2" step="0.1" value="0.5">
+    <span class="slider-value" id="colorSpeedValue">0.5</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Color Mix:</span>
+    <input type="range" id="colorMix" min="0" max="1" step="0.01" value="0.3">
+    <span class="slider-value" id="colorMixValue">0.3</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Metallic Sheen:</span>
+    <input type="range" id="metallicSheen" min="0" max="1" step="0.01" value="0.3">
+    <span class="slider-value" id="metallicSheenValue">0.3</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Surface Roughness:</span>
+    <input type="range" id="surfaceRoughness" min="0" max="1" step="0.01" value="0.1">
+    <span class="slider-value" id="surfaceRoughnessValue">0.1</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Liquid Viscosity:</span>
+    <input type="range" id="liquidViscosity" min="0" max="1" step="0.01" value="0.5">
+    <span class="slider-value" id="liquidViscosityValue">0.5</span>
+  </div>
+  <div class="color-container">
+    <span class="color-label">Color 1:</span>
+    <input type="color" id="color1" value="#C0C0C0">
+  </div>
+  <div class="color-container">
+    <span class="color-label">Color 2:</span>
+    <input type="color" id="color2" value="#D3D3D3">
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Color Cycle Speed:</span>
+    <input type="range" id="colorCycleSpeed" min="0.1" max="2" step="0.1" value="0.5">
+    <span class="slider-value" id="colorCycleSpeedValue">0.5</span>
+  </div>
+  <div class="slider-container">
+    <span class="slider-label">Color Cycle Intensity:</span>
+    <input type="range" id="colorCycleIntensity" min="0" max="1" step="0.01" value="0.5">
+    <span class="slider-value" id="colorCycleIntensityValue">0.5</span>
+  </div>
+</div>
+
+<script>
+let scene, camera, renderer, uniforms, material, mesh;
+let playing = true;
+let speed = 1;
+let fluidity = 0.3;
+let iterations = 20;
+let zoom = 2.5;
+let rotationSpeed = 0.3;
+let glowIntensity = 0.5;
+let colorSpeed = 0.5;
+let colorMix = 0.3;
+let metallicSheen = 0.3;
+let surfaceRoughness = 0.1;
+let liquidViscosity = 0.5;
+let colorCycleSpeed = 0.5;
+let colorCycleIntensity = 0.5;
+let color1 = new THREE.Color(0xC0C0C0);
+let color2 = new THREE.Color(0xD3D3D3);
+let seed;
+
+const presets = [
+  {
+    name: "Liquid Gold",
+    fluidity: 0.4,
+    iterations: 25,
+    zoom: 2.8,
+    rotationSpeed: 0.15,
+    glowIntensity: 0.7,
+    colorSpeed: 0.3,
+    colorMix: 0.2,
+    metallicSheen: 0.8,
+    surfaceRoughness: 0.1,
+    liquidViscosity: 0.6,
+    colorCycleSpeed: 0.3,
+    colorCycleIntensity: 0.2,
+    color1: "#FFD700",
+    color2: "#DAA520"
+  },
+  {
+    name: "Mercury Flow",
+    fluidity: 0.5,
+    iterations: 20,
+    zoom: 2.5,
+    rotationSpeed: 0.2,
+    glowIntensity: 0.6,
+    colorSpeed: 0.4,
+    colorMix: 0.1,
+    metallicSheen: 0.9,
+    surfaceRoughness: 0.05,
+    liquidViscosity: 0.7,
+    colorCycleSpeed: 0.2,
+    colorCycleIntensity: 0.1,
+    color1: "#C0C0C0",
+    color2: "#A9A9A9"
+  },
+  {
+    name: "Rose Gold Dream",
+    fluidity: 0.3,
+    iterations: 22,
+    zoom: 3.0,
+    rotationSpeed: 0.1,
+    glowIntensity: 0.8,
+    colorSpeed: 0.2,
+    colorMix: 0.3,
+    metallicSheen: 0.7,
+    surfaceRoughness: 0.15,
+    liquidViscosity: 0.5,
+    colorCycleSpeed: 0.4,
+    colorCycleIntensity: 0.3,
+    color1: "#B76E79",
+    color2: "#E0BFB8"
+  },
+  {
+    name: "Cosmic Silver",
+    fluidity: 0.6,
+    iterations: 28,
+    zoom: 2.2,
+    rotationSpeed: 0.25,
+    glowIntensity: 0.9,
+    colorSpeed: 0.5,
+    colorMix: 0.4,
+    metallicSheen: 0.6,
+    surfaceRoughness: 0.2,
+    liquidViscosity: 0.4,
+    colorCycleSpeed: 0.6,
+    colorCycleIntensity: 0.4,
+    color1: "#E0E0E0",
+    color2: "#B0B0B0"
+  },
+  {
+    name: "Bronze Age",
+    fluidity: 0.35,
+    iterations: 24,
+    zoom: 2.6,
+    rotationSpeed: 0.18,
+    glowIntensity: 0.65,
+    colorSpeed: 0.35,
+    colorMix: 0.25,
+    metallicSheen: 0.75,
+    surfaceRoughness: 0.12,
+    liquidViscosity: 0.55,
+    colorCycleSpeed: 0.35,
+    colorCycleIntensity: 0.25,
+    color1: "#CD7F32",
+    color2: "#B87333"
+  },
+  {
+    name: "Platinum Swirl",
+    fluidity: 0.45,
+    iterations: 26,
+    zoom: 2.7,
+    rotationSpeed: 0.22,
+    glowIntensity: 0.75,
+    colorSpeed: 0.45,
+    colorMix: 0.15,
+    metallicSheen: 0.85,
+    surfaceRoughness: 0.08,
+    liquidViscosity: 0.65,
+    colorCycleSpeed: 0.25,
+    colorCycleIntensity: 0.15,
+    color1: "#E5E4E2",
+    color2: "#CECECE"
+  },
+  {
+    name: "Copper River",
+    fluidity: 0.55,
+    iterations: 23,
+    zoom: 2.4,
+    rotationSpeed: 0.2,
+    glowIntensity: 0.7,
+    colorSpeed: 0.4,
+    colorMix: 0.3,
+    metallicSheen: 0.7,
+    surfaceRoughness: 0.18,
+    liquidViscosity: 0.5,
+    colorCycleSpeed: 0.45,
+    colorCycleIntensity: 0.35,
+    color1: "#B87333",
+    color2: "#CD7F32"
+  },
+  {
+    name: "Titanium Tempest",
+    fluidity: 0.5,
+    iterations: 27,
+    zoom: 2.9,
+    rotationSpeed: 0.28,
+    glowIntensity: 0.85,
+    colorSpeed: 0.55,
+    colorMix: 0.35,
+    metallicSheen: 0.8,
+    surfaceRoughness: 0.1,
+    liquidViscosity: 0.45,
+    colorCycleSpeed: 0.5,
+    colorCycleIntensity: 0.4,
+    color1: "#878681",
+    color2: "#D3D3D3"
+  },
+  {
+    name: "Iridescent Pearl",
+    fluidity: 0.4,
+    iterations: 25,
+    zoom: 2.5,
+    rotationSpeed: 0.15,
+    glowIntensity: 0.9,
+    colorSpeed: 0.6,
+    colorMix: 0.5,
+    metallicSheen: 0.9,
+    surfaceRoughness: 0.05,
+    liquidViscosity: 0.6,
+    colorCycleSpeed: 0.7,
+    colorCycleIntensity: 0.6,
+    color1: "#F0EAD6",
+    color2: "#FDEEF4"
+  },
+  {
+    name: "Molten Steel",
+    fluidity: 0.6,
+    iterations: 30,
+    zoom: 2.3,
+    rotationSpeed: 0.3,
+    glowIntensity: 1.0,
+    colorSpeed: 0.5,
+    colorMix: 0.2,
+    metallicSheen: 0.95,
+    surfaceRoughness: 0.15,
+    liquidViscosity: 0.7,
+    colorCycleSpeed: 0.4,
+    colorCycleIntensity: 0.3,
+    color1: "#71797E",
+    color2: "#C0C0C0"
+  },
+  {
+    name: "Aurora Borealis",
+    fluidity: 0.6,
+    iterations: 28,
+    zoom: 2.7,
+    rotationSpeed: 0.12,
+    glowIntensity: 0.8,
+    colorSpeed: 0.4,
+    colorMix: 0.3,
+    metallicSheen: 0.5,
+    surfaceRoughness: 0.2,
+    liquidViscosity: 0.5,
+    colorCycleSpeed: 0.6,
+    colorCycleIntensity: 0.5,
+    color1: "#00FF7F",
+    color2: "#1E90FF"
+  },
+  {
+    name: "Ethereal Mist",
+    fluidity: 0.5,
+    iterations: 24,
+    zoom: 2.9,
+    rotationSpeed: 0.1,
+    glowIntensity: 0.9,
+    colorSpeed: 0.3,
+    colorMix: 0.4,
+    metallicSheen: 0.4,
+    surfaceRoughness: 0.15,
+    liquidViscosity: 0.6,
+    colorCycleSpeed: 0.7,
+    colorCycleIntensity: 0.6,
+    color1: "#E6E6FA",
+    color2: "#D8BFD8"
+  },
+  {
+    name: "Deep Ocean",
+    fluidity: 0.7,
+    iterations: 26,
+    zoom: 2.6,
+    rotationSpeed: 0.18,
+    glowIntensity: 0.7,
+    colorSpeed: 0.3,
+    colorMix: 0.2,
+    metallicSheen: 0.5,
+    surfaceRoughness: 0.25,
+    liquidViscosity: 0.7,
+    colorCycleSpeed: 0.5,
+    colorCycleIntensity: 0.4,
+    color1: "#000080",
+    color2: "#008080"
+  },
+  {
+    name: "Sunset Glow",
+    fluidity: 0.5,
+    iterations: 22,
+    zoom: 3.0,
+    rotationSpeed: 0.1,
+    glowIntensity: 0.85,
+    colorSpeed: 0.4,
+    colorMix: 0.5,
+    metallicSheen: 0.6,
+    surfaceRoughness: 0.18,
+    liquidViscosity: 0.5,
+    colorCycleSpeed: 0.5,
+    colorCycleIntensity: 0.5,
+    color1: "#FFA07A",
+    color2: "#FF4500"
+  },
+  {
+    name: "Emerald Dream",
+    fluidity: 0.55,
+    iterations: 25,
+    zoom: 2.8,
+    rotationSpeed: 0.15,
+    glowIntensity: 0.75,
+    colorSpeed: 0.35,
+    colorMix: 0.2,
+    metallicSheen: 0.5,
+    surfaceRoughness: 0.15,
+    liquidViscosity: 0.6,
+    colorCycleSpeed: 0.6,
+    colorCycleIntensity: 0.4,
+    color1: "#50C878",
+    color2: "#008000"
+  },
+  {
+    name: "Purple Haze",
+    fluidity: 0.48,
+    iterations: 27,
+    zoom: 2.5,
+    rotationSpeed: 0.2,
+    glowIntensity: 0.7,
+    colorSpeed: 0.5,
+    colorMix: 0.3,
+    metallicSheen: 0.7,
+    surfaceRoughness: 0.2,
+    liquidViscosity: 0.5,
+    colorCycleSpeed: 0.7,
+    colorCycleIntensity: 0.6,
+    color1: "#800080",
+    color2: "#DA70D6"
+  },
+  {
+    name: "Firestorm",
+    fluidity: 0.65,
+    iterations: 29,
+    zoom: 2.4,
+    rotationSpeed: 0.25,
+    glowIntensity: 0.9,
+    colorSpeed: 0.6,
+    colorMix: 0.4,
+    metallicSheen: 0.6,
+    surfaceRoughness: 0.18,
+    liquidViscosity: 0.6,
+    colorCycleSpeed: 0.8,
+    colorCycleIntensity: 0.7,
+    color1: "#FF4500",
+    color2: "#FFD700"
+  },
+  {
+    name: "Velvet Night",
+    fluidity: 0.4,
+    iterations: 24,
+    zoom: 2.9,
+    rotationSpeed: 0.1,
+    glowIntensity: 0.8,
+    colorSpeed: 0.3,
+    colorMix: 0.2,
+    metallicSheen: 0.5,
+    surfaceRoughness: 0.15,
+    liquidViscosity: 0.7,
+    colorCycleSpeed: 0.4,
+    colorCycleIntensity: 0.3,
+    color1: "#191970",
+    color2: "#000080"
+  },
+  {
+    name: "Crimson Tide",
+    fluidity: 0.6,
+    iterations: 28,
+    zoom: 2.6,
+    rotationSpeed: 0.16,
+    glowIntensity: 0.85,
+    colorSpeed: 0.5,
+    colorMix: 0.35,
+    metallicSheen: 0.4,
+    surfaceRoughness: 0.2,
+    liquidViscosity: 0.5,
+    colorCycleSpeed: 0.6,
+    colorCycleIntensity: 0.5,
+    color1: "#B22222",
+    color2: "#DC143C"
+  },
+  {
+    name: "Golden Sands",
+    fluidity: 0.5,
+    iterations: 26,
+    zoom: 2.7,
+    rotationSpeed: 0.14,
+    glowIntensity: 0.8,
+    colorSpeed: 0.4,
+    colorMix: 0.3,
+    metallicSheen: 0.8,
+    surfaceRoughness: 0.1,
+    liquidViscosity: 0.6,
+    colorCycleSpeed: 0.5,
+    colorCycleIntensity: 0.4,
+    color1: "#FFD700",
+    color2: "#EEDC82"
+  }
+];
+
+function applyPreset(preset) {
+  Object.keys(preset).forEach(key => {
+    if (uniforms[key]) {
+      uniforms[key].value = preset[key];
+    }
+    const element = document.getElementById(key);
+    if (element) {
+      element.value = preset[key];
+      const event = new Event('input');
+      element.dispatchEvent(event);
+    }
+  });
+  if (preset.color1) {
+    document.getElementById('color1').value = preset.color1;
+    changeColor1();
+  }
+  if (preset.color2) {
+    document.getElementById('color2').value = preset.color2;
+    changeColor2();
+  }
+}
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+  camera.position.z = 1;
+
+  renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), preserveDrawingBuffer: false, powerPreference: "high-performance" });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  randomizeSeed();
+
+  uniforms = {
+    time: { value: 0 },
+    resolution: { value: new THREE.Vector2() },
+    fluidity: { value: fluidity },
+    iterations: { value: iterations },
+    zoom: { value: zoom },
+    rotationSpeed: { value: rotationSpeed },
+    glowIntensity: { value: glowIntensity },
+    colorSpeed: { value: colorSpeed },
+    colorMix: { value: colorMix },
+    metallicSheen: { value: metallicSheen },
+    surfaceRoughness: { value: surfaceRoughness },
+    liquidViscosity: { value: liquidViscosity },
+    colorCycleSpeed: { value: colorCycleSpeed },
+    colorCycleIntensity: { value: colorCycleIntensity },
+    color1: { value: color1 },
+    color2: { value: color2 },
+    seed: { value: seed }
+  };
+
+  const shaderMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: `
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float time;
+      uniform vec2 resolution;
+      uniform float fluidity;
+      uniform int iterations;
+      uniform float zoom;
+      uniform float rotationSpeed;
+      uniform float glowIntensity;
+      uniform float colorSpeed;
+      uniform float colorMix;
+      uniform float metallicSheen;
+      uniform float surfaceRoughness;
+      uniform float liquidViscosity;
+      uniform float colorCycleSpeed;
+      uniform float colorCycleIntensity;
+      uniform vec3 color1;
+      uniform vec3 color2;
+      uniform vec4 seed;
+
+      vec4 quat_mul(vec4 a, vec4 b) {
+        return vec4(
+          a.w * b.xyz + b.w * a.xyz + cross(a.xyz, b.xyz),
+          a.w * b.w - dot(a.xyz, b.xyz)
+        );
+      }
+
+      vec3 rotate4D(vec3 p, float t) {
+        vec4 q = vec4(sin(t) * vec3(1.0, 0.5, 0.25), cos(t));
+        vec4 qInv = vec4(-q.xyz, q.w);
+        return quat_mul(q, quat_mul(vec4(p, 0.0), qInv)).xyz;
+      }
+
+      float random(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+      }
+
+      float noise(vec2 st) {
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        float a = random(i);
+        float b = random(i + vec2(1.0, 0.0));
+        float c = random(i + vec2(0.0, 1.0));
+        float d = random(i + vec2(1.0, 1.0));
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+      }
+
+      float fluidMandelbulb(vec3 p) {
+        vec3 z = p;
+        float dr = 1.0;
+        float r = 0.0;
+        float power = 8.0 + 4.0 * sin(time * 0.1 + seed.x);
+
+        for (int i = 0; i < 50; i++) {
+          if (i >= iterations) break;
+          r = length(z);
+
+          if (r > 2.0) break;
+
+          float theta = acos(z.z / r) * power;
+          float phi = atan(z.y, z.x) * power;
+          float zr = pow(r, power);
+
+          dr = pow(r, power - 1.0) * power * dr + 1.0;
+          
+          vec3 distortion = vec3(
+            noise(z.xy * 2.0 + seed.yz + time * 0.1),
+            noise(z.yz * 2.0 + seed.zw + time * 0.15),
+            noise(z.zx * 2.0 + seed.wx + time * 0.2)
+          ) * fluidity;
+
+          z = mix(z, zr * vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)), liquidViscosity);
+          z += p * (1.0 - liquidViscosity);
+        }
+
+        return 0.5 * log(r) * r / dr;
+      }
+
+      float smootherstep(float edge0, float edge1, float x) {
+        x = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+        return x * x * x * (x * (x * 6.0 - 15.0) + 10.0);
+      }
+
+      vec3 hsv2rgb(vec3 c) {
+        vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+        vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+        return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+      }
+
+      void main() {
+        vec3 color = vec3(0.0);
+        
+        for (int y = 0; y < 2; y++) {
+          for (int x = 0; x < 2; x++) {
+            vec2 offset = vec2(x, y) / 2.0 - 0.25;
+            vec2 uv = (gl_FragCoord.xy + offset - 0.5 * resolution.xy) / resolution.y;
+            vec3 dir = normalize(vec3(uv, 1.0));
+            vec3 eye = vec3(0.0, 0.0, -zoom);
+            
+            float rotationOffset = noise(vec2(seed.x, seed.y) + time * 0.1) * 6.28;
+            eye = rotate4D(eye, time * rotationSpeed + rotationOffset);
+            dir = rotate4D(dir, time * rotationSpeed + rotationOffset);
+
+            float t = 0.0;
+            float d = 0.0;
+            vec3 p;
+
+            for (int i = 0; i < 150; i++) {
+              p = eye + dir * t;
+              d = fluidMandelbulb(p);
+              if (abs(d) < 0.0001 || t > 10.0) break;
+              t += d;
+            }
+
+            if (t < 10.0) {
+              vec3 normal = normalize(vec3(
+                fluidMandelbulb(p + vec3(0.0001, 0.0, 0.0)) - fluidMandelbulb(p - vec3(0.0001, 0.0, 0.0)),
+                fluidMandelbulb(p + vec3(0.0, 0.0001, 0.0)) - fluidMandelbulb(p - vec3(0.0, 0.0001, 0.0)),
+                fluidMandelbulb(p + vec3(0.0, 0.0, 0.0001)) - fluidMandelbulb(p - vec3(0.0, 0.0, 0.0001))
+              ));
+
+              vec3 light = normalize(vec3(1.0, 1.0, -1.0));
+              float diff = max(dot(normal, light), 0.0);
+              vec3 ref = reflect(dir, normal);
+              float spec = pow(max(dot(ref, light), 0.0), 64.0);
+
+              vec3 fluidColor = mix(
+                color1,
+                color2,
+                smoothstep(-1.0, 1.0, sin(time * colorSpeed * 0.05 + length(p) * 0.1 + seed.z))
+              );
+
+              vec3 cycledColor = hsv2rgb(vec3(
+                fract(time * colorCycleSpeed + length(p) * 0.1),
+                0.7,
+                0.8
+              ));
+
+              fluidColor = mix(fluidColor, cycledColor, colorCycleIntensity);
+
+              float roughness = surfaceRoughness * noise(p.xy * 10.0 + time);
+              float sheen = metallicSheen * (1.0 - roughness);
+              vec3 subColor = vec3(0.02, 0.02, 0.025) * t; // Darker ambient for metallic look
+              subColor += fluidColor * diff * (0.6 + sheen * 0.4); // Reduced diffuse for more specular prominence
+              
+              // Increased specular intensity and sharpness for metallic look
+              float specIntensity = pow(max(dot(ref, light), 0.0), 64.0);
+              vec3 specColor = mix(vec3(1.0), fluidColor, 0.3); // Mix in some fluid color to the specular
+              subColor += specColor * specIntensity * (1.2 + sheen * 0.8);
+              
+              float glowFactor = smootherstep(0.0, 1.0, 1.0 - t / 10.0);
+              subColor += fluidColor * glowIntensity * glowFactor * glowFactor * 0.5; // Reduced glow intensity
+
+              // Add subtle metallic sheen
+              float fresnel = pow(1.0 - max(dot(normal, -dir), 0.0), 5.0);
+              subColor += fresnel * specColor * 0.3;
+
+              subColor = mix(subColor, vec3(0.1, 0.12, 0.15), 1.0 - exp(-0.05 * t)); // Adjusted fog color for metallic look
+
+              color += subColor;
+            }
+          }
+        }
+
+        color /= 4.0;
+
+        // Add subtle noise to simulate metallic imperfections
+        vec2 noiseUV = gl_FragCoord.xy / resolution.xy * 10.0;
+        float noise = random(noiseUV + time * 0.01) * 0.05;
+        color += vec3(noise);
+
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `
+  });
+
+  mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2, 2), shaderMaterial);
+  scene.add(mesh);
+
+  window.addEventListener('resize', onWindowResize, false);
+  onWindowResize();
+
+  const presetSelect = document.getElementById('preset-select');
+  presets.forEach((preset, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = preset.name;
+    presetSelect.appendChild(option);
+  });
+
+  presetSelect.addEventListener('change', (e) => {
+    if (e.target.value !== "") {
+      applyPreset(presets[e.target.value]);
+    }
+  });
+
+  document.getElementById('play').addEventListener('click', togglePlay);
+  document.getElementById('randomize').addEventListener('click', randomizeAll);
+  document.getElementById('speed').addEventListener('input', changeSpeed);
+  document.getElementById('fluidity').addEventListener('input', changeFluidity);
+  document.getElementById('iterations').addEventListener('input', changeIterations);
+  document.getElementById('zoom').addEventListener('input', changeZoom);
+  document.getElementById('rotationSpeed').addEventListener('input', changeRotationSpeed);
+  document.getElementById('glowIntensity').addEventListener('input', changeGlowIntensity);
+  document.getElementById('colorSpeed').addEventListener('input', changeColorSpeed);
+  document.getElementById('colorMix').addEventListener('input', changeColorMix);
+  document.getElementById('metallicSheen').addEventListener('input', changeMetallicSheen);
+  document.getElementById('surfaceRoughness').addEventListener('input', changeSurfaceRoughness);
+  document.getElementById('liquidViscosity').addEventListener('input', changeLiquidViscosity);
+  document.getElementById('color1').addEventListener('input', changeColor1);
+  document.getElementById('color2').addEventListener('input', changeColor2);
+  document.getElementById('colorCycleSpeed').addEventListener('input', changeColorCycleSpeed);
+  document.getElementById('colorCycleIntensity').addEventListener('input', changeColorCycleIntensity);
+
+  const controls = document.getElementById('controls');
+
+  let inactivityTimer;
+
+  function showControls() {
+    clearTimeout(inactivityTimer);
+    controls.classList.add('active');
+    inactivityTimer = setTimeout(hideControls, 5000);
+  }
+
+  function hideControls() {
+    controls.classList.remove('active');
+  }
+
+  // Show controls when the mouse moves over the canvas
+  renderer.domElement.addEventListener('mousemove', showControls);
+
+  // Prevent hiding when interacting with controls
+  controls.addEventListener('mouseenter', () => {
+    clearTimeout(inactivityTimer);
+  });
+
+  controls.addEventListener('mouseleave', () => {
+    inactivityTimer = setTimeout(hideControls, 5000);
+  });
+}
+
+function onWindowResize() {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  uniforms.resolution.value.x = renderer.domElement.width;
+  uniforms.resolution.value.y = renderer.domElement.height;
+}
+
+function togglePlay() {
+  playing = !playing;
+}
+
+function changeSpeed() {
+  speed = parseFloat(document.getElementById('speed').value);
+  document.getElementById('speedValue').textContent = speed.toFixed(1) + 'x';
+}
+
+function changeFluidity() {
+  fluidity = parseFloat(document.getElementById('fluidity').value);
+  uniforms.fluidity.value = fluidity;
+  document.getElementById('fluidityValue').textContent = fluidity.toFixed(2);
+}
+
+function changeIterations() {
+  iterations = parseInt(document.getElementById('iterations').value);
+  uniforms.iterations.value = iterations;
+  document.getElementById('iterationsValue').textContent = iterations;
+}
+
+function changeZoom() {
+  zoom = parseFloat(document.getElementById('zoom').value);
+  uniforms.zoom.value = zoom;
+  document.getElementById('zoomValue').textContent = zoom.toFixed(1);
+}
+
+function changeRotationSpeed() {
+  rotationSpeed = parseFloat(document.getElementById('rotationSpeed').value);
+  uniforms.rotationSpeed.value = rotationSpeed;
+  document.getElementById('rotationSpeedValue').textContent = rotationSpeed.toFixed(2);
+}
+
+function changeGlowIntensity() {
+  glowIntensity = parseFloat(document.getElementById('glowIntensity').value);
+  uniforms.glowIntensity.value = glowIntensity;
+  document.getElementById('glowIntensityValue').textContent = glowIntensity.toFixed(1);
+}
+
+function changeColorSpeed() {
+  colorSpeed = parseFloat(document.getElementById('colorSpeed').value);
+  uniforms.colorSpeed.value = colorSpeed;
+  document.getElementById('colorSpeedValue').textContent = colorSpeed.toFixed(1);
+}
+
+function changeColorMix() {
+  colorMix = parseFloat(document.getElementById('colorMix').value);
+  uniforms.colorMix.value = colorMix;
+  document.getElementById('colorMixValue').textContent = colorMix.toFixed(2);
+}
+
+function changeMetallicSheen() {
+  metallicSheen = parseFloat(document.getElementById('metallicSheen').value);
+  uniforms.metallicSheen.value = metallicSheen;
+  document.getElementById('metallicSheenValue').textContent = metallicSheen.toFixed(2);
+}
+
+function changeSurfaceRoughness() {
+  surfaceRoughness = parseFloat(document.getElementById('surfaceRoughness').value);
+  uniforms.surfaceRoughness.value = surfaceRoughness;
+  document.getElementById('surfaceRoughnessValue').textContent = surfaceRoughness.toFixed(2);
+}
+
+function changeLiquidViscosity() {
+  liquidViscosity = parseFloat(document.getElementById('liquidViscosity').value);
+  uniforms.liquidViscosity.value = liquidViscosity;
+  document.getElementById('liquidViscosityValue').textContent = liquidViscosity.toFixed(2);
+}
+
+function changeColorCycleSpeed() {
+  colorCycleSpeed = parseFloat(document.getElementById('colorCycleSpeed').value);
+  uniforms.colorCycleSpeed.value = colorCycleSpeed;
+  document.getElementById('colorCycleSpeedValue').textContent = colorCycleSpeed.toFixed(1);
+}
+
+function changeColorCycleIntensity() {
+  colorCycleIntensity = parseFloat(document.getElementById('colorCycleIntensity').value);
+  uniforms.colorCycleIntensity.value = colorCycleIntensity;
+  document.getElementById('colorCycleIntensityValue').textContent = colorCycleIntensity.toFixed(2);
+}
+
+function changeColor1() {
+  color1.set(document.getElementById('color1').value);
+  uniforms.color1.value = color1;
+}
+
+function changeColor2() {
+  color2.set(document.getElementById('color2').value);
+  uniforms.color2.value = color2;
+}
+
+function randomizeSeed() {
+  seed = new THREE.Vector4(
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random()
+  );
+  if (uniforms) {
+    uniforms.seed.value = seed;
+  }
+}
+
+function randomizeAll() {
+  randomizeSeed();
+  document.getElementById('fluidity').value = Math.random() * 0.3 + 0.1; // Lower fluidity for more solid appearance
+  document.getElementById('iterations').value = Math.floor(Math.random() * 10) + 15; // Higher iterations for more detail
+  document.getElementById('zoom').value = Math.random() * 2 + 1.5; // Closer zoom for more detail
+  document.getElementById('rotationSpeed').value = Math.random() * 0.3; // Slower rotation for a more viscous look
+  document.getElementById('glowIntensity').value = Math.random() * 0.5 + 0.5; // Lower glow for metallic appearance
+  document.getElementById('colorSpeed').value = Math.random() * 0.5 + 0.1; // Slower color changes
+  document.getElementById('colorMix').value = Math.random() * 0.3; // Less color mixing for more consistent metallic look
+  document.getElementById('metallicSheen').value = Math.random() * 1; // Randomize metallic sheen
+  document.getElementById('surfaceRoughness').value = Math.random() * 1; // Randomize surface roughness
+  document.getElementById('liquidViscosity').value = Math.random(); // Randomize liquid viscosity
+  document.getElementById('colorCycleSpeed').value = Math.random() * 1.9 + 0.1; // Randomize color cycle speed
+  document.getElementById('colorCycleIntensity').value = Math.random(); // Randomize color cycle intensity
+
+  // Generate metallic colors (silvers, golds, bronzes)
+  const metallicColors = [
+    '#C0C0C0', '#D3D3D3', '#A9A9A9', // Silvers
+    '#FFD700', '#DAA520', '#B8860B', // Golds
+    '#CD7F32', '#B87333', '#A0522D'  // Bronzes
+  ];
+  document.getElementById('color1').value = metallicColors[Math.floor(Math.random() * metallicColors.length)];
+  document.getElementById('color2').value = metallicColors[Math.floor(Math.random() * metallicColors.length)];
+
+  changeFluidity();
+  changeIterations();
+  changeZoom();
+  changeRotationSpeed();
+  changeGlowIntensity();
+  changeColorSpeed();
+  changeColorMix();
+  changeMetallicSheen();
+  changeSurfaceRoughness();
+  changeLiquidViscosity();
+  changeColorCycleSpeed();
+  changeColorCycleIntensity();
+  changeColor1();
+  changeColor2();
+}
+
+function animate(timestamp) {
+  requestAnimationFrame(animate);
+  if (playing) {
+    uniforms.time.value += 0.01 * speed;
+  }
+  renderer.render(scene, camera);
+}
+
+init();
+randomizeAll(); // Randomize on start
+animate();
+</script>
+</body></html>

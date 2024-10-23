@@ -1,0 +1,353 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Heat Diffusion Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 100;
+    width: 300px;
+    backdrop-filter: blur(5px);
+    border: 1px solid #444;
+}
+#info-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 800px;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    border: 1px solid #444;
+}
+.slider-container {
+    margin: 10px 0;
+}
+.slider-container label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ff6b6b;
+}
+button, select {
+    margin: 5px;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+button:hover, select:hover {
+    background: #333;
+    border-color: #ff6b6b;
+}
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    background: #333;
+    border-radius: 3px;
+    outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3 style="color: #ff6b6b; text-align: center;">Heat Diffusion Simulation</h3>
+    <div class="slider-container">
+        <label>Thermal Conductivity (α):</label>
+        <input type="range" id="conductivity" min="0.1" max="2" step="0.1" value="1">
+    </div>
+    <div class="slider-container">
+        <label>Time Step:</label>
+        <input type="range" id="timeStep" min="0.1" max="2" step="0.1" value="1">
+    </div>
+    <select id="boundaryCondition">
+        <option value="fixed">Fixed Temperature</option>
+        <option value="periodic">Periodic</option>
+        <option value="insulated">Insulated</option>
+    </select>
+    <select id="vizMode">
+        <option value="surface">Surface Rendering</option>
+        <option value="volume">Volume Rendering</option>
+    </select>
+    <button id="resetBtn">Reset</button>
+    <button id="pauseBtn">Pause</button>
+    <button id="infoBtn">Know More</button>
+</div>
+
+<div id="info-panel">
+    <h3>Heat Diffusion Equation</h3>
+    <p>The animation visualizes the Heat Diffusion Equation:</p>
+    <p style="font-family: 'Courier New', monospace;">∂u/∂t = α∇²u</p>
+    
+    <h4>Key Concepts:</h4>
+    <ul>
+        <li>Temperature Distribution: Colors represent temperature (blue=cold, red=hot)</li>
+        <li>Heat Flow: Arrows show direction of heat transfer</li>
+        <li>Isothermal Surfaces: Transparent layers of equal temperature</li>
+        <li>Conservation of Energy: Total heat energy remains constant in isolated system</li>
+    </ul>
+
+    <h4>Boundary Conditions:</h4>
+    <ul>
+        <li>Fixed Temperature: Boundaries maintain constant temperature</li>
+        <li>Periodic: Heat flows from one edge to opposite edge</li>
+        <li>Insulated: No heat flow across boundaries</li>
+    </ul>
+
+    <h4>Applications:</h4>
+    <ul>
+        <li>Building thermal insulation</li>
+        <li>Heat sink design in electronics</li>
+        <li>Climate modeling</li>
+        <li>Industrial heating/cooling processes</li>
+    </ul>
+</div>
+
+<script>
+let scene, camera, renderer, controls;
+let heatMesh, arrowHelpers = [], isosurfaces = [];
+let time = 0;
+let isAnimating = true;
+let gridSize = 20;
+let temperature = Array(gridSize).fill().map(() => 
+    Array(gridSize).fill().map(() => 
+        Array(gridSize).fill(0)
+    )
+);
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+    
+    camera.position.set(30, 30, 30);
+    
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(ambientLight, directionalLight);
+    
+    createHeatVisualization();
+    setupEventListeners();
+    initializeTemperature();
+    animate();
+}
+
+function createHeatVisualization() {
+    // Create main heat distribution cube
+    const geometry = new THREE.BoxGeometry(20, 20, 20);
+    const material = new THREE.MeshPhongMaterial({
+        transparent: true,
+        opacity: 0.8,
+        vertexColors: true
+    });
+    
+    heatMesh = new THREE.Mesh(geometry, material);
+    scene.add(heatMesh);
+    
+    // Create arrow helpers for heat flow
+    for(let i = 0; i < 50; i++) {
+        const arrow = new THREE.ArrowHelper(
+            new THREE.Vector3(1, 0, 0),
+            new THREE.Vector3(
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 20
+            ),
+            2,
+            0xffff00
+        );
+        arrowHelpers.push(arrow);
+        scene.add(arrow);
+    }
+    
+    // Create isosurfaces
+    for(let i = 0; i < 5; i++) {
+        const isoGeometry = new THREE.IcosahedronGeometry(8 + i, 2);
+        const isoMaterial = new THREE.MeshPhongMaterial({
+            color: new THREE.Color().setHSL(i/5, 1, 0.5),
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide
+        });
+        const iso = new THREE.Mesh(isoGeometry, isoMaterial);
+        isosurfaces.push(iso);
+        scene.add(iso);
+    }
+}
+
+function initializeTemperature() {
+    // Initialize with a hot sphere in the center
+    const center = gridSize / 2;
+    const radius = gridSize / 4;
+    
+    for(let i = 0; i < gridSize; i++) {
+        for(let j = 0; j < gridSize; j++) {
+            for(let k = 0; k < gridSize; k++) {
+                const dist = Math.sqrt(
+                    Math.pow(i - center, 2) +
+                    Math.pow(j - center, 2) +
+                    Math.pow(k - center, 2)
+                );
+                temperature[i][j][k] = dist < radius ? 1 : 0;
+            }
+        }
+    }
+}
+
+function updateHeatDistribution() {
+    const conductivity = parseFloat(document.getElementById('conductivity').value);
+    const dt = parseFloat(document.getElementById('timeStep').value) * 0.01;
+    
+    // Simple finite difference method
+    const newTemp = JSON.parse(JSON.stringify(temperature));
+    
+    for(let i = 1; i < gridSize-1; i++) {
+        for(let j = 1; j < gridSize-1; j++) {
+            for(let k = 1; k < gridSize-1; k++) {
+                const laplacian = (
+                    temperature[i+1][j][k] + temperature[i-1][j][k] +
+                    temperature[i][j+1][k] + temperature[i][j-1][k] +
+                    temperature[i][j][k+1] + temperature[i][j][k-1] -
+                    6 * temperature[i][j][k]
+                );
+                newTemp[i][j][k] += conductivity * dt * laplacian;
+            }
+        }
+    }
+    
+    temperature = newTemp;
+    
+    // Update visualization
+    updateMeshColors();
+    updateArrows();
+    updateIsosurfaces();
+}
+
+function updateMeshColors() {
+    const colors = [];
+    const positions = heatMesh.geometry.attributes.position.array;
+    
+    for(let i = 0; i < positions.length; i += 3) {
+        const x = Math.floor((positions[i] + 10) * gridSize/20);
+        const y = Math.floor((positions[i+1] + 10) * gridSize/20);
+        const z = Math.floor((positions[i+2] + 10) * gridSize/20);
+        
+        if(x >= 0 && x < gridSize && y >= 0 && y < gridSize && z >= 0 && z < gridSize) {
+            const temp = temperature[x][y][z];
+            colors.push(1-temp, 0, temp); // R,G,B
+        } else {
+            colors.push(0, 0, 0);
+        }
+    }
+    
+    heatMesh.geometry.setAttribute('color', 
+        new THREE.Float32BufferAttribute(colors, 3)
+    );
+}
+
+function updateArrows() {
+    arrowHelpers.forEach(arrow => {
+        const pos = arrow.position;
+        const x = Math.floor((pos.x + 10) * gridSize/20);
+        const y = Math.floor((pos.y + 10) * gridSize/20);
+        const z = Math.floor((pos.z + 10) * gridSize/20);
+        
+        if(x > 0 && x < gridSize-1 && y > 0 && y < gridSize-1 && z > 0 && z < gridSize-1) {
+            const gradX = temperature[x+1][y][z] - temperature[x-1][y][z];
+            const gradY = temperature[x][y+1][z] - temperature[x][y-1][z];
+            const gradZ = temperature[x][y][z+1] - temperature[x][y][z-1];
+            
+            arrow.setDirection(new THREE.Vector3(gradX, gradY, gradZ).normalize());
+            arrow.setLength(Math.sqrt(gradX*gradX + gradY*gradY + gradZ*gradZ) * 2);
+        }
+    });
+}
+
+function updateIsosurfaces() {
+    isosurfaces.forEach((iso, index) => {
+        const scale = 1 + 0.1 * Math.sin(time + index);
+        iso.scale.set(scale, scale, scale);
+        iso.rotation.y = time * 0.1;
+    });
+}
+
+function setupEventListeners() {
+    document.getElementById('resetBtn').addEventListener('click', initializeTemperature);
+    
+    document.getElementById('pauseBtn').addEventListener('click', function() {
+        isAnimating = !isAnimating;
+        this.textContent = isAnimating ? 'Pause' : 'Resume';
+    });
+    
+    document.getElementById('infoBtn').addEventListener('click', () => {
+        const panel = document.getElementById('info-panel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    if(isAnimating) {
+        time += 0.01;
+        updateHeatDistribution();
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body>
+</html>

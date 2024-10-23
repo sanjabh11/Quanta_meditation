@@ -1,0 +1,270 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan's Sum of Three Cubes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 100;
+    width: 250px;
+    backdrop-filter: blur(5px);
+}
+#info-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    display: none;
+}
+.slider-container {
+    margin: 10px 0;
+}
+button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+    transition: background 0.3s;
+}
+button:hover {
+    background: #666;
+}
+input[type="range"] {
+    width: 100%;
+    margin: 5px 0;
+}
+#current-n {
+    font-size: 1.2em;
+    text-align: center;
+    margin: 10px 0;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3>Sum of Three Cubes</h3>
+    <div id="current-n">n = 3</div>
+    <div class="slider-container">
+        <label>Value of n: <span id="n-value">3</span></label>
+        <input type="range" id="n-slider" min="3" max="100" value="3">
+    </div>
+    <div class="slider-container">
+        <label>Search Range: <span id="range-value">10</span></label>
+        <input type="range" id="range-slider" min="1" max="50" value="10">
+    </div>
+    <button id="reset">Reset View</button>
+    <button id="toggle-rotation">Pause Rotation</button>
+    <button id="toggle-info">Know More</button>
+</div>
+
+<div id="info-panel">
+    <h3>Ramanujan's Sum of Three Cubes</h3>
+    <p>The problem of expressing numbers as sums of three cubes has fascinated mathematicians for centuries. The equation takes the form:</p>
+    <p style="text-align: center;">n = x³ + y³ + z³</p>
+    <p>Key points:</p>
+    <ul>
+        <li>Each point in the visualization represents a solution (x,y,z)</li>
+        <li>Colors indicate different values of n</li>
+        <li>Point sizes reflect the magnitude of the coordinates</li>
+        <li>Some numbers (like 4, 5, and 13) are proven impossible to represent</li>
+    </ul>
+    <p>Recent breakthroughs:</p>
+    <ul>
+        <li>In 2019, 42 was solved: 42 = (-80538738812075974)³ + 80435758145817515³ + 12602123297335631³</li>
+        <li>In 2019, 33 was also solved with similarly large numbers</li>
+    </ul>
+    <p>This remains an active area of research in number theory, combining computational methods with deep mathematical insights.</p>
+</div>
+
+<script>
+let scene, camera, renderer, controls;
+let points;
+let isRotating = true;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    camera.position.set(20, 20, 20);
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 0.8);
+    pointLight.position.set(20, 20, 20);
+    scene.add(pointLight);
+
+    // Add coordinate axes
+    addAxes();
+    
+    createPoints();
+    animate();
+}
+
+function addAxes() {
+    const axesHelper = new THREE.AxesHelper(20);
+    scene.add(axesHelper);
+
+    // Add axis labels
+    const loader = new THREE.TextureLoader();
+    const createLabel = (text, position) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 64;
+        canvas.height = 32;
+        ctx.fillStyle = 'white';
+        ctx.font = '24px Arial';
+        ctx.fillText(text, 5, 24);
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        const material = new THREE.SpriteMaterial({ map: texture });
+        const sprite = new THREE.Sprite(material);
+        sprite.position.copy(position);
+        sprite.scale.set(4, 2, 1);
+        scene.add(sprite);
+    };
+
+    createLabel('X', new THREE.Vector3(22, 0, 0));
+    createLabel('Y', new THREE.Vector3(0, 22, 0));
+    createLabel('Z', new THREE.Vector3(0, 0, 22));
+}
+
+function findCubeSolutions(n, range) {
+    const solutions = [];
+    for (let x = -range; x <= range; x++) {
+        for (let y = -range; y <= range; y++) {
+            for (let z = -range; z <= range; z++) {
+                if (x*x*x + y*y*y + z*z*z === n) {
+                    solutions.push([x, y, z]);
+                }
+            }
+        }
+    }
+    return solutions;
+}
+
+function createPoints() {
+    if (points) scene.remove(points);
+
+    const n = parseInt(document.getElementById('n-slider').value);
+    const range = parseInt(document.getElementById('range-slider').value);
+    const solutions = findCubeSolutions(n, range);
+
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(solutions.length * 3);
+    const colors = new Float32Array(solutions.length * 3);
+    const sizes = new Float32Array(solutions.length);
+
+    solutions.forEach((sol, i) => {
+        positions[i*3] = sol[0];
+        positions[i*3+1] = sol[1];
+        positions[i*3+2] = sol[2];
+
+        const magnitude = Math.sqrt(sol[0]*sol[0] + sol[1]*sol[1] + sol[2]*sol[2]);
+        const hue = (n % 360) / 360;
+        const color = new THREE.Color().setHSL(hue, 1, 0.5);
+        
+        colors[i*3] = color.r;
+        colors[i*3+1] = color.g;
+        colors[i*3+2] = color.b;
+
+        sizes[i] = 0.5 + magnitude * 0.1;
+    });
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const material = new THREE.PointsMaterial({
+        size: 1,
+        vertexColors: true,
+        sizeAttenuation: true
+    });
+
+    points = new THREE.Points(geometry, material);
+    scene.add(points);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (isRotating && points) {
+        points.rotation.y += 0.005;
+    }
+    renderer.render(scene, camera);
+}
+
+// Event Listeners
+document.getElementById('n-slider').addEventListener('input', (e) => {
+    document.getElementById('n-value').textContent = e.target.value;
+    document.getElementById('current-n').textContent = `n = ${e.target.value}`;
+    createPoints();
+});
+
+document.getElementById('range-slider').addEventListener('input', (e) => {
+    document.getElementById('range-value').textContent = e.target.value;
+    createPoints();
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    camera.position.set(20, 20, 20);
+    controls.reset();
+    if (points) points.rotation.set(0, 0, 0);
+});
+
+document.getElementById('toggle-rotation').addEventListener('click', (e) => {
+    isRotating = !isRotating;
+    e.target.textContent = isRotating ? 'Pause Rotation' : 'Resume Rotation';
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const panel = document.getElementById('info-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body>
+</html>
