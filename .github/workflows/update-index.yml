@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'Beginning of Infinity/**'
+      - 'Equations/**'
       - 'Mindfullness/**'
       - 'Quantum Physics Simulations/**'
   workflow_dispatch:
