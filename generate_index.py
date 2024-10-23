@@ -1,6 +1,6 @@
 import os
 
-folders = ['Beginning of Infinity', 'Equations','Mindfullness', 'Quantum Physics Simulations']
+folders = ['Beginning of Infinity', 'Equations', 'Mindfullness', 'Quantum Physics Simulations']
 
 html_content = """
 <!DOCTYPE html>
