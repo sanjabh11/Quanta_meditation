@@ -26,6 +26,7 @@ body {
     z-index: 100;
     width: 250px;
     backdrop-filter: blur(5px);
+    transition: transform 0.3s ease-in-out;
 }
 #info-panel {
     position: fixed;
@@ -69,10 +70,45 @@ input[type="range"] {
     margin: 10px 0;
     text-align: center;
 }
+#toggle-controls {
+    display: none;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 101;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    #controls {
+        transform: translateX(100%);
+        width: 80%;
+        max-width: none;
+        height: 100%;
+        top: 0;
+        right: 0;
+        border-radius: 0;
+        overflow-y: auto;
+    }
+
+    #controls.active {
+        transform: translateX(0);
+    }
+
+    #toggle-controls {
+        display: block;
+    }
+}
 </style>
 </head>
 <body>
 <div id="container"></div>
+<button id="toggle-controls">Controls</button>
 <div id="controls">
     <h3>Mock Theta Function</h3>
     <div class="slider-container">
@@ -273,6 +309,20 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Add these event listeners at the end of your script
+document.getElementById('toggle-controls').addEventListener('click', function() {
+    document.getElementById('controls').classList.toggle('active');
+});
+
+// Optionally, close the controls panel when clicking outside of it
+document.addEventListener('click', function(event) {
+    const controls = document.getElementById('controls');
+    const toggleButton = document.getElementById('toggle-controls');
+    if (!controls.contains(event.target) && event.target !== toggleButton) {
+        controls.classList.remove('active');
+    }
 });
 
 init();
