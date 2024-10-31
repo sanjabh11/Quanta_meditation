@@ -7,7 +7,7 @@
     margin: 0;
     overflow: hidden;
     font-family: Arial, sans-serif;
-    background: #000;
+    background-color: #000;
     color: #fff;
   }
   #info {
@@ -24,117 +24,46 @@
     max-height: 80vh;
   }
   #controls {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.85);
-    padding: 20px;
-    border-radius: 10px;
-    z-index: 100;
-    width: 280px;
-    backdrop-filter: blur(5px);
-    transition: transform 0.3s ease-in-out;
-  }
-  #toggle-controls {
-    display: none;
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 101;
-    background: rgba(0, 0, 0, 0.85);
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  @media (max-width: 768px) {
-    #controls {
-        transform: translateX(100%);
-        width: 80%;
-        max-width: none;
-        height: 100%;
-        top: 0;
-        right: 0;
-        border-radius: 0;
-        overflow-y: auto;
-    }
-
-    #controls.active {
-        transform: translateX(0);
-    }
-
-    #toggle-controls {
-        display: block;
-    }
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
   }
   button {
+    padding: 5px 10px;
     background: #444;
-    color: white;
+    color: #fff;
     border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
-    margin: 5px 0;
-    transition: background 0.3s;
-    width: 100%;
+    transition: background 0.3s, transform 0.1s;
   }
   button:hover {
-    background: #666;
-  }
-  #apply-changes {
-    background: #444;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 10px 0;
-    width: 100%;
-    transition: all 0.3s ease;
-  }
-  #apply-changes:hover {
     background: #555;
+    transform: scale(1.05);
   }
-  .value-display {
-    font-family: monospace;
-    margin: 5px 0;
+  button:active {
+    transform: scale(0.95);
   }
-  .slider-container {
-    margin: 10px 0;
-  }
-  input[type="range"] {
-    width: 100%;
-    margin: 5px 0;
+  @media (max-width: 600px) {
+    #controls {
+      flex-direction: column;
+      left: 10px;
+      right: 10px;
+      transform: none;
+    }
   }
 </style>
 </head>
 <body>
 <div id="container"></div>
-<button id="toggle-controls">Controls</button>
 <div id="controls">
-    <h3 style="color: #0af; text-align: center;">Multi-Pendulum System</h3>
-    <div class="value-display" id="result">Current State: Running</div>
-    <div class="slider-container">
-        <label>Number of Pendulums: <span id="num-value">1</span></label>
-        <input type="range" id="numPendulums" min="1" max="10" value="1">
-    </div>
-    <div class="slider-container">
-        <label>Mass: <span id="mass-value">1.0</span></label>
-        <input type="range" id="mass" min="0.1" max="5" step="0.1" value="1">
-    </div>
-    <div class="slider-container">
-        <label>Length: <span id="length-value">1.0</span></label>
-        <input type="range" id="length" min="0.1" max="2" step="0.1" value="1">
-    </div>
-    <div class="slider-container">
-        <label>Damping: <span id="damping-value">0.0</span></label>
-        <input type="range" id="damping" min="0" max="1" step="0.01" value="0">
-    </div>
-    <button id="apply-changes">Apply Changes</button>
-    <button id="reset">Reset</button>
-    <button id="toggle-animation">Pause Animation</button>
-    <button id="toggle-info">Know More</button>
+  <button id="toggleInfo">Know More</button>
+  <button id="reset">Reset</button>
+  <button id="start">Start</button>
 </div>
 <div id="info">
   <h2>Multi-Pendulum System</h2>
@@ -444,50 +373,5 @@ function toggleAnimation() {
 
 init();
 animate();
-
-// Add to end of existing script section
-document.getElementById('toggle-controls').addEventListener('click', function() {
-    document.getElementById('controls').classList.toggle('active');
-});
-
-document.addEventListener('click', function(event) {
-    const controls = document.getElementById('controls');
-    const toggleButton = document.getElementById('toggle-controls');
-    if (!controls.contains(event.target) && event.target !== toggleButton) {
-        controls.classList.remove('active');
-    }
-});
-
-// Add Apply Changes button functionality
-document.getElementById('apply-changes').addEventListener('click', () => {
-    // Apply all changes
-    updatePendulumParams();
-    
-    // Visual feedback
-    const applyBtn = document.getElementById('apply-changes');
-    applyBtn.textContent = 'Applied!';
-    applyBtn.style.backgroundColor = '#4CAF50';
-    setTimeout(() => {
-        applyBtn.textContent = 'Apply Changes';
-        applyBtn.style.backgroundColor = '#444';
-    }, 1000);
-});
-
-// Update the updatePendulumParams function to handle all changes at once
-function updatePendulumParams() {
-    const numPendulums = parseInt(document.getElementById('numPendulums').value);
-    const mass = parseFloat(document.getElementById('mass').value);
-    const length = parseFloat(document.getElementById('length').value);
-    const damping = parseFloat(document.getElementById('damping').value);
-    
-    // Update display values
-    document.getElementById('num-value').textContent = numPendulums;
-    document.getElementById('mass-value').textContent = mass.toFixed(1);
-    document.getElementById('length-value').textContent = length.toFixed(1);
-    document.getElementById('damping-value').textContent = damping.toFixed(2);
-    
-    // Update pendulum system
-    updatePendulumSystem(numPendulums, mass, length, damping);
-}
 </script>
 </body></html>
