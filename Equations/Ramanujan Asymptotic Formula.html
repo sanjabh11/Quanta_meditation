@@ -37,7 +37,7 @@ body {
     background: rgba(0, 0, 0, 0.85);
     padding: 15px;
     border-radius: 8px;
-    max-width: 600px;
+    max-width: 90%;
     max-height: 40vh;
     overflow-y: auto;
     z-index: 100;
@@ -108,6 +108,14 @@ button:hover, select:hover {
     padding: 10px;
     border-radius: 5px;
     cursor: pointer;
+}
+
+/* Additional media query for mobile responsiveness */
+@media (max-width: 600px) {
+    #info-panel {
+        max-height: 60vh; /* Increase height limit for better visibility */
+        padding: 10px; /* Adjust padding for mobile */
+    }
 }
 </style>
 </head>
