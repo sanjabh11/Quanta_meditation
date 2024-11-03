@@ -15,6 +15,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: 1;
 }
 #controls {
     position: fixed;
@@ -26,6 +27,7 @@ body {
     z-index: 100;
     max-width: 300px;
     backdrop-filter: blur(5px);
+    overflow-y: auto;
 }
 #info-panel {
     position: fixed;
@@ -85,23 +87,51 @@ button:hover, select:hover {
     color: white;
     font-size: 0.9em;
 }
+@media (max-width: 600px) {
+    #controls {
+        max-width: 90%;
+        right: 5%;
+    }
+    #info-panel {
+        max-width: 90%;
+        left: 5%;
+    }
+}
+#toggle-controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 101;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
 </style>
 </head>
 <body>
 <div id="container"></div>
-<div id="controls">
+<div id="controls" class="active">
     <h3>Controls</h3>
     <div class="slider-container">
         <label for="range">Range (n): <span id="range-value">100</span></label>
         <input type="range" id="range" min="1" max="1000" value="100">
     </div>
-    <select id="scale">
-        <option value="linear">Linear Scale</option>
-        <option value="log">Logarithmic Scale</option>
-    </select>
+    <div class="slider-container">
+        <label for="scale">Scale:</label>
+        <select id="scale">
+            <option value="linear">Linear Scale</option>
+            <option value="log">Logarithmic Scale</option>
+        </select>
+    </div>
+    <button id="apply-changes">Apply Changes</button>
     <button id="reset">Reset View</button>
     <button id="toggle-rotation">Pause Rotation</button>
 </div>
+
+<button id="toggle-controls">Hide Controls</button>
 
 <div id="info-panel">
     <h3>Ramanujan's Partition Function Formula</h3>
@@ -244,13 +274,21 @@ function animate() {
 document.getElementById('range').addEventListener('input', (e) => {
     const range = parseInt(e.target.value);
     document.getElementById('range-value').textContent = range;
-    const scale = document.getElementById('scale').value;
-    createGraph(range, scale);
 });
 
-document.getElementById('scale').addEventListener('change', (e) => {
+document.getElementById('apply-changes').addEventListener('click', () => {
     const range = parseInt(document.getElementById('range').value);
-    createGraph(range, e.target.value);
+    const scale = document.getElementById('scale').value;
+    createGraph(range, scale);
+    
+    // Visual feedback
+    const applyBtn = document.getElementById('apply-changes');
+    applyBtn.textContent = 'Applied!';
+    applyBtn.style.backgroundColor = '#4CAF50';
+    setTimeout(() => {
+        applyBtn.textContent = 'Apply Changes';
+        applyBtn.style.backgroundColor = '#444';
+    }, 1000);
 });
 
 document.getElementById('reset').addEventListener('click', () => {
@@ -277,6 +315,15 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const toggleButton = document.getElementById('toggle-controls');
+const controlsPanel = document.getElementById('controls');
+
+toggleButton.addEventListener('click', () => {
+    const isActive = controlsPanel.classList.toggle('active');
+    controlsPanel.style.display = isActive ? 'block' : 'none';
+    toggleButton.textContent = isActive ? 'Hide Controls' : 'Show Controls';
 });
 
 // Initialize and start animation
