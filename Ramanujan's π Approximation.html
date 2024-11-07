@@ -1,0 +1,262 @@
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan's Pi Approximation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 100;
+    width: 280px;
+    backdrop-filter: blur(5px);
+}
+#info-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<div id="controls">
+    <h3>Ramanujan's π Approximation</h3>
+    <div class="pi-value">π ≈ <span id="pi-approx">3.14159...</span></div>
+    <div class="slider-container">
+        <label>Terms (k): <span id="terms-value">1</span></label>
+        <input type="range" id="terms-slider" min="1" max="20" value="1">
+    </div>
+    <div class="slider-container">
+        <label>Animation Speed: <span id="speed-value">1x</span></label>
+        <input type="range" id="speed-slider" min="0.1" max="2" step="0.1" value="1">
+    </div>
+    <button id="toggle-animation">Pause Animation</button>
+    <button id="reset-view">Reset View</button>
+    <button id="toggle-info">Know More</button>
+</div>
+
+<div id="info-panel">
+    <h3>Ramanujan's π Approximation</h3>
+    <div class="math-formula">
+        π ≈ [2√2 / 9801] * Σ ((4k)! * (1103 + 26390k)) / ((k!)^4 * 396^(4k))
+    </div>
+    <p>This remarkable formula, discovered by Srinivasa Ramanujan in 1914, adds approximately 8 decimal places of accuracy with each term of the series.</p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let scene, camera, renderer, controls;
+    let helixMesh;
+    let isAnimating = true;
+    let animationSpeed = 1;
+
+    function init() {
+        // Scene setup
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000);
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        // Camera and controls setup
+        camera.position.set(10, -10, 10);
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0xffffff, 0.8);
+        pointLight1.position.set(20, 20, 20);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xffffff, 0.6);
+        pointLight2.position.set(-20, -20, -20);
+        scene.add(pointLight2);
+
+        createHelix(1);
+        animate();
+    }
+
+    function factorial(n) {
+        if (n === 0 || n === 1) return 1;
+        return n * factorial(n - 1);
+    }
+
+    function calculateRamanujanPiTerm(k) {
+        const numerator = factorial(4 * k) * (1103 + 26390 * k);
+        const denominator = Math.pow(factorial(k), 4) * Math.pow(396, 4 * k);
+        return numerator / denominator;
+    }
+
+    function calculatePiApproximation(terms) {
+        const constant = 2 * Math.sqrt(2) / 9801;
+        let sum = 0;
+        for (let k = 0; k < terms; k++) {
+            sum += calculateRamanujanPiTerm(k);
+        }
+        return 1 / (constant * sum);
+    }
+
+    function createTubeGeometry(points, radius) {
+        const curve = new THREE.CatmullRomCurve3(points);
+        return new THREE.TubeGeometry(curve, points.length * 3, radius, 8, false);
+    }
+
+    function createHelix(terms) {
+        if (helixMesh) scene.remove(helixMesh);
+
+        const points = [];
+        const colors = [];
+        const pointsPerTurn = 50;
+        const heightPerTerm = 2;
+        const tubeRadius = 0.1;
+
+        for (let term = 0; term < terms; term++) {
+            const piApprox = calculatePiApproximation(term + 1);
+            const contribution = Math.abs(piApprox - (term > 0 ? calculatePiApproximation(term) : 0));
+            
+            for (let i = 0; i < pointsPerTurn; i++) {
+                const t = i / pointsPerTurn;
+                const angle = t * Math.PI * 2;
+                const radius = piApprox;
+                
+                const x = radius * Math.cos(angle);
+                const y = -term * heightPerTerm - t * heightPerTerm;
+                const z = radius * Math.sin(angle);
+                
+                points.push(new THREE.Vector3(x, y, z));
+                const hue = 0.7 - (contribution * 10);
+                const color = new THREE.Color().setHSL(hue, 1, 0.5);
+                colors.push(color);
+            }
+        }
+
+        const geometry = createTubeGeometry(points, tubeRadius);
+        const colorArray = new Float32Array(geometry.attributes.position.count * 3);
+        let colorIndex = 0;
+        
+        for (let i = 0; i < colors.length; i++) {
+            const verticesPerSegment = geometry.attributes.position.count / colors.length;
+            for (let j = 0; j < verticesPerSegment; j++) {
+                colorArray[colorIndex] = colors[i].r;
+                colorArray[colorIndex + 1] = colors[i].g;
+                colorArray[colorIndex + 2] = colors[i].b;
+                colorIndex += 3;
+            }
+        }
+        
+        geometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+        const material = new THREE.MeshPhongMaterial({
+            vertexColors: true,
+            shininess: 100,
+            specular: 0x444444
+        });
+
+        helixMesh = new THREE.Mesh(geometry, material);
+        scene.add(helixMesh);
+
+        camera.position.set(10, -10, 10);
+        controls.target.set(0, -terms * heightPerTerm / 2, 0);
+        controls.update();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (isAnimating && helixMesh) {
+            helixMesh.rotation.y += 0.01 * animationSpeed;
+        }
+        renderer.render(scene, camera);
+    }
+
+    // Event Listeners
+    const termsSlider = document.getElementById('terms-slider');
+    if (termsSlider) {
+        termsSlider.addEventListener('input', (e) => {
+            const terms = parseInt(e.target.value);
+            document.getElementById('terms-value').textContent = terms;
+            createHelix(terms);
+            const piApprox = calculatePiApproximation(terms);
+            document.getElementById('pi-approx').textContent = piApprox.toFixed(8);
+        });
+    }
+
+    const speedSlider = document.getElementById('speed-slider');
+    if (speedSlider) {
+        speedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseFloat(e.target.value);
+            document.getElementById('speed-value').textContent = `${animationSpeed.toFixed(1)}x`;
+        });
+    }
+
+    const toggleAnimationBtn = document.getElementById('toggle-animation');
+    if (toggleAnimationBtn) {
+        toggleAnimationBtn.addEventListener('click', (e) => {
+            isAnimating = !isAnimating;
+            e.target.textContent = isAnimating ? 'Pause Animation' : 'Resume Animation';
+        });
+    }
+
+    const resetViewBtn = document.getElementById('reset-view');
+    if (resetViewBtn) {
+        resetViewBtn.addEventListener('click', () => {
+            const terms = parseInt(document.getElementById('terms-slider').value);
+            const heightPerTerm = 2;
+            camera.position.set(10, -10, 10);
+            controls.target.set(0, -terms * heightPerTerm / 2, 0);
+            controls.update();
+            if (helixMesh) helixMesh.rotation.set(0, 0, 0);
+        });
+    }
+
+    const toggleInfoBtn = document.getElementById('toggle-info');
+    if (toggleInfoBtn) {
+        toggleInfoBtn.addEventListener('click', () => {
+            const panel = document.getElementById('info-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    init();
+});
+</script>
+</body>
+</html>
