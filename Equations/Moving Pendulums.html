@@ -169,7 +169,7 @@
     params = JSON.parse(JSON.stringify(originalParams));
   
     gui = new dat.GUI();
-    gui.add(params, 'numPendulums', 2, 10).step(1).name('Number of Pendulums').onChange(updatePendulumParams);
+    gui.add(params, 'numPendulums', 2, 5).step(1).name('Number of Pendulums').onChange(updatePendulumParams);
     gui.add(params, 'trailLength', 100, 5000).step(100).name('Trail Length');
     gui.add(params, 'rotationSpeed', 0, 0.01).name('Rotation Speed');
     
