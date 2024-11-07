@@ -72,6 +72,16 @@
       background: rgba(68, 68, 68, 0.7);
       padding: 5px 15px;
       border-radius: 25px;
+      position: relative;
+    }
+    .pendulum-label {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 14px;
+      white-space: nowrap;
     }
     .pendulum-display {
       color: white;
@@ -85,30 +95,43 @@
         left: 10px;
         right: 10px;
         transform: none;
-        gap: 10px;
+        gap: 15px;
         width: calc(100% - 40px);
         margin: 0 10px;
+        padding: 20px;
       }
       button {
-        font-size: 18px;
-        padding: 15px 30px;
+        font-size: 20px;
+        padding: 18px 30px;
         width: 100%;
       }
       .pendulum-controls {
         width: 100%;
         justify-content: center;
+        padding: 10px 15px;
+      }
+      .pendulum-label {
+        font-size: 18px;
+        top: -25px;
+      }
+      .pendulum-display {
+        font-size: 20px;
       }
       .dg.main {
-        font-size: 16px !important;
+        font-size: 18px !important;
       }
       .dg .c input[type=text] {
-        font-size: 16px !important;
+        font-size: 18px !important;
       }
       .dg .property-name {
-        font-size: 16px !important;
+        font-size: 18px !important;
       }
       .dg .c .slider {
-        height: 24px !important;
+        height: 28px !important;
+      }
+      #info {
+        font-size: 18px;
+        max-width: 90%;
       }
     }
   </style>
@@ -117,6 +140,7 @@
   <div id="container"></div>
   <div id="controls">
     <div class="pendulum-controls">
+      <span class="pendulum-label">Pendulums Control</span>
       <button id="decrementPendulum">-</button>
       <span class="pendulum-display" id="pendulumCount">2</span>
       <button id="incrementPendulum">+</button>
