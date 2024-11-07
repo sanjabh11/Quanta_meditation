@@ -1,381 +1,424 @@
 <html><head>
-<title>Interactive 3D Multi-Pendulum Visualization</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
-<style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background-color: #000;
-    color: #fff;
-  }
-  #info {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(0,0,0,0.7);
-    padding: 10px;
-    border-radius: 5px;
-    max-width: 300px;
-    display: none;
-    z-index: 1000;
-    overflow-y: auto;
-    max-height: 80vh;
-  }
-  #controls {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    z-index: 1000;
-    background: rgba(0,0,0,0.7);
-    padding: 15px;
-    border-radius: 25px;
-  }
-  button {
-    padding: 10px 20px;
-    background: #444;
-    color: #fff;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-  }
-  button:hover {
-    background: #555;
-    transform: scale(1.05);
-  }
-  .dg.main {
-    font-size: 14px !important;
-  }
-  .dg .c input[type=text] {
-    font-size: 14px !important;
-  }
-  .dg .property-name {
-    font-size: 14px !important;
-  }
-  .dg .c .slider {
-    height: 20px !important;
-  }
-  @media (max-width: 600px) {
-    #controls {
-      flex-direction: column;
+  <title>Interactive 3D Multi-Pendulum Visualization</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+    }
+    #info {
+      position: absolute;
+      top: 10px;
       left: 10px;
-      right: 10px;
-      transform: none;
-      gap: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 5px;
+      max-width: 300px;
+      display: none;
+      z-index: 1000;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      z-index: 1000;
+      background: rgba(0,0,0,0.7);
+      padding: 15px;
+      border-radius: 25px;
     }
     button {
-      font-size: 18px;
-      padding: 12px 24px;
+      padding: 10px 20px;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      min-width: 44px;
+    }
+    button:hover {
+      background: #555;
+      transform: scale(1.05);
     }
     .dg.main {
-      font-size: 16px !important;
+      font-size: 14px !important;
     }
     .dg .c input[type=text] {
-      font-size: 16px !important;
+      font-size: 14px !important;
     }
     .dg .property-name {
-      font-size: 16px !important;
+      font-size: 14px !important;
     }
     .dg .c .slider {
-      height: 24px !important;
+      height: 20px !important;
     }
-  }
-</style>
-</head>
-<body>
-<div id="container"></div>
-<div id="controls">
-  <button id="toggleInfo">Know More</button>
-  <button id="reset">Reset</button>
-</div>
-<div id="info">
-  <h2>Multi-Pendulum System</h2>
-  <p>This visualization shows a multi-pendulum system, an extension of the double pendulum concept to N pendulums.</p>
-  <p>Each pendulum's motion is influenced by all the others, creating a complex, chaotic system. The equations of motion for such a system become increasingly complicated as more pendulums are added.</p>
-  <p>Key points:</p>
-  <ul>
-    <li>The system is highly sensitive to initial conditions.</li>
-    <li>Small changes in parameters can lead to drastically different behaviors.</li>
-    <li>The motion can transition between regular and chaotic regimes.</li>
-    <li>Energy is conserved in the system (ignoring air resistance).</li>
-  </ul>
-  <p>This visualization uses numerical integration to approximate the motion of the pendulums over time.</p>
-</div>
-
-<script>
-let scene, camera, renderer;
-let pendulum, trail;
-let clock = new THREE.Clock();
-let gui, params, originalParams;
-
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.getElementById('container').appendChild(renderer.domElement);
-
-  camera.position.z = 10;
-
-  originalParams = {
-    numPendulums: 2,
-    masses: [1, 1],
-    lengths: [1, 1],
-    angles: [Math.PI / 2, Math.PI / 2],
-    angularVelocities: [0, 0],
-    g: 9.81,
-    trailLength: 1000,
-    rotationSpeed: 0.001
-  };
-  params = JSON.parse(JSON.stringify(originalParams));
-
-  gui = new dat.GUI();
-  gui.add(params, 'numPendulums', 2, 10).step(1).name('Number of Pendulums').onChange(updatePendulumParams);
-  gui.add(params, 'trailLength', 100, 5000).step(100).name('Trail Length');
-  gui.add(params, 'rotationSpeed', 0, 0.01).name('Rotation Speed');
-  
-  params.massFolder = gui.addFolder('Masses');
-  params.lengthFolder = gui.addFolder('Lengths');
-  
-  updatePendulumParams();
-
-  createPendulum();
-  createTrail();
-
-  window.addEventListener('resize', onWindowResize, false);
-
-  document.getElementById('toggleInfo').addEventListener('click', toggleInfo);
-  document.getElementById('reset').addEventListener('click', resetParams);
-}
-
-function updatePendulumParams() {
-  const num = params.numPendulums;
-  params.masses = params.masses.slice(0, num);
-  params.lengths = params.lengths.slice(0, num);
-  params.angles = params.angles.slice(0, num);
-  params.angularVelocities = params.angularVelocities.slice(0, num);
-
-  while (params.masses.length < num) params.masses.push(1);
-  while (params.lengths.length < num) params.lengths.push(1);
-  while (params.angles.length < num) params.angles.push(Math.PI / 2);
-  while (params.angularVelocities.length < num) params.angularVelocities.push(0);
-
-  updateGUI();
-  createPendulum();
-  createTrail();
-}
-
-function updateGUI() {
-  if (params.massFolder) {
-    for (let controller of params.massFolder.__controllers.slice()) {
-      params.massFolder.remove(controller);
+    .pendulum-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(68, 68, 68, 0.7);
+      padding: 5px 15px;
+      border-radius: 25px;
     }
-  }
-  if (params.lengthFolder) {
-    for (let controller of params.lengthFolder.__controllers.slice()) {
-      params.lengthFolder.remove(controller);
+    .pendulum-display {
+      color: white;
+      font-size: 16px;
+      min-width: 30px;
+      text-align: center;
     }
-  }
-
-  for (let i = 0; i < params.numPendulums; i++) {
-    params.massFolder.add(params.masses, i, 0.1, 5).name(`Mass ${i + 1}`);
-    params.lengthFolder.add(params.lengths, i, 0.1, 2).name(`Length ${i + 1}`);
-  }
-}
-
-function createPendulum() {
-  if (pendulum) scene.remove(pendulum);
+    @media (max-width: 600px) {
+      #controls {
+        flex-direction: column;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        gap: 10px;
+        width: calc(100% - 40px);
+        margin: 0 10px;
+      }
+      button {
+        font-size: 18px;
+        padding: 15px 30px;
+        width: 100%;
+      }
+      .pendulum-controls {
+        width: 100%;
+        justify-content: center;
+      }
+      .dg.main {
+        font-size: 16px !important;
+      }
+      .dg .c input[type=text] {
+        font-size: 16px !important;
+      }
+      .dg .property-name {
+        font-size: 16px !important;
+      }
+      .dg .c .slider {
+        height: 24px !important;
+      }
+    }
+  </style>
+  </head>
+  <body>
+  <div id="container"></div>
+  <div id="controls">
+    <div class="pendulum-controls">
+      <button id="decrementPendulum">-</button>
+      <span class="pendulum-display" id="pendulumCount">2</span>
+      <button id="incrementPendulum">+</button>
+    </div>
+    <button id="toggleInfo">Know More</button>
+    <button id="reset">Reset</button>
+  </div>
+  <div id="info">
+    <h2>Multi-Pendulum System</h2>
+    <p>This visualization shows a multi-pendulum system, an extension of the double pendulum concept to N pendulums.</p>
+    <p>Each pendulum's motion is influenced by all the others, creating a complex, chaotic system. The equations of motion for such a system become increasingly complicated as more pendulums are added.</p>
+    <p>Key points:</p>
+    <ul>
+      <li>The system is highly sensitive to initial conditions.</li>
+      <li>Small changes in parameters can lead to drastically different behaviors.</li>
+      <li>The motion can transition between regular and chaotic regimes.</li>
+      <li>Energy is conserved in the system (ignoring air resistance).</li>
+    </ul>
+    <p>This visualization uses numerical integration to approximate the motion of the pendulums over time.</p>
+  </div>
   
-  pendulum = new THREE.Group();
-
-  const material = new THREE.MeshPhongMaterial({ 
-    color: 0xffffff,
-    shininess: 100
-  });
-  let prevX = 0, prevY = 0;
-
-  const ambientLight = new THREE.AmbientLight(0x404040);
-  scene.add(ambientLight);
+  <script>
+  let scene, camera, renderer;
+  let pendulum, trail;
+  let clock = new THREE.Clock();
+  let gui, params, originalParams;
   
-  const pointLight = new THREE.PointLight(0xffffff, 1);
-  pointLight.position.set(5, 5, 5);
-  scene.add(pointLight);
-
-  for (let i = 0; i < params.numPendulums; i++) {
-    const rodGeometry = new THREE.CylinderGeometry(0.03, 0.03, params.lengths[i], 8);
-    rodGeometry.translate(0, -params.lengths[i]/2, 0);
-    const rod = new THREE.Mesh(rodGeometry, material);
-    rod.position.set(prevX, prevY, 0);
+  function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('container').appendChild(renderer.domElement);
+  
+    camera.position.z = 10;
+  
+    originalParams = {
+      numPendulums: 2,
+      masses: [1, 1],
+      lengths: [1, 1],
+      angles: [Math.PI / 2, Math.PI / 2],
+      angularVelocities: [0, 0],
+      g: 9.81,
+      trailLength: 1000,
+      rotationSpeed: 0.001
+    };
+    params = JSON.parse(JSON.stringify(originalParams));
+  
+    gui = new dat.GUI();
+    gui.add(params, 'trailLength', 100, 5000).step(100).name('Trail Length');
+    gui.add(params, 'rotationSpeed', 0, 0.01).name('Rotation Speed');
     
-    const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
-    const sphereMaterial = new THREE.MeshPhongMaterial({ 
-      color: new THREE.Color().setHSL(i / params.numPendulums, 1, 0.5),
+    params.massFolder = gui.addFolder('Masses');
+    params.lengthFolder = gui.addFolder('Lengths');
+    
+    updatePendulumParams();
+  
+    createPendulum();
+    createTrail();
+  
+    window.addEventListener('resize', onWindowResize, false);
+  
+    document.getElementById('toggleInfo').addEventListener('click', toggleInfo);
+    document.getElementById('reset').addEventListener('click', resetParams);
+  
+    document.getElementById('decrementPendulum').addEventListener('click', () => {
+        if (params.numPendulums > 2) {
+            params.numPendulums--;
+            document.getElementById('pendulumCount').textContent = params.numPendulums;
+            updatePendulumParams();
+        }
+    });
+    
+    document.getElementById('incrementPendulum').addEventListener('click', () => {
+        if (params.numPendulums < 10) {
+            params.numPendulums++;
+            document.getElementById('pendulumCount').textContent = params.numPendulums;
+            updatePendulumParams();
+        }
+    });
+  }
+  
+  function updatePendulumParams() {
+    const num = params.numPendulums;
+    params.masses = params.masses.slice(0, num);
+    params.lengths = params.lengths.slice(0, num);
+    params.angles = params.angles.slice(0, num);
+    params.angularVelocities = params.angularVelocities.slice(0, num);
+  
+    while (params.masses.length < num) params.masses.push(1);
+    while (params.lengths.length < num) params.lengths.push(1);
+    while (params.angles.length < num) params.angles.push(Math.PI / 2);
+    while (params.angularVelocities.length < num) params.angularVelocities.push(0);
+  
+    updateGUI();
+    createPendulum();
+    createTrail();
+  }
+  
+  function updateGUI() {
+    if (params.massFolder) {
+      for (let controller of params.massFolder.__controllers.slice()) {
+        params.massFolder.remove(controller);
+      }
+    }
+    if (params.lengthFolder) {
+      for (let controller of params.lengthFolder.__controllers.slice()) {
+        params.lengthFolder.remove(controller);
+      }
+    }
+  
+    for (let i = 0; i < params.numPendulums; i++) {
+      params.massFolder.add(params.masses, i, 0.1, 5).name(`Mass ${i + 1}`);
+      params.lengthFolder.add(params.lengths, i, 0.1, 2).name(`Length ${i + 1}`);
+    }
+  }
+  
+  function createPendulum() {
+    if (pendulum) scene.remove(pendulum);
+    
+    pendulum = new THREE.Group();
+  
+    const material = new THREE.MeshPhongMaterial({ 
+      color: 0xffffff,
       shininess: 100
     });
-    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    sphere.position.set(prevX, prevY - params.lengths[i], 0);
-
-    pendulum.add(rod, sphere);
-    prevY -= params.lengths[i];
-  }
-
-  scene.add(pendulum);
-}
-
-function createTrail() {
-  if (trail) scene.remove(trail);
-
-  const trailGeometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(params.trailLength * 3);
-  trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-  const trailMaterial = new THREE.LineBasicMaterial({
-    vertexColors: true,
-    linewidth: 2
-  });
-
-  const colors = new Float32Array(params.trailLength * 3);
-  trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-  trail = new THREE.Line(trailGeometry, trailMaterial);
-  scene.add(trail);
-}
-
-function updateTrail(x, y) {
-  const positions = trail.geometry.attributes.position.array;
-  const colors = trail.geometry.attributes.color.array;
-
-  for (let i = positions.length - 3; i > 2; i -= 3) {
-    positions[i] = positions[i - 3];
-    positions[i + 1] = positions[i - 2];
-    positions[i + 2] = positions[i - 1];
-
-    colors[i] = colors[i - 3];
-    colors[i + 1] = colors[i - 2];
-    colors[i + 2] = colors[i - 1];
-  }
-
-  positions[0] = x;
-  positions[1] = y;
-  positions[2] = 0;
-
-  const hue = (Date.now() % 10000) / 10000;
-  const color = new THREE.Color().setHSL(hue, 1, 0.5);
-  colors[0] = color.r;
-  colors[1] = color.g;
-  colors[2] = color.b;
-
-  trail.geometry.attributes.position.needsUpdate = true;
-  trail.geometry.attributes.color.needsUpdate = true;
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  const dt = clock.getDelta();
-  updatePendulum(dt);
-
-  pendulum.rotation.y += params.rotationSpeed;
-  trail.rotation.y += params.rotationSpeed;
-
-  renderer.render(scene, camera);
-}
-
-function updatePendulum(dt) {
-  const n = params.numPendulums;
-  const { masses, lengths, g } = params;
-  let { angles, angularVelocities } = params;
-
-  const k1 = getDerivatives(angles, angularVelocities);
-  const k2 = getDerivatives(
-    angles.map((a, i) => a + k1[i] * dt / 2),
-    angularVelocities.map((w, i) => w + k1[n + i] * dt / 2)
-  );
-  const k3 = getDerivatives(
-    angles.map((a, i) => a + k2[i] * dt / 2),
-    angularVelocities.map((w, i) => w + k2[n + i] * dt / 2)
-  );
-  const k4 = getDerivatives(
-    angles.map((a, i) => a + k3[i] * dt),
-    angularVelocities.map((w, i) => w + k3[n + i] * dt)
-  );
-
-  for (let i = 0; i < n; i++) {
-    angles[i] += (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]) * dt / 6;
-    angularVelocities[i] += (k1[n+i] + 2*k2[n+i] + 2*k3[n+i] + k4[n+i]) * dt / 6;
-  }
-
-  params.angles = angles;
-  params.angularVelocities = angularVelocities;
-
-  let x = 0, y = 0;
-  for (let i = 0; i < n; i++) {
-    const prevX = x, prevY = y;
-    x += lengths[i] * Math.sin(angles[i]);
-    y -= lengths[i] * Math.cos(angles[i]);
+    let prevX = 0, prevY = 0;
+  
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
     
-    pendulum.children[i*2].geometry.setFromPoints([
-      new THREE.Vector3(prevX, prevY, 0),
-      new THREE.Vector3(x, y, 0)
-    ]);
-    pendulum.children[i*2+1].position.set(x, y, 0);
-  }
-
-  updateTrail(x, y);
-}
-
-function getDerivatives(angles, angularVelocities) {
-  const n = params.numPendulums;
-  const { masses, lengths, g } = params;
-
-  const derivatives = new Array(2*n).fill(0);
-
-  for (let i = 0; i < n; i++) {
-    derivatives[i] = angularVelocities[i];
-  }
-
-  for (let i = 0; i < n; i++) {
-    let sum1 = 0, sum2 = 0;
-    for (let j = i; j < n; j++) {
-      sum1 += masses[j] * lengths[i] * lengths[j] * Math.cos(angles[i] - angles[j]) * derivatives[j];
-      sum2 += masses[j] * lengths[i] * lengths[j] * Math.sin(angles[i] - angles[j]) * angularVelocities[j] * angularVelocities[j];
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+  
+    for (let i = 0; i < params.numPendulums; i++) {
+      const rodGeometry = new THREE.CylinderGeometry(0.03, 0.03, params.lengths[i], 8);
+      rodGeometry.translate(0, -params.lengths[i]/2, 0);
+      const rod = new THREE.Mesh(rodGeometry, material);
+      rod.position.set(prevX, prevY, 0);
+      
+      const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+      const sphereMaterial = new THREE.MeshPhongMaterial({ 
+        color: new THREE.Color().setHSL(i / params.numPendulums, 1, 0.5),
+        shininess: 100
+      });
+      const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+      sphere.position.set(prevX, prevY - params.lengths[i], 0);
+  
+      pendulum.add(rod, sphere);
+      prevY -= params.lengths[i];
     }
-    derivatives[n+i] = (sum2 - g * Math.sin(angles[i]) * masses.slice(i).reduce((a, b) => a + b, 0) - sum1) / 
-                       (lengths[i] * masses.slice(i).reduce((a, b) => a + b, 0));
+  
+    scene.add(pendulum);
   }
-
-  return derivatives;
-}
-
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-function toggleInfo() {
-  const info = document.getElementById('info');
-  info.style.display = info.style.display === 'none' ? 'block' : 'none';
-}
-
-function resetParams() {
-  Object.assign(params, JSON.parse(JSON.stringify(originalParams)));
-  updatePendulumParams();
-  for (let i in gui.__controllers) {
-    gui.__controllers[i].updateDisplay();
+  
+  function createTrail() {
+    if (trail) scene.remove(trail);
+  
+    const trailGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(params.trailLength * 3);
+    trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  
+    const trailMaterial = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      linewidth: 2
+    });
+  
+    const colors = new Float32Array(params.trailLength * 3);
+    trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  
+    trail = new THREE.Line(trailGeometry, trailMaterial);
+    scene.add(trail);
   }
-}
-
-init();
-animate();
-</script>
-</body></html>
+  
+  function updateTrail(x, y) {
+    const positions = trail.geometry.attributes.position.array;
+    const colors = trail.geometry.attributes.color.array;
+  
+    for (let i = positions.length - 3; i > 2; i -= 3) {
+      positions[i] = positions[i - 3];
+      positions[i + 1] = positions[i - 2];
+      positions[i + 2] = positions[i - 1];
+  
+      colors[i] = colors[i - 3];
+      colors[i + 1] = colors[i - 2];
+      colors[i + 2] = colors[i - 1];
+    }
+  
+    positions[0] = x;
+    positions[1] = y;
+    positions[2] = 0;
+  
+    const hue = (Date.now() % 10000) / 10000;
+    const color = new THREE.Color().setHSL(hue, 1, 0.5);
+    colors[0] = color.r;
+    colors[1] = color.g;
+    colors[2] = color.b;
+  
+    trail.geometry.attributes.position.needsUpdate = true;
+    trail.geometry.attributes.color.needsUpdate = true;
+  }
+  
+  function animate() {
+    requestAnimationFrame(animate);
+  
+    const dt = clock.getDelta();
+    updatePendulum(dt);
+  
+    pendulum.rotation.y += params.rotationSpeed;
+    trail.rotation.y += params.rotationSpeed;
+  
+    renderer.render(scene, camera);
+  }
+  
+  function updatePendulum(dt) {
+    const n = params.numPendulums;
+    const { masses, lengths, g } = params;
+    let { angles, angularVelocities } = params;
+  
+    const k1 = getDerivatives(angles, angularVelocities);
+    const k2 = getDerivatives(
+      angles.map((a, i) => a + k1[i] * dt / 2),
+      angularVelocities.map((w, i) => w + k1[n + i] * dt / 2)
+    );
+    const k3 = getDerivatives(
+      angles.map((a, i) => a + k2[i] * dt / 2),
+      angularVelocities.map((w, i) => w + k2[n + i] * dt / 2)
+    );
+    const k4 = getDerivatives(
+      angles.map((a, i) => a + k3[i] * dt),
+      angularVelocities.map((w, i) => w + k3[n + i] * dt)
+    );
+  
+    for (let i = 0; i < n; i++) {
+      angles[i] += (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]) * dt / 6;
+      angularVelocities[i] += (k1[n+i] + 2*k2[n+i] + 2*k3[n+i] + k4[n+i]) * dt / 6;
+    }
+  
+    params.angles = angles;
+    params.angularVelocities = angularVelocities;
+  
+    let x = 0, y = 0;
+    for (let i = 0; i < n; i++) {
+      const prevX = x, prevY = y;
+      x += lengths[i] * Math.sin(angles[i]);
+      y -= lengths[i] * Math.cos(angles[i]);
+      
+      pendulum.children[i*2].geometry.setFromPoints([
+        new THREE.Vector3(prevX, prevY, 0),
+        new THREE.Vector3(x, y, 0)
+      ]);
+      pendulum.children[i*2+1].position.set(x, y, 0);
+    }
+  
+    updateTrail(x, y);
+  }
+  
+  function getDerivatives(angles, angularVelocities) {
+    const n = params.numPendulums;
+    const { masses, lengths, g } = params;
+  
+    const derivatives = new Array(2*n).fill(0);
+  
+    for (let i = 0; i < n; i++) {
+      derivatives[i] = angularVelocities[i];
+    }
+  
+    for (let i = 0; i < n; i++) {
+      let sum1 = 0, sum2 = 0;
+      for (let j = i; j < n; j++) {
+        sum1 += masses[j] * lengths[i] * lengths[j] * Math.cos(angles[i] - angles[j]) * derivatives[j];
+        sum2 += masses[j] * lengths[i] * lengths[j] * Math.sin(angles[i] - angles[j]) * angularVelocities[j] * angularVelocities[j];
+      }
+      derivatives[n+i] = (sum2 - g * Math.sin(angles[i]) * masses.slice(i).reduce((a, b) => a + b, 0) - sum1) / 
+                         (lengths[i] * masses.slice(i).reduce((a, b) => a + b, 0));
+    }
+  
+    return derivatives;
+  }
+  
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  
+  function toggleInfo() {
+    const info = document.getElementById('info');
+    info.style.display = info.style.display === 'none' ? 'block' : 'none';
+  }
+  
+  function resetParams() {
+    Object.assign(params, JSON.parse(JSON.stringify(originalParams)));
+    document.getElementById('pendulumCount').textContent = params.numPendulums;
+    updatePendulumParams();
+    for (let i in gui.__controllers) {
+      gui.__controllers[i].updateDisplay();
+    }
+  }
+  
+  init();
+  animate();
+  </script>
+  </body></html>
