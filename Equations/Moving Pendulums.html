@@ -34,6 +34,20 @@
       background: rgba(0,0,0,0.7);
       padding: 15px;
       border-radius: 25px;
+      transition: transform 0.3s ease-in-out;
+    }
+    #toggle-controls {
+      display: none;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 101;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
     }
     button {
       padding: 10px 20px;
@@ -47,7 +61,6 @@
       text-transform: uppercase;
       letter-spacing: 1px;
       transition: all 0.3s ease;
-      min-width: 44px;
     }
     button:hover {
       background: #555;
@@ -65,73 +78,44 @@
     .dg .c .slider {
       height: 20px !important;
     }
-    .pendulum-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(68, 68, 68, 0.7);
-      padding: 5px 15px;
-      border-radius: 25px;
-      position: relative;
-    }
-    .pendulum-label {
-      position: absolute;
-      top: -20px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-    .pendulum-display {
-      color: white;
-      font-size: 16px;
-      min-width: 30px;
-      text-align: center;
-    }
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
       #controls {
         flex-direction: column;
-        left: 10px;
-        right: 10px;
-        transform: none;
-        gap: 15px;
-        width: calc(100% - 40px);
-        margin: 0 10px;
+        transform: translateX(100%);
+        width: 80%;
+        max-width: none;
+        height: 100%;
+        top: 0;
+        left: auto;
+        right: 0;
+        bottom: auto;
+        border-radius: 0;
+        overflow-y: auto;
         padding: 20px;
       }
+      #controls.active {
+        transform: translateX(0);
+      }
+      #toggle-controls {
+        display: block;
+      }
       button {
-        font-size: 20px;
-        padding: 18px 30px;
         width: 100%;
-      }
-      .pendulum-controls {
-        width: 100%;
-        justify-content: center;
-        padding: 10px 15px;
-      }
-      .pendulum-label {
-        font-size: 18px;
-        top: -25px;
-      }
-      .pendulum-display {
-        font-size: 20px;
+        font-size: 16px;
+        padding: 12px 24px;
+        margin: 5px 0;
       }
       .dg.main {
-        font-size: 18px !important;
+        width: 100% !important;
       }
       .dg .c input[type=text] {
-        font-size: 18px !important;
+        font-size: 16px !important;
       }
       .dg .property-name {
-        font-size: 18px !important;
+        font-size: 16px !important;
       }
       .dg .c .slider {
-        height: 28px !important;
-      }
-      #info {
-        font-size: 18px;
-        max-width: 90%;
+        height: 24px !important;
       }
     }
   </style>
@@ -139,14 +123,9 @@
   <body>
   <div id="container"></div>
   <div id="controls">
-    <div class="pendulum-controls">
-      <span class="pendulum-label">Pendulums Control</span>
-      <button id="decrementPendulum">-</button>
-      <span class="pendulum-display" id="pendulumCount">2</span>
-      <button id="incrementPendulum">+</button>
-    </div>
     <button id="toggleInfo">Know More</button>
     <button id="reset">Reset</button>
+    <button id="toggle-controls">Controls</button>
   </div>
   <div id="info">
     <h2>Multi-Pendulum System</h2>
@@ -190,6 +169,7 @@
     params = JSON.parse(JSON.stringify(originalParams));
   
     gui = new dat.GUI();
+    gui.add(params, 'numPendulums', 2, 10).step(1).name('Number of Pendulums').onChange(updatePendulumParams);
     gui.add(params, 'trailLength', 100, 5000).step(100).name('Trail Length');
     gui.add(params, 'rotationSpeed', 0, 0.01).name('Rotation Speed');
     
@@ -205,22 +185,7 @@
   
     document.getElementById('toggleInfo').addEventListener('click', toggleInfo);
     document.getElementById('reset').addEventListener('click', resetParams);
-  
-    document.getElementById('decrementPendulum').addEventListener('click', () => {
-        if (params.numPendulums > 2) {
-            params.numPendulums--;
-            document.getElementById('pendulumCount').textContent = params.numPendulums;
-            updatePendulumParams();
-        }
-    });
-    
-    document.getElementById('incrementPendulum').addEventListener('click', () => {
-        if (params.numPendulums < 10) {
-            params.numPendulums++;
-            document.getElementById('pendulumCount').textContent = params.numPendulums;
-            updatePendulumParams();
-        }
-    });
+    document.getElementById('toggle-controls').addEventListener('click', toggleControls);
   }
   
   function updatePendulumParams() {
@@ -435,12 +400,29 @@
   
   function resetParams() {
     Object.assign(params, JSON.parse(JSON.stringify(originalParams)));
-    document.getElementById('pendulumCount').textContent = params.numPendulums;
     updatePendulumParams();
     for (let i in gui.__controllers) {
       gui.__controllers[i].updateDisplay();
     }
   }
+  
+  function toggleControls() {
+    const controls = document.getElementById('controls');
+    controls.classList.toggle('active');
+    document.getElementById('toggle-controls').textContent = controls.classList.contains('active') ? 'Close' : 'Controls';
+  }
+  
+  document.getElementById('toggle-controls').addEventListener('click', function() {
+    document.getElementById('controls').classList.toggle('active');
+  });
+  
+  document.addEventListener('click', function(event) {
+    const controls = document.getElementById('controls');
+    const toggleButton = document.getElementById('toggle-controls');
+    if (!controls.contains(event.target) && event.target !== toggleButton) {
+      controls.classList.remove('active');
+    }
+  });
   
   init();
   animate();
