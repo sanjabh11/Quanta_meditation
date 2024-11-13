@@ -18,18 +18,25 @@ body {
 }
 #controls {
     position: fixed;
-    top: 10px;
-    right: 10px;
+    top: 0;
+    right: 0;
     background: rgba(0, 0, 0, 0.85);
     padding: 15px;
     border-radius: 8px;
     z-index: 100;
-    max-width: 300px;
+    width: 280px;
     backdrop-filter: blur(5px);
+    transition: transform 0.3s ease-in-out;
+}
+#controls.active {
+    transform: translateX(0);
+}
+#controls:not(.active) {
+    transform: translateX(100%);
 }
 #info-panel {
     position: fixed;
-    bottom: 10px;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0, 0, 0, 0.85);
@@ -40,6 +47,54 @@ body {
     overflow-y: auto;
     z-index: 100;
     backdrop-filter: blur(5px);
+    transition: transform 0.3s ease-in-out;
+}
+#info-panel.active {
+    transform: translate(-50%, 0);
+}
+#info-panel:not(.active) {
+    transform: translate(-50%, 100%);
+}
+#toggle-controls, #toggle-info-panel {
+    display: block;
+    position: fixed;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    z-index: 101;
+}
+#toggle-controls {
+    top: 10px;
+    right: 10px;
+}
+#toggle-info-panel {
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+#toggle-controls:hover, #toggle-info-panel:hover {
+    background: rgba(0, 0, 0, 0.95);
+}
+@media (max-width: 768px) {
+    #controls {
+        width: 80%;
+        max-width: none;
+        height: 100%;
+        top: 0;
+        right: 0;
+        border-radius: 0;
+        overflow-y: auto;
+    }
+    #info-panel {
+        width: 100%;
+        max-width: none;
+        border-radius: 8px 8px 0 0;
+    }
 }
 button {
     background: #444;
@@ -83,6 +138,9 @@ button.active {
 </head>
 <body>
 <div id="container"></div>
+<button id="toggle-controls">Show Patterns</button>
+<button id="toggle-info-panel">Show Info</button>
+
 <div id="controls">
     <h3>Highlight Patterns</h3>
     <button id="rows">Rows (Sum: 139)</button>
@@ -349,6 +407,38 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Toggle controls panel
+document.getElementById('toggle-controls').addEventListener('click', function() {
+    const controls = document.getElementById('controls');
+    const isActive = controls.classList.toggle('active');
+    this.textContent = isActive ? 'Hide Patterns' : 'Show Patterns';
+});
+
+// Toggle info panel
+document.getElementById('toggle-info-panel').addEventListener('click', function() {
+    const infoPanel = document.getElementById('info-panel');
+    const isActive = infoPanel.classList.toggle('active');
+    this.textContent = isActive ? 'Hide Info' : 'Show Info';
+});
+
+// Optional: Close panels when clicking outside
+document.addEventListener('click', function(event) {
+    const controls = document.getElementById('controls');
+    const infoPanel = document.getElementById('info-panel');
+    const toggleControlsBtn = document.getElementById('toggle-controls');
+    const toggleInfoBtn = document.getElementById('toggle-info-panel');
+
+    if (!controls.contains(event.target) && event.target !== toggleControlsBtn) {
+        controls.classList.remove('active');
+        toggleControlsBtn.textContent = 'Show Patterns';
+    }
+
+    if (!infoPanel.contains(event.target) && event.target !== toggleInfoBtn) {
+        infoPanel.classList.remove('active');
+        toggleInfoBtn.textContent = 'Show Info';
+    }
 });
 
 // Initialize and start animation
