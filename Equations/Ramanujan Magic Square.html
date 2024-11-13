@@ -444,6 +444,494 @@ document.addEventListener('click', function(event) {
 // Initialize and start animation
 init();
 animate();
+
+// Function to toggle animation
+function toggleAnimation() {
+    isAnimating = !isAnimating;
+    document.getElementById('animate-toggle').textContent = isAnimating ? 'Pause Rotation' : 'Resume Rotation';
+}
+
+// Function to highlight a specific pillar on mouse hover
+function onMouseMove(event) {
+    const mouse = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+
+    // Calculate mouse position in normalized device coordinates
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Update the picking ray with the camera and mouse position
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calculate objects intersecting the picking ray
+    const intersects = raycaster.intersectObjects(pillars.flat());
+
+    if (intersects.length > 0) {
+        const intersectedPillar = intersects[0].object;
+        intersectedPillar.material.color.setHex(0xff0000); // Change color on hover
+    }
+}
+
+// Reset pillar colors when mouse leaves
+function onMouseLeave() {
+    resetColors();
+}
+
+// Add event listeners for mouse movement
+window.addEventListener('mousemove', onMouseMove);
+window.addEventListener('mouseleave', onMouseLeave);
+
+// Event listener for the animation toggle button
+document.getElementById('animate-toggle').addEventListener('click', toggleAnimation);
+</script>
+</body>
+</html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ramanujan's Magic Square Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+    background: #000;
+    color: #fff;
+}
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+#controls {
+    position: fixed;
+    top: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 100;
+    width: 280px;
+    backdrop-filter: blur(5px);
+    transition: transform 0.3s ease-in-out;
+}
+#controls.active {
+    transform: translateX(0);
+}
+#controls:not(.active) {
+    transform: translateX(100%);
+}
+#info-panel {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 40vh;
+    overflow-y: auto;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    transition: transform 0.3s ease-in-out;
+}
+#info-panel.active {
+    transform: translate(-50%, 0);
+}
+#info-panel:not(.active) {
+    transform: translate(-50%, 100%);
+}
+#toggle-controls, #toggle-info-panel {
+    display: block;
+    position: fixed;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    z-index: 101;
+}
+#toggle-controls {
+    top: 10px;
+    right: 10px;
+}
+#toggle-info-panel {
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+#toggle-controls:hover, #toggle-info-panel:hover {
+    background: rgba(0, 0, 0, 0.95);
+}
+@media (max-width: 768px) {
+    #controls {
+        width: 80%;
+        max-width: none;
+        height: 100%;
+        top: 0;
+        right: 0;
+        border-radius: 0;
+        overflow-y: auto;
+    }
+    #info-panel {
+        width: 100%;
+        max-width: none;
+        border-radius: 8px 8px 0 0;
+    }
+}
+button {
+    background: #444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+    transition: background 0.3s;
+    width: 100%;
+}
+button:hover {
+    background: #666;
+}
+button.active {
+    background: #0a84ff;
+}
+.hidden {
+    display: none;
+}
+.magic-square {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin: 10px 0;
+    font-family: monospace;
+    font-size: 1.2em;
+}
+.magic-square div {
+    background: #333;
+    padding: 5px;
+    text-align: center;
+    border-radius: 4px;
+}
+.highlight {
+    color: #0a84ff;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+<button id="toggle-controls">Show Patterns</button>
+<button id="toggle-info-panel">Show Info</button>
+
+<div id="controls">
+    <h3>Highlight Patterns</h3>
+    <button id="rows">Rows (Sum: 139)</button>
+    <button id="columns">Columns (Sum: 139)</button>
+    <button id="diagonals">Diagonals (Sum: 139)</button>
+    <button id="squares">2x2 Squares (Sum: 139)</button>
+    <button id="reset">Reset View</button>
+    <button id="animate-toggle">Pause Rotation</button>
+</div>
+
+<div id="info-panel">
+    <h3>Ramanujan's Magic Square</h3>
+    <div class="magic-square">
+        <div>58</div><div>15</div><div>33</div><div>33</div>
+        <div>22</div><div>51</div><div>40</div><div>26</div>
+        <div>35</div><div>28</div><div>46</div><div>30</div>
+        <div>24</div><div>45</div><div>20</div><div>50</div>
+    </div>
+    <button id="toggle-info">Know More</button>
+    <div id="extended-info" class="hidden">
+        <p>This remarkable 4×4 magic square was discovered by the mathematical genius Srinivasa Ramanujan. It possesses several extraordinary properties:</p>
+        <ul>
+            <li>All rows, columns, and diagonals sum to 139</li>
+            <li>All 2×2 sub-squares also sum to 139</li>
+            <li>The middle four numbers sum to 139</li>
+            <li>The four corner numbers sum to 139</li>
+            <li>The square has repeated numbers (33 appears twice), making it unique among classical magic squares</li>
+        </ul>
+        <p>This magic square demonstrates Ramanujan's exceptional mathematical intuition and creativity. It challenges traditional definitions of magic squares while maintaining perfect balance in its sums. The square was found in one of his notebooks and continues to fascinate mathematicians today.</p>
+    </div>
+</div>
+
+<script>
+let scene, camera, renderer, controls;
+let pillars = [];
+let isAnimating = true;
+
+const magicSquare = [
+    [58, 15, 33, 33],
+    [22, 51, 40, 26],
+    [35, 28, 46, 30],
+    [24, 45, 20, 50]
+];
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    camera.position.set(8, 8, 8);
+    controls.update();
+
+    addLighting();
+    createPillars();
+}
+
+function getColorForValue(value) {
+    const minValue = 15;
+    const maxValue = 58;
+    const normalizedValue = (value - minValue) / (maxValue - minValue);
+    return new THREE.Color().setHSL(0.7 * (1 - normalizedValue), 1, 0.5);
+}
+
+function createPillars() {
+    const gridSize = 4;
+    const spacing = 2;
+    const baseHeight = 0.5;
+    const maxHeight = 3;
+
+    for(let i = 0; i < gridSize; i++) {
+        pillars[i] = [];
+        for(let j = 0; j < gridSize; j++) {
+            const value = magicSquare[i][j];
+            const normalizedHeight = (value / 58) * maxHeight;
+            
+            const geometry = new THREE.BoxGeometry(1, normalizedHeight, 1);
+            const color = getColorForValue(value);
+            const material = new THREE.MeshPhongMaterial({ color: color });
+            
+            const pillar = new THREE.Mesh(geometry, material);
+            pillar.position.set(
+                (i - gridSize/2 + 0.5) * spacing,
+                normalizedHeight/2,
+                (j - gridSize/2 + 0.5) * spacing
+            );
+            
+            pillar.userData = {
+                originalColor: color,
+                value: value
+            };
+            
+            scene.add(pillar);
+            pillars[i][j] = pillar;
+        }
+    }
+
+    // Add base plate
+    const baseGeometry = new THREE.BoxGeometry(gridSize * spacing + 1, baseHeight, gridSize * spacing + 1);
+    const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x222222 });
+    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+    base.position.y = -baseHeight/2;
+    scene.add(base);
+}
+
+function addLighting() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
+}
+
+function resetColors() {
+    pillars.forEach(row => {
+        row.forEach(pillar => {
+            pillar.material.color.copy(pillar.userData.originalColor);
+        });
+    });
+}
+
+function highlightPillars(indices) {
+    resetColors();
+    indices.forEach(([i, j]) => {
+        pillars[i][j].material.color.setHex(0x00ff00);
+    });
+}
+
+function highlightRows() {
+    const rowIndices = Array(4).fill().map((_, i) => 
+        Array(4).fill().map((_, j) => [i, j])
+    );
+    let currentRow = 0;
+    const interval = setInterval(() => {
+        resetColors();
+        highlightPillars(rowIndices[currentRow]);
+        currentRow = (currentRow + 1) % 4;
+    }, 1000);
+    return interval;
+}
+
+function highlightColumns() {
+    const columnIndices = Array(4).fill().map((_, j) => 
+        Array(4).fill().map((_, i) => [i, j])
+    );
+    let currentCol = 0;
+    const interval = setInterval(() => {
+        resetColors();
+        highlightPillars(columnIndices[currentCol]);
+        currentCol = (currentCol + 1) % 4;
+    }, 1000);
+    return interval;
+}
+
+function highlightDiagonals() {
+    const diagonals = [
+        [[0,0], [1,1], [2,2], [3,3]],
+        [[0,3], [1,2], [2,1], [3,0]]
+    ];
+    let currentDiag = 0;
+    const interval = setInterval(() => {
+        resetColors();
+        highlightPillars(diagonals[currentDiag]);
+        currentDiag = (currentDiag + 1) % 2;
+    }, 1000);
+    return interval;
+}
+
+function highlight2x2Squares() {
+    const squares = [
+        [[0,0], [0,1], [1,0], [1,1]],
+        [[0,2], [0,3], [1,2], [1,3]],
+        [[2,0], [2,1], [3,0], [3,1]],
+        [[2,2], [2,3], [3,2], [3,3]]
+    ];
+    let currentSquare = 0;
+    const interval = setInterval(() => {
+        resetColors();
+        highlightPillars(squares[currentSquare]);
+        currentSquare = (currentSquare + 1) % 4;
+    }, 1000);
+    return interval;
+}
+
+let currentInterval = null;
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    if (isAnimating) {
+        pillars.forEach(row => {
+            row.forEach(pillar => {
+                pillar.rotation.y += 0.01;
+            });
+        });
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Event Listeners
+document.getElementById('rows').addEventListener('click', (e) => {
+    if (currentInterval) clearInterval(currentInterval);
+    if (e.target.classList.toggle('active')) {
+        currentInterval = highlightRows();
+    } else {
+        resetColors();
+    }
+});
+
+document.getElementById('columns').addEventListener('click', (e) => {
+    if (currentInterval) clearInterval(currentInterval);
+    if (e.target.classList.toggle('active')) {
+        currentInterval = highlightColumns();
+    } else {
+        resetColors();
+    }
+});
+
+document.getElementById('diagonals').addEventListener('click', (e) => {
+    if (currentInterval) clearInterval(currentInterval);
+    if (e.target.classList.toggle('active')) {
+        currentInterval = highlightDiagonals();
+    } else {
+        resetColors();
+    }
+});
+
+document.getElementById('squares').addEventListener('click', (e) => {
+    if (currentInterval) clearInterval(currentInterval);
+    if (e.target.classList.toggle('active')) {
+        currentInterval = highlight2x2Squares();
+    } else {
+        resetColors();
+    }
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+    if (currentInterval) clearInterval(currentInterval);
+    resetColors();
+    camera.position.set(8, 8, 8);
+    controls.reset();
+    document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+});
+
+document.getElementById('animate-toggle').addEventListener('click', (e) => {
+    isAnimating = !isAnimating;
+    e.target.textContent = isAnimating ? 'Pause Rotation' : 'Resume Rotation';
+});
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const info = document.getElementById('extended-info');
+    info.classList.toggle('hidden');
+    document.getElementById('toggle-info').textContent = 
+        info.classList.contains('hidden') ? 'Know More' : 'Show Less';
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Toggle controls panel
+document.getElementById('toggle-controls').addEventListener('click', function() {
+    const controls = document.getElementById('controls');
+    const isActive = controls.classList.toggle('active');
+    this.textContent = isActive ? 'Hide Patterns' : 'Show Patterns';
+});
+
+// Toggle info panel
+document.getElementById('toggle-info-panel').addEventListener('click', function() {
+    const infoPanel = document.getElementById('info-panel');
+    const isActive = infoPanel.classList.toggle('active');
+    this.textContent = isActive ? 'Hide Info' : 'Show Info';
+});
+
+// Optional: Close panels when clicking outside
+document.addEventListener('click', function(event) {
+    const controls = document.getElementById('controls');
+    const infoPanel = document.getElementById('info-panel');
+    const toggleControlsBtn = document.getElementById('toggle-controls');
+    const toggleInfoBtn = document.getElementById('toggle-info-panel');
+
+    if (!controls.contains(event.target) && event.target !== toggleControlsBtn) {
+        controls.classList.remove('active');
+        toggleControlsBtn.textContent = 'Show Patterns';
+    }
+
+    if (!infoPanel.contains(event.target) && event.target !== toggleInfoBtn) {
+        infoPanel.classList.remove('active');
+        toggleInfoBtn.textContent = 'Show Info';
+    }
+});
+
+// Initialize and start animation
+init();
+animate();
 </script>
 </body>
 </html>
