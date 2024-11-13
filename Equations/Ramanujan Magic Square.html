@@ -1,4 +1,4 @@
-<html><head><title>Interactive Ramanujan's Magic Square</title>
+<html><head><base href="https://ramanujansquare.sim/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Interactive Ramanujan's Magic Square</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
@@ -45,13 +45,11 @@ body {
 .panel-content {
     transition: max-height 0.3s ease-out;
     overflow: hidden;
-    max-height: 500px;  /* Set initial max-height */
+    max-height: 0px;  /* Start collapsed */
 }
 .panel-header .toggle-icon {
     transition: transform 0.3s ease;
-}
-.panel-header .toggle-icon.collapsed {
-    transform: rotate(-90deg);
+    transform: rotate(-90deg); /* Start with collapsed icon */
 }
 .controls, #info-panel {
     transition: opacity 0.3s ease;
@@ -120,7 +118,7 @@ body {
             <div>24</div><div>45</div><div>20</div><div>50</div>
         </div>
         <button id="toggle-info">Know More</button>
-        <div id="extended-info" class="hidden">
+        <div id="extended-info" style="display: none;">
             <p>This remarkable 4×4 magic square was discovered by the mathematical genius Srinivasa Ramanujan. It possesses several extraordinary properties:</p>
             <ul>
                 <li>All rows, columns, and diagonals sum to 139</li>
@@ -172,10 +170,10 @@ function setupPanelToggles() {
         const content = panel.querySelector('.panel-content');
         const icon = header.querySelector('.toggle-icon');
         
-        // Start expanded
-        content.style.maxHeight = content.scrollHeight + "px";
-        panel.classList.remove('minimized');
-        icon.classList.remove('collapsed');
+        // Start collapsed
+        content.style.maxHeight = "0px";
+        panel.classList.add('minimized');
+        icon.classList.add('collapsed');
         
         header.addEventListener('click', () => {
             const isCollapsed = content.style.maxHeight === "0px";
@@ -475,9 +473,9 @@ document.getElementById('animate-toggle').addEventListener('click', (e) => {
 
 document.getElementById('toggle-info').addEventListener('click', () => {
     const info = document.getElementById('extended-info');
-    info.classList.toggle('hidden');
+    info.style.display = info.style.display === 'none' ? 'block' : 'none';
     document.getElementById('toggle-info').textContent = 
-        info.classList.contains('hidden') ? 'Know More' : 'Show Less';
+        info.style.display === 'none' ? 'Know More' : 'Show Less';
 });
 
 window.addEventListener('resize', () => {
