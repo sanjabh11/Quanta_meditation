@@ -1,0 +1,274 @@
+<html><head><base href="." />
+<title>Aizawa Attractor Interactive Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+<!-- Added OrbitControls CDN -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  body { 
+    margin: 0; 
+    overflow: hidden; 
+    background-color: #000000;
+  }
+  #info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px;
+    font-family: monospace;
+    border-radius: 5px;
+    max-width: 400px;
+    transition: opacity 0.3s;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .equation {
+    margin: 10px 0;
+    font-size: 14px;
+  }
+  #toggleEquations, #toggleParams {
+    padding: 5px 10px;
+    background: #333;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  #toggleEquations:hover, #toggleParams:hover {
+    background: #444;
+  }
+  #toggleEquations {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+  #toggleParams {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+  }
+  .controls {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+  }
+  #parametersPanel {
+    position: absolute;
+    top: 90px;
+    right: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    transition: opacity 0.3s;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .parameter-control {
+    margin: 10px 0;
+  }
+  input[type="range"] {
+    width: 150px;
+    margin-left: 10px;
+    background: #333;
+  }
+  .parameter-value {
+    display: inline-block;
+    width: 50px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+<div id="info">
+  <h3>Aizawa Attractor</h3>
+  <div class="equation">dx/dt = (z-b)x - dy</div>
+  <div class="equation">dy/dt = dx + (z-b)y</div>
+  <div class="equation">dz/dt = c + az - z³/3 - (x² + y²)(1 + ez) + fzx³</div>
+  <div class="controls">
+    <strong>Controls:</strong><br>
+    • Drag mouse to rotate view<br>
+    • Scroll to zoom in/out<br>
+    • Scroll + Shift to adjust line size<br>
+    • Points generated: 20000<br>
+    • Rotation speed: 0.001 rad/frame<br>
+    • Integration method: RK4
+  </div>
+</div>
+
+<button id="toggleEquations">Toggle Info</button>
+<button id="toggleParams">Toggle Parameters</button>
+
+<div id="parametersPanel">
+  <h4>Adjust Parameters</h4>
+  <div class="parameter-control">
+    a: <input type="range" id="param-a" min="0" max="2" step="0.05" value="0.95">
+    <span class="parameter-value">0.95</span>
+  </div>
+  <div class="parameter-control">
+    b: <input type="range" id="param-b" min="0" max="2" step="0.05" value="0.7">
+    <span class="parameter-value">0.7</span>
+  </div>
+  <div class="parameter-control">
+    c: <input type="range" id="param-c" min="0" max="2" step="0.05" value="0.6">
+    <span class="parameter-value">0.6</span>
+  </div>
+  <div class="parameter-control">
+    d: <input type="range" id="param-d" min="0" max="5" step="0.1" value="3.5">
+    <span class="parameter-value">3.5</span>
+  </div>
+  <div class="parameter-control">
+    e: <input type="range" id="param-e" min="0" max="1" step="0.05" value="0.25">
+    <span class="parameter-value">0.25</span>
+  </div>
+  <div class="parameter-control">
+    f: <input type="range" id="param-f" min="0" max="0.5" step="0.01" value="0.1">
+    <span class="parameter-value">0.1</span>
+  </div>
+</div>
+
+<script>
+let scene, camera, renderer, points, controls;
+let params = {
+    a: 0.95,
+    b: 0.7,
+    c: 0.6,
+    d: 3.5,
+    e: 0.25,
+    f: 0.1
+};
+const dt = 0.005;
+let x = 0.1, y = 0, z = 0;
+const maxPoints = 20000;
+const positions = new Float32Array(maxPoints * 3);
+let currentPoint = 0;
+let pointSize = 0.08;
+let isAnimating = true;
+
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        alpha: false,
+        preserveDrawingBuffer: true
+    });
+    renderer.setClearColor(0x000000, 1);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.LineBasicMaterial({
+        color: 0x00ffff,
+        linewidth: 3, // Increased line width
+        opacity: 0.8,
+        transparent: true
+    });
+
+    points = new THREE.Line(geometry, material);
+    scene.add(points);
+    
+    camera.position.z = 30;
+
+    // Controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+}
+
+function updateParticle() {
+    let k1 = calculateDerivatives(x, y, z);
+    let k2 = calculateDerivatives(
+        x + k1.dx * dt/2, 
+        y + k1.dy * dt/2, 
+        z + k1.dz * dt/2
+    );
+    let k3 = calculateDerivatives(
+        x + k2.dx * dt/2, 
+        y + k2.dy * dt/2, 
+        z + k2.dz * dt/2
+    );
+    let k4 = calculateDerivatives(
+        x + k3.dx * dt, 
+        y + k3.dy * dt, 
+        z + k3.dz * dt
+    );
+
+    x += (k1.dx + 2*k2.dx + 2*k3.dx + k4.dx) * dt/6;
+    y += (k1.dy + 2*k2.dy + 2*k3.dy + k4.dy) * dt/6;
+    z += (k1.dz + 2*k2.dz + 2*k3.dz + k4.dz) * dt/6;
+
+    positions[currentPoint * 3] = x * 5;
+    positions[currentPoint * 3 + 1] = y * 5;
+    positions[currentPoint * 3 + 2] = z * 5;
+
+    currentPoint = (currentPoint + 1) % maxPoints;
+    points.geometry.attributes.position.needsUpdate = true;
+}
+
+function calculateDerivatives(x, y, z) {
+    return {
+        dx: (z - params.b) * x - params.d * y,
+        dy: params.d * x + (z - params.b) * y,
+        dz: params.c + params.a * z - Math.pow(z, 3)/3 - 
+            (Math.pow(x, 2) + Math.pow(y, 2)) * (1 + params.e * z) + 
+            params.f * z * Math.pow(x, 3)
+    };
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (isAnimating) {
+        updateParticle();
+        points.rotation.y += 0.001;
+    }
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+window.addEventListener('resize', onWindowResize, false);
+
+document.querySelectorAll('input[type="range"]').forEach(input => {
+    input.addEventListener('input', (e) => {
+        const param = e.target.id.split('-')[1];
+        params[param] = parseFloat(e.target.value);
+        e.target.nextElementSibling.textContent = e.target.value;
+    });
+});
+
+document.getElementById('toggleEquations').addEventListener('click', () => {
+    const info = document.getElementById('info');
+    info.style.opacity = info.style.opacity === '0' ? '1' : '0';
+});
+
+document.getElementById('toggleParams').addEventListener('click', () => {
+    const panel = document.getElementById('parametersPanel');
+    panel.style.opacity = panel.style.opacity === '0' ? '1' : '0';
+});
+
+window.addEventListener('wheel', (e) => {
+    if (e.shiftKey) {
+        pointSize = Math.max(0.01, Math.min(0.5, pointSize + e.deltaY * -0.0001));
+        points.material.size = pointSize;
+    }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    init();
+    animate();
+});
+</script>
+</body>
+</html>
