@@ -1,0 +1,558 @@
+<html><head><base href="." />
+<title>Advanced Weierstrass Function & Approximation Visualizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+<style>
+  body { margin: 0; overflow: hidden; background: #000021; }
+  #info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    border-radius: 8px;
+    max-width: 500px;
+    transition: all 0.4s ease;
+    border: 1px solid #0ff;
+    box-shadow: 0 0 15px rgba(0,255,255,0.2);
+    transform: translateY(-200%);
+    transition: transform 0.5s;
+  }
+  #info.visible {
+    transform: translateY(0);
+  }
+  .equation {
+    margin: 15px 0;
+    font-size: 16px;
+    color: #0ff;
+    text-shadow: 0 0 5px #0ff;
+    padding: 10px;
+    background: rgba(0,255,255,0.1);
+    border-radius: 4px;
+  }
+  .theorem {
+    margin: 15px 0;
+    font-size: 14px;
+    color: #ff9;
+    padding: 10px;
+    background: rgba(255,255,153,0.1);
+    border-radius: 4px;
+  }
+  button {
+    padding: 8px 15px;
+    background: linear-gradient(45deg, #444, #666);
+    color: white;
+    border: 1px solid #0ff;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'Courier New', monospace;
+  }
+  button:hover {
+    background: linear-gradient(45deg, #666, #888);
+    box-shadow: 0 0 10px rgba(0,255,255,0.5);
+  }
+  #toggleInfo, #toggleParams {
+    position: fixed;
+    top: 20px;
+    z-index: 101;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  #toggleInfo { left: 20px; }
+  #toggleParams { right: 20px; }
+  .crux {
+    font-style: italic;
+    margin: 20px 0;
+    line-height: 1.6;
+    color: #ffd700;
+  }
+  .scene-nav {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 100;
+  }
+  .scene-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .scene-btn:hover {
+    background: rgba(255,255,255,0.2);
+  }
+  .scene-btn.active {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.8);
+  }
+  #parametersPanel {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #0ff;
+    display: none;
+    z-index: 100;
+  }
+  .parameter-control {
+    margin: 10px 0;
+  }
+  input[type="range"] {
+    width: 150px;
+    margin: 0 10px;
+  }
+  .scene-description {
+    margin-top: 20px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+    font-size: 0.9em;
+    color: #0ff;
+  }
+  .quantum-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Courier New', monospace;
+    font-size: 3em;
+    color: #fff;
+    text-shadow: 0 0 10px #fff;
+    opacity: 0;
+    transition: opacity 1s;
+  }
+  .quantum-title.visible {
+    opacity: 1;
+  }
+  .progress-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+  }
+  .progress-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transition: all 0.3s;
+  }
+  .progress-dot.active {
+    background: #fff;
+    box-shadow: 0 0 10px #fff;
+  }
+</style>
+</head>
+<body>
+<div id="info">
+  <h3>The Weierstrass Function Visualization</h3>
+  <div class="equation">
+    W(x) = Σ(n=0 to ∞) aⁿcos(bⁿπx)
+  </div>
+  <p>Explore the fascinating properties of the Weierstrass function - a continuous everywhere but nowhere differentiable function.</p>
+  <div class="theorem">
+    The Weierstrass Approximation Theorem states that every continuous function on a closed interval can be uniformly approximated by polynomials.
+  </div>
+</div>
+
+<button id="toggleInfo">Function Info</button>
+<button id="toggleParams">Parameters</button>
+
+<div id="parametersPanel">
+  <h4>Animation Parameters</h4>
+  <div class="parameter-control">
+    Amplitude (a): <input type="range" id="param-a" min="0.1" max="0.9" step="0.05" value="0.5">
+    <span class="parameter-value">0.5</span>
+  </div>
+  <div class="parameter-control">
+    Frequency (b): <input type="range" id="param-b" min="2" max="15" step="0.5" value="3">
+    <span class="parameter-value">3</span>
+  </div>
+  <div class="parameter-control">
+    Terms: <input type="range" id="param-terms" min="1" max="15" step="1" value="7">
+    <span class="parameter-value">7</span>
+  </div>
+  <div class="parameter-control">
+    Speed: <input type="range" id="param-speed" min="0" max="0.1" step="0.01" value="0.04">
+    <span class="parameter-value">0.02</span>
+  </div>
+  
+  <div class="scene-description">
+    <h4>Current Animation:</h4>
+    <div id="scene-info">
+      <strong>Dissolving World:</strong> Particles move in a sinusoidal pattern, creating a dissolving effect that represents the continuous but non-differentiable nature of the Weierstrass function.
+    </div>
+  </div>
+</div>
+
+<div class="scene-nav">
+  <button class="scene-btn active" data-scene="0">Dissolving World</button>
+  <button class="scene-btn" data-scene="1">Witness Light</button>
+  <button class="scene-btn" data-scene="2">Deep Sleep</button>
+  <button class="scene-btn" data-scene="3">Ultimate Presence</button>
+</div>
+
+<div class="progress-indicator">
+  <div class="progress-dot" data-progress="0"></div>
+  <div class="progress-dot" data-progress="1"></div>
+  <div class="progress-dot" data-progress="2"></div>
+  <div class="progress-dot" data-progress="3"></div>
+</div>
+
+<script>
+let scene, camera, renderer;
+const params = {
+    a: 0.5,
+    b: 3,
+    terms: 7,
+    rotationSpeed: 0.02,
+    quantumField: {
+        density: 100000,
+        rippleStrength: 0.8,
+        entanglementFactor: 0.5,
+        dissolveSpeed: 0.01
+    },
+    zoom: {
+        current: 50,
+        min: 5,
+        max: 500
+    }
+};
+let particles = [];
+const PARTICLE_COUNT = params.quantumField.density;
+let time = 0;
+let currentScene = 0;
+
+const quantumParams = {
+  bec: {
+    coherenceLength: 1.0,
+    temperature: 0.001,
+    particleStats: 'bosonic',
+    coupling: 0.5
+  },
+  bcs: {
+    pairFormation: 0.0,
+    energyGap: 0.2,
+    resonance: 0.5,
+    fermiEnergy: 1.0
+  },
+  crossover: {
+    phasePosition: 0.0,
+    transitionRate: 0.01,
+    fluctuationAmplitude: 0.1
+  }
+};
+
+const quantumShader = {
+  vertexShader: `
+    uniform float time;
+    uniform float coherenceLength;
+    uniform float temperature;
+    uniform float phasePosition;
+    attribute float size;
+    varying vec3 vColor;
+    varying float vPhase;
+    
+    float quantumWaveFunction(vec3 position) {
+      float r = length(position);
+      return exp(-r * r / (2.0 * coherenceLength * coherenceLength)) 
+             * cos(r * 10.0 - time * 5.0);
+    }
+    
+    void main() {
+      vColor = color;
+      vec3 pos = position;
+      
+      float quantum = quantumWaveFunction(pos);
+      float temp = temperature * sin(time * 0.5 + length(pos));
+      
+      pos += normal * (quantum + temp) * (1.0 - phasePosition);
+      pos += vec3(
+        sin(time + pos.x) * phasePosition,
+        cos(time + pos.y) * phasePosition,
+        sin(time * 0.5 + pos.z) * phasePosition
+      );
+      
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_PointSize = size * (300.0 / length(mvPosition.xyz));
+      gl_Position = projectionMatrix * mvPosition;
+      
+      vPhase = phasePosition;
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+    varying float vPhase;
+    
+    vec3 becColor = vec3(1.0, 0.843, 0.0); // Golden
+    vec3 bcsColor = vec3(0.541, 0.169, 0.886); // Blue-violet
+    
+    void main() {
+      float d = length(gl_PointCoord - vec2(0.5));
+      if(d > 0.5) discard;
+      
+      vec3 finalColor = mix(becColor, bcsColor, vPhase);
+      finalColor = mix(finalColor, vColor, 0.5);
+      
+      float glow = exp(-d * 4.0);
+      finalColor += vec3(0.2) * glow;
+      
+      gl_FragColor = vec4(finalColor, 1.0 - 2.0 * d);
+    }
+  `
+};
+
+const sceneDescriptions = [
+    "Particles move in a sinusoidal pattern, creating a dissolving effect that represents the continuous but non-differentiable nature of the Weierstrass function. This scene visualizes how every point contains infinite oscillations.",
+    
+    "A representation of quantum coherence where particles align into wave-like patterns, showing how continuous functions can be approximated by polynomials. The golden light patterns demonstrate the bridge between discrete and continuous mathematics.",
+    
+    "An exploration of deep quantum states where particles flow in harmonic waves, illustrating the nowhere-differentiable property of the Weierstrass function through smooth yet unpredictable motion patterns.",
+    
+    "The ultimate convergence of quantum states and mathematical continuity, where particles orbit in complex patterns demonstrating how even seemingly chaotic systems contain underlying mathematical order."
+];
+
+function createParticleSystem() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(params.quantumField.density * 3);
+    const colors = new Float32Array(params.quantumField.density * 3);
+    const sizes = new Float32Array(params.quantumField.density);
+
+    for(let i = 0; i < params.quantumField.density * 3; i += 3) {
+        // Quantum field distribution
+        const radius = Math.random() * 100;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        
+        positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        positions[i + 2] = radius * Math.cos(phi);
+
+        const energyLevel = Math.random();
+        const hue = (Math.sin(energyLevel * Math.PI * 2) + 1) * 0.5;
+        const saturation = 0.8 + Math.random() * 0.2;
+        const brightness = 0.6 + Math.random() * 0.4;
+        
+        const color = new THREE.Color().setHSL(hue, saturation, brightness);
+        colors[i] = color.r;
+        colors[i + 1] = color.g;
+        colors[i + 2] = color.b;
+        
+        sizes[i/3] = Math.random() * 2 + 1;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0 },
+            coherenceLength: { value: quantumParams.bec.coherenceLength },
+            temperature: { value: quantumParams.bec.temperature },
+            phasePosition: { value: quantumParams.crossover.phasePosition }
+        },
+        vertexShader: quantumShader.vertexShader,
+        fragmentShader: quantumShader.fragmentShader,
+        transparent: true,
+        vertexColors: true,
+        blending: THREE.AdditiveBlending
+    });
+
+    const particleSystem = new THREE.Points(geometry, material);
+    scene.add(particleSystem);
+    particles.push(particleSystem);
+}
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance"
+    });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    camera.position.z = params.zoom.current;
+
+    createParticleSystem();
+    setupLights();
+    setupEventListeners();
+    setupInteraction();
+}
+
+function setupLights() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffd700, 1);
+    pointLight.position.set(10, 10, 10);
+    scene.add(pointLight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    time += params.rotationSpeed;
+
+    particles.forEach(particle => {
+        const positions = particle.geometry.attributes.position.array;
+        const colors = particle.geometry.attributes.color.array;
+        
+        for(let i = 0; i < positions.length; i += 3) {
+            // Update colors based on position and time
+            const hue = (Math.sin(time + positions[i]/50) + 1) * 0.5;
+            const color = new THREE.Color().setHSL(hue, 0.9, 0.6);
+            colors[i] = color.r;
+            colors[i + 1] = color.g;
+            colors[i + 2] = color.b;
+
+            switch(currentScene) {
+                case 0:
+                    positions[i] += Math.sin(time + i) * 0.01;
+                    positions[i + 1] += Math.cos(time + i) * 0.01;
+                    break;
+                case 1:
+                    const angle = time * 2 + i;
+                    positions[i] = Math.sin(angle) * 20;
+                    positions[i + 1] = Math.cos(angle) * 20;
+                    break;
+                case 2:
+                    positions[i + 2] = Math.sin(time + i/100) * 30;
+                    break;
+                case 3:
+                    const r = 30;
+                    const theta = time + i/1000;
+                    positions[i] = r * Math.sin(theta) * Math.cos(time);
+                    positions[i + 1] = r * Math.sin(theta) * Math.sin(time);
+                    positions[i + 2] = r * Math.cos(theta);
+                    break;
+            }
+        }
+        particle.geometry.attributes.position.needsUpdate = true;
+        particle.geometry.attributes.color.needsUpdate = true;
+    });
+
+    renderer.render(scene, camera);
+}
+
+function setupEventListeners() {
+    window.addEventListener('resize', onWindowResize, false);
+    
+    document.getElementById('toggleInfo').addEventListener('click', () => {
+        document.getElementById('info').classList.toggle('visible');
+    });
+
+    document.getElementById('toggleParams').addEventListener('click', () => {
+        const panel = document.getElementById('parametersPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.scene-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            currentScene = parseInt(e.target.dataset.scene);
+            document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            document.querySelector('#scene-info').innerHTML = `<strong>${e.target.textContent}:</strong> ${sceneDescriptions[currentScene]}`;
+            
+            gsap.to(camera.position, {
+                z: 50 + Math.random() * 20,
+                duration: 1,
+                ease: "power2.inOut"
+            });
+            
+            particles.forEach(particle => {
+                gsap.to(particle.material, {
+                    opacity: 0.5 + Math.random() * 0.5,
+                    duration: 1
+                });
+            });
+        });
+    });
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function setupInteraction() {
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    
+    window.addEventListener('mousemove', (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(particles);
+        
+        if(intersects.length > 0) {
+            const point = intersects[0].point;
+            createQuantumRipple(point);
+        }
+    });
+    
+    // Add zoom control
+    window.addEventListener('wheel', (event) => {
+        params.zoom.current = THREE.MathUtils.clamp(
+          params.zoom.current - event.deltaY * 0.05,
+          params.zoom.min,
+          params.zoom.max
+        );
+        
+        gsap.to(camera.position, {
+          z: params.zoom.current,
+          duration: 0.5,
+          ease: "power2.out"
+        });
+    });
+}
+
+function createQuantumRipple(point) {
+  particles.forEach(particle => {
+    const positions = particle.geometry.attributes.position.array;
+    
+    for(let i = 0; i < positions.length; i += 3) {
+      const distance = new THREE.Vector3(
+        positions[i], positions[i+1], positions[i+2]
+      ).distanceTo(point);
+      
+      if(distance < 10) {
+        const ripple = Math.sin(distance - time * 5) * params.quantumField.rippleStrength;
+        positions[i] += ripple * (positions[i] - point.x) / distance;
+        positions[i+1] += ripple * (positions[i+1] - point.y) / distance;
+        positions[i+2] += ripple * (positions[i+2] - point.z) / distance;
+      }
+    }
+    
+    particle.geometry.attributes.position.needsUpdate = true;
+  });
+}
+
+init();
+animate();
+</script>
+</body></html>
