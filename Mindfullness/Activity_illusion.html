@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Quantum-Spiritual Experience</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+  <style>
+      body {
+          margin: 0;
+          overflow: hidden;
+          font-family: 'Arial', sans-serif;
+          background: #000;
+          color: white;
+      }
+      #scene-container {
+          position: relative;
+          width: 100vw;
+          height: 100vh;
+          background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
+      }
+      .panel {
+          position: absolute;
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
+          transition: all 0.3s ease;
+      }
+      #info-panel {
+          right: 20px;
+          top: 20px;
+          width: 300px;
+          padding: 20px;
+          font-size: 14px;
+      }
+      #controls-panel {
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 15px 25px;
+          display: flex;
+          gap: 15px;
+          align-items: center;
+      }
+      #knowledge-panel {
+          position: absolute;
+          right: 20px;
+          bottom: 20px;
+          width: 400px;
+          max-height: 70vh;
+          transform: translateY(calc(100% - 50px));
+          transition: transform 0.3s ease;
+          overflow: hidden;
+      }
+      #knowledge-panel.expanded {
+          transform: translateY(0);
+      }
+      #knowledge-header {
+          padding: 15px;
+          background: rgba(255, 255, 255, 0.2);
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+      #knowledge-content {
+          padding: 20px;
+          overflow-y: auto;
+          max-height: calc(70vh - 50px);
+      }
+      .concept-section {
+          margin-bottom: 20px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      button {
+          padding: 10px 20px;
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          border-radius: 20px;
+          cursor: pointer;
+          transition: all 0.3s;
+          font-size: 14px;
+      }
+      button:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: translateY(-2px);
+      }
+      button.active {
+          background: rgba(100, 200, 255, 0.3);
+          border-color: rgba(100, 200, 255, 0.5);
+      }
+      .state-indicator {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 10px 0;
+      }
+      .indicator-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.5);
+      }
+      .indicator-dot.active {
+          background: #64c8ff;
+          box-shadow: 0 0 10px #64c8ff;
+      }
+      #particle-count, #energy-level {
+          margin: 10px 0;
+      }
+      .slider-container {
+          margin: 15px 0;
+      }
+      input[type="range"] {
+          width: 100%;
+          margin: 10px 0;
+      }
+      ::-webkit-scrollbar {
+          width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+      }
+      ::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+      }
+      #parameters-panel {
+          position: absolute;
+          left: 20px;
+          top: 20px;
+          width: 300px;
+          padding: 20px;
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 15px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
+          transition: all 0.3s ease;
+      }
+      #parameters-header {
+          padding: 15px;
+          background: rgba(255, 255, 255, 0.2);
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+      #parameters-content {
+          padding: 20px;
+          overflow-y: auto;
+          max-height: calc(70vh - 50px);
+      }
+      #parameters-content.expanded {
+          display: block;
+      }
+      #parameters-content.collapsed {
+          display: none;
+      }
+  </style>
+</head>
+<body>
+  <div id="scene-container">
+      <div id="info-panel" class="panel">
+          <h3>Current State: <span id="state-title">Activity as Illusion</span></h3>
+          <div class="state-indicator">
+              <div class="indicator-dot active"></div>
+              <span id="state-description">Quantum Flux State</span>
+          </div>
+          <div id="particle-count">Particles: 2000</div>
+          <div id="energy-level">Energy Level: 100%</div>
+      </div>
+
+      <div id="controls-panel" class="panel">
+          <button onclick="toggleState()" id="state-toggle">Toggle State</button>
+          <button onclick="toggleRotation()" id="rotation-toggle">Toggle Rotation</button>
+          <button onclick="toggleAutoTransform()">Toggle Auto Transform</button>
+      </div>
+
+      <div id="parameters-panel" class="panel">
+          <div id="parameters-header">
+              <span>Parameters</span>
+              <span id="parameters-arrow">↓</span>
+          </div>
+          <div id="parameters-content" class="expanded">
+              <div class="slider-container">
+                  <label>Particle Speed</label>
+                  <input type="range" id="speed-slider" min="0" max="100" value="50">
+              </div>
+          </div>
+      </div>
+
+      <div id="knowledge-panel" class="panel">
+          <div id="knowledge-header">
+              <span>Know More</span>
+              <span id="toggle-arrow">↑</span>
+          </div>
+          <div id="knowledge-content">
+              <div class="concept-section">
+                  <h3>Spiritual Concepts</h3>
+                  <p><strong>Activity as Illusion:</strong> The dynamic particles represent the apparent activity of the mind and world, showing how all action is ultimately a play of consciousness.</p>
+                  <p><strong>Rest as True Nature:</strong> When particles align and move harmoniously, they represent the deep sleep state (susupti), pointing to the underlying peace of pure awareness.</p>
+                  <p><strong>The Witness:</strong> You, the observer of this visualization, represent the unchanging witness consciousness that perceives both activity and rest.</p>
+              </div>
+              <div class="concept-section">
+                  <h3>Quantum Parallels</h3>
+                  <p><strong>Superposition:</strong> The particles exist in multiple states simultaneously, representing the quantum nature of consciousness.</p>
+                  <p><strong>Entanglement:</strong> The interconnected movement of particles demonstrates quantum entanglement, reflecting the non-dual nature of reality.</p>
+                  <p><strong>Wave-Particle Duality:</strong> The shifting between particle and wave-like behavior mirrors the dual nature of consciousness as both individual and universal.</p>
+              </div>
+              <div class="concept-section">
+                  <h3>Visual Guide</h3>
+                  <p><strong>Colors:</strong> The shifting colors represent the different states of consciousness - from the multiplicity of waking state to the unity of deep sleep.</p>
+                  <p><strong>Movement:</strong> The particle movements show the transition from apparent chaos (mind) to underlying order (consciousness).</p>
+                  <p><strong>Interactions:</strong> Your interaction with the visualization represents the play between individual will and universal consciousness.</p>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <script>
+      let scene, camera, renderer, particles;
+      let rotationActive = true;
+      let autoTransformActive = false;
+      let currentState = 'activity';
+      let mouseX = 0, mouseY = 0;
+      let targetRotationX = 0, targetRotationY = 0;
+      let isDragging = false;
+      let lastMouseX = 0, lastMouseY = 0;
+      let cameraDistance = 8;
+
+      // Define toggle functions first
+      function toggleState() {
+          currentState = currentState === 'activity' ? 'rest' : 'activity';
+          document.getElementById('state-title').textContent = 
+              currentState === 'activity' ? 'Activity as Illusion' : 'Rest as Real Nature';
+          document.getElementById('state-description').textContent = 
+              currentState === 'activity' ? 'Quantum Flux State' : 'Unified Field State';
+
+          // Visual feedback
+          const stateToggle = document.getElementById('state-toggle');
+          stateToggle.classList.toggle('active');
+      }
+
+      function toggleRotation() {
+          rotationActive = !rotationActive;
+          document.getElementById('rotation-toggle').classList.toggle('active');
+      }
+
+      function toggleAutoTransform() {
+          autoTransformActive = !autoTransformActive;
+          event.target.classList.toggle('active');
+      }
+
+      // Initialize the scene
+      function init() {
+          scene = new THREE.Scene();
+          camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+          renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          document.getElementById('scene-container').appendChild(renderer.domElement);
+
+          // Create particle system
+          const geometry = new THREE.BufferGeometry();
+          const particleCount = 2000;
+          const positions = new Float32Array(particleCount * 3);
+          const colors = new Float32Array(particleCount * 3);
+          const sizes = new Float32Array(particleCount);
+
+          for (let i = 0; i < particleCount; i++) {
+              const i3 = i * 3;
+              positions[i3] = (Math.random() - 0.5) * 10;
+              positions[i3 + 1] = (Math.random() - 0.5) * 10;
+              positions[i3 + 2] = (Math.random() - 0.5) * 10;
+
+              colors[i3] = Math.random();
+              colors[i3 + 1] = Math.random();
+              colors[i3 + 2] = Math.random();
+
+              sizes[i] = Math.random() * 0.1 + 0.05;
+          }
+
+          geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+          geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+          geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+          const material = new THREE.PointsMaterial({
+              size: 0.1,
+              vertexColors: true,
+              transparent: true,
+              opacity: 0.8,
+              blending: THREE.AdditiveBlending
+          });
+
+          particles = new THREE.Points(geometry, material);
+          scene.add(particles);
+
+          camera.position.z = cameraDistance;
+
+          // Initialize controls
+          initializeControls();
+
+          // Start animation
+          animate();
+      }
+
+      function initializeControls() {
+          // Knowledge panel toggle
+          const knowledgePanel = document.getElementById('knowledge-panel');
+          const knowledgeHeader = document.getElementById('knowledge-header');
+          const toggleArrow = document.getElementById('toggle-arrow');
+
+          knowledgeHeader.addEventListener('click', () => {
+              knowledgePanel.classList.toggle('expanded');
+              toggleArrow.textContent = knowledgePanel.classList.contains('expanded') ? '↓' : '↑';
+          });
+
+          // Parameters panel toggle
+          const parametersPanel = document.getElementById('parameters-panel');
+          const parametersHeader = document.getElementById('parameters-header');
+          const parametersArrow = document.getElementById('parameters-arrow');
+          const parametersContent = document.getElementById('parameters-content');
+
+          parametersHeader.addEventListener('click', () => {
+              parametersContent.classList.toggle('expanded');
+              parametersContent.classList.toggle('collapsed');
+              parametersArrow.textContent = parametersContent.classList.contains('expanded') ? '↓' : '↑';
+          });
+
+          // Speed slider
+          const speedSlider = document.getElementById('speed-slider');
+          speedSlider.addEventListener('input', (e) => {
+              const speed = e.target.value / 50;
+              updateParticleSpeed(speed);
+          });
+
+          // Mouse/Touch events
+          document.addEventListener('mousedown', onMouseDown);
+          document.addEventListener('mouseup', onMouseUp);
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('wheel', onWheel);
+          document.addEventListener('touchstart', onTouchStart, { passive: false });
+          document.addEventListener('touchmove', onTouchMove, { passive: false });
+          document.addEventListener('touchend', onTouchEnd, { passive: false });
+          window.addEventListener('resize', onWindowResize, false);
+      }
+
+      function updateParticleSpeed(speed) {
+          particles.material.size = 0.05 + speed * 0.05;
+      }
+
+      function animate() {
+          requestAnimationFrame(animate);
+
+          if (rotationActive) {
+              particles.rotation.x += 0.001;
+              particles.rotation.y += 0.002;
+          }
+
+          if (autoTransformActive) {
+              transformParticles();
+          }
+
+          updateParticles();
+          renderer.render(scene, camera);
+      }
+
+      function updateParticles() {
+          const positions = particles.geometry.attributes.position.array;
+          const colors = particles.geometry.attributes.color.array;
+          const time = Date.now() * 0.001;
+
+          for (let i = 0; i < positions.length; i += 3) {
+              if (currentState === 'activity') {
+                  const amp = 0.1;
+                  positions[i] += Math.sin(time + i) * amp;
+                  positions[i + 1] += Math.cos(time + i) * amp;
+                  positions[i + 2] += Math.sin(time + i * 0.5) * amp;
+
+                  colors[i] = Math.sin(time + i) * 0.5 + 0.5;
+                  colors[i + 1] = Math.cos(time + i) * 0.5 + 0.5;
+                  colors[i + 2] = Math.sin(time * 2 + i) * 0.5 + 0.5;
+              } else {
+                  const distance = Math.sqrt(
+                      positions[i] * positions[i] +
+                      positions[i + 1] * positions[i + 1] +
+                      positions[i + 2] * positions[i + 2]
+                  );
+
+                  if (distance > 5) {
+                      positions[i] *= 0.99;
+                      positions[i + 1] *= 0.99;
+                      positions[i + 2] *= 0.99;
+                  }
+
+                  colors[i] = 0.5 + Math.sin(time) * 0.2;
+                  colors[i + 1] = 0.7;
+                  colors[i + 2] = 1.0;
+              }
+          }
+
+          particles.geometry.attributes.position.needsUpdate = true;
+          particles.geometry.attributes.color.needsUpdate = true;
+      }
+
+      function transformParticles() {
+          const positions = particles.geometry.attributes.position.array;
+          const time = Date.now() * 0.001;
+
+          for (let i = 0; i < positions.length; i += 3) {
+              const angle = time + i * 0.01;
+              const radius = 3 + Math.sin(angle * 0.5) * 2;
+
+              positions[i] = Math.cos(angle) * radius;
+              positions[i + 1] = Math.sin(angle) * radius;
+              positions[i + 2] = Math.sin(time + i * 0.02) * 2;
+          }
+
+          particles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      function onMouseDown(event) {
+          isDragging = true;
+          lastMouseX = event.clientX;
+          lastMouseY = event.clientY;
+      }
+
+      function onMouseUp(event) {
+          isDragging = false;
+      }
+
+      function onMouseMove(event) {
+          if (isDragging) {
+              const deltaX = event.clientX - lastMouseX;
+              const deltaY = event.clientY - lastMouseY;
+
+              targetRotationX += deltaY * 0.001;
+              targetRotationY += deltaX * 0.001;
+
+              lastMouseX = event.clientX;
+              lastMouseY = event.clientY;
+          }
+
+          mouseX = (event.clientX - window.innerWidth / 2) * 0.001;
+          mouseY = (event.clientY - window.innerHeight / 2) * 0.001;
+      }
+
+      function onWheel(event) {
+          cameraDistance += event.deltaY * 0.01;
+          cameraDistance = Math.max(5, Math.min(20, cameraDistance));
+          camera.position.z = cameraDistance;
+      }
+
+      function onTouchStart(event) {
+          if (event.touches.length === 1) {
+              isDragging = true;
+              lastMouseX = event.touches[0].clientX;
+              lastMouseY = event.touches[0].clientY;
+          }
+      }
+
+      function onTouchMove(event) {
+          event.preventDefault();
+          if (event.touches.length === 1 && isDragging) {
+              const deltaX = event.touches[0].clientX - lastMouseX;
+              const deltaY = event.touches[0].clientY - lastMouseY;
+
+              targetRotationX += deltaY * 0.001;
+              targetRotationY += deltaX * 0.001;
+
+              lastMouseX = event.touches[0].clientX;
+              lastMouseY = event.touches[0].clientY;
+          }
+      }
+
+      function onTouchEnd(event) {
+          isDragging = false;
+      }
+
+      function onWindowResize() {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // Initialize everything when the page loads
+      window.addEventListener('load', init);
+  </script>
+</body>
+</html>
