@@ -1,0 +1,337 @@
+<html><head><base href=""><meta charset="utf-8"><title>The Timeless Current: A Quantum View of Change</title>
+<style>
+:root { --color-dark: #333; --color-light: #fff; }
+body { margin: 0; overflow-x: hidden; font-family: sans-serif; }
+#container { position: relative; width: 100vw; height: 100vh; background: #000; }
+
+.button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background: #fff;
+    color: var(--color-dark);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.button:hover {
+    transform: scale(1.05);
+    background: #eee;
+}
+
+#knowMore {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+#controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+}
+
+#info {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    width: 300px;
+    padding: 20px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 10px;
+    display: none;
+}
+
+#scene {
+    width: 100%;
+    height: 100%;
+}
+
+#interactionGuide {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene, camera, renderer;
+let currentScene = 1;
+let mouse = new THREE.Vector2();
+let raycaster = new THREE.Raycaster();
+let rotationSpeed = 0.003;
+let particleSystem;
+let clock = new THREE.Clock();
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('scene').appendChild(renderer.domElement);
+    
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('wheel', onMouseWheel);
+    
+    createScene1();
+    animate();
+}
+
+function onMouseMove(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
+    if(scene.children[0]) {
+        scene.children[0].rotation.x += mouse.y * 0.001;
+        scene.children[0].rotation.y += mouse.x * 0.001;
+    }
+}
+
+function onMouseWheel(event) {
+    camera.position.z = Math.max(3, Math.min(10, camera.position.z + event.deltaY * 0.01));
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    const time = Date.now() * 0.001;
+    
+    if(scene.children.length > 0) {
+        scene.children[0].rotation.x += rotationSpeed * 1.5;
+        scene.children[0].rotation.y += rotationSpeed * 1.5;
+        
+        if(scene.children[0].type === "Points") {
+            const positions = scene.children[0].geometry.attributes.position.array;
+            
+            for(let i = 0; i < positions.length; i += 3) {
+                positions[i + 1] += Math.sin(time + positions[i]) * 0.02;
+                positions[i + 2] += Math.cos(time + positions[i]) * 0.02;
+
+                const radius = Math.sqrt(positions[i] * positions[i] + positions[i + 2] * positions[i + 2]);
+                positions[i] += Math.sin(time + radius) * 0.01;
+                positions[i + 2] += Math.cos(time + radius) * 0.01;
+            }
+            scene.children[0].geometry.attributes.position.needsUpdate = true;
+        }
+    }
+    
+    camera.position.x += (mouse.x * 2 - camera.position.x) * 0.05;
+    camera.position.y += (-mouse.y * 2 - camera.position.y) * 0.05;
+    camera.lookAt(scene.position);
+    
+    renderer.render(scene, camera);
+}
+
+function toggleInfo() {
+    const info = document.getElementById('info');
+    info.style.display = info.style.display === 'none' ? 'block' : 'none';
+}
+
+function changeScene(direction) {
+    currentScene += direction;
+    if(currentScene > 3) currentScene = 1;
+    if(currentScene < 1) currentScene = 3;
+    
+    switch(currentScene) {
+        case 1:
+            createScene1();
+            break;
+        case 2:
+            createScene2();
+            break;
+        case 3:
+            createScene3();
+            break;
+    }
+}
+
+function createScene1() {
+    while(scene.children.length > 0){ 
+        scene.remove(scene.children[0]); 
+    }
+
+    const particleGeometry = new THREE.BufferGeometry();
+    const particleCount = 20000;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+
+    for(let i = 0; i < particleCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 12;
+        positions[i+1] = (Math.random() - 0.5) * 12;
+        positions[i+2] = (Math.random() - 0.5) * 12;
+        
+        colors[i] = Math.random() * 0.5 + 0.5;
+        colors[i+1] = Math.random() * 0.8 + 0.2;
+        colors[i+2] = Math.random() * 0.5 + 0.5;
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    
+    const particleMaterial = new THREE.PointsMaterial({
+        size: 0.08,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.9
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    camera.position.z = 5;
+    
+    document.getElementById('info').innerHTML = `
+        <h3>Scene 1: The Quantum River</h3>
+        <p>This visualization represents the flow of time and the changing world through quantum particles. The shimmering particles demonstrate the quantum field's dynamic nature.</p>
+        <p>Formula: E = ℏω (Energy of quantum oscillations)</p>
+        <hr>
+        <h4>Spiritual Perspective:</h4>
+        <p>• The flowing particles represent the constant flux of consciousness and awareness in the universe</p>
+        <p>• Like the Buddhist concept of "impermanence" (Anicca), these quantum fluctuations show nothing is fixed or permanent</p>
+        <p>• The interconnected nature of particles mirrors the spiritual concept of "Oneness" or "Unity consciousness"</p>
+        <p>• The observer effect in quantum mechanics parallels ancient wisdom about consciousness affecting reality</p>
+    `;
+}
+
+function createScene2() {
+    while(scene.children.length > 0){ 
+        scene.remove(scene.children[0]); 
+    }
+
+    const particles = new THREE.Group();
+    
+    for(let i = 0; i < 200; i++) {
+        const geometry = new THREE.SphereGeometry(0.08, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: new THREE.Color(
+                Math.random() * 0.5 + 0.5,
+                Math.random() * 0.5 + 0.5,
+                Math.random() * 0.5 + 0.5
+            ),
+            transparent: true,
+            opacity: 0.9
+        });
+        const particle = new THREE.Mesh(geometry, material);
+        
+        particle.position.set(
+            (Math.random() - 0.5) * 12,
+            (Math.random() - 0.5) * 12,
+            (Math.random() - 0.5) * 12
+        );
+        
+        particle.rotation.x = Math.random() * Math.PI;
+        particle.rotation.y = Math.random() * Math.PI;
+        
+        particles.add(particle);
+    }
+    
+    scene.add(particles);
+    camera.position.z = 5;
+    
+    document.getElementById('info').innerHTML = `
+        <h3>Scene 2: Virtual Particles and Fluctuations</h3>
+        <p>Virtual particles continuously arise and vanish, appearing as fleeting flashes of light and energy, demonstrating the dynamic nature of quantum space.</p>
+        <p>Formula: ΔE·Δt ≥ ℏ/2 (Heisenberg's Uncertainty Principle)</p>
+        <hr>
+        <h4>Spiritual Perspective:</h4>
+        <p>• The emergence and dissolution of particles reflects the Hindu concept of creation and dissolution (Brahma-Vishnu-Shiva)</p>
+        <p>• The void from which particles arise parallels the Taoist concept of emptiness (Wu Wei)</p>
+        <p>• The dance of particles demonstrates the cosmic dance of Shiva (Tandava)</p>
+        <p>• The underlying quantum vacuum represents the field of pure potentiality in spiritual traditions</p>
+    `;
+}
+
+function createScene3() {
+    while(scene.children.length > 0){ 
+        scene.remove(scene.children[0]); 
+    }
+
+    const gridHelper = new THREE.GridHelper(12, 50, 0x00ff88, 0x00ff88);
+    scene.add(gridHelper);
+
+    const particleGeometry = new THREE.BufferGeometry();
+    const particleCount = 3000;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+
+    for(let i = 0; i < particleCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 12;
+        positions[i+1] = (Math.random() - 0.5) * 12;
+        positions[i+2] = (Math.random() - 0.5) * 12;
+        
+        colors[i] = Math.random() * 0.5 + 0.5;
+        colors[i+1] = Math.random() * 0.5 + 0.5;
+        colors[i+2] = 1;
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    
+    const particleMaterial = new THREE.PointsMaterial({
+        size: 0.08,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.9
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    scene.add(particles);
+
+    camera.position.set(5, 5, 5);
+    camera.lookAt(0, 0, 0);
+    
+    document.getElementById('info').innerHTML = `
+        <h3>Scene 3: The Timeless Observer</h3>
+        <p>The grid symbolizes quantum spacetime, the underlying timeless framework. The flowing particles represent the timeline of appearances within this eternal backdrop.</p>
+        <p>Formula: ds² = gμνdxμdxν (Spacetime Metric)</p>
+        <hr>
+        <h4>Spiritual Perspective:</h4>
+        <p>• The grid represents Maya (illusion) - the framework through which we perceive reality</p>
+        <p>• The timeless nature of the observer reflects the eternal witness consciousness (Sakshi)</p>
+        <p>• The unified spacetime grid illustrates the non-dual nature of reality (Advaita)</p>
+        <p>• The observer's perspective demonstrates the wisdom of "Be still and know" from various traditions</p>
+    `;
+}
+
+window.onload = init;
+window.onresize = function() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+};
+</script>
+</head>
+<body>
+    <div id="container">
+        <div id="scene"></div>
+        <button id="knowMore" class="button" onclick="toggleInfo()">Know More</button>
+        <div id="info">
+            <h3>Scene 1: The Quantum River</h3>
+            <p>This visualization represents the flow of time and the changing world through quantum particles. The shimmering particles demonstrate the quantum field's dynamic nature.</p>
+            <p>Formula: E = ℏω (Energy of quantum oscillations)</p>
+            <hr>
+            <h4>Spiritual Perspective:</h4>
+            <p>• The flowing particles represent the constant flux of consciousness and awareness in the universe</p>
+            <p>• Like the Buddhist concept of "impermanence" (Anicca), these quantum fluctuations show nothing is fixed or permanent</p>
+            <p>• The interconnected nature of particles mirrors the spiritual concept of "Oneness" or "Unity consciousness"</p>
+            <p>• The observer effect in quantum mechanics parallels ancient wisdom about consciousness affecting reality</p>
+        </div>
+        <div id="controls">
+            <button class="button" onclick="changeScene(-1)">Previous</button>
+            <button class="button" onclick="changeScene(1)">Next</button>
+        </div>
+        <div id="interactionGuide">
+            Mouse: Rotate View
+            <br>
+            Scroll: Zoom In/Out
+        </div>
+    </div>
+</body></html>
