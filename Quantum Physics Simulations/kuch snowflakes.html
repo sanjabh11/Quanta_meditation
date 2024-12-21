@@ -1,4 +1,4 @@
-<html><head><base href="/" /><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>3D Koch Snowflake Explorer</title>
+<html><head><base href="/" /><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Advanced 3D Koch Snowflake Explorer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 <style>
@@ -81,36 +81,35 @@ body {
     transform: translateX(0);
 }
 
-.info-panel h3 {
-    color: #4CAF50;
-    margin-bottom: 1.5rem;
-    font-size: 1.4rem;
-    text-shadow: 0 0 10px rgba(76,175,80,0.5);
-}
-
-.equation {
-    margin: 1.5rem 0;
-    font-size: 1.2rem;
+.speed-control {
+    position: fixed;
+    top: 2rem;
+    right: 10rem;
     padding: 1rem;
-    background: rgba(255,255,255,0.05);
-    border-radius: 8px;
-    transition: all 0.3s;
-}
-
-.equation:hover {
-    background: rgba(255,255,255,0.1);
-    transform: scale(1.02);
+    background: rgba(0,0,0,0.8);
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
 }
 
 .iteration-counter {
     position: fixed;
     top: 2rem;
     right: 2rem;
-    font-size: 1.5rem;
     padding: 1rem;
     background: rgba(0,0,0,0.8);
     border-radius: 10px;
     backdrop-filter: blur(5px);
+    font-size: 1.2rem;
+    color: #fff;
+}
+
+.speed-control label {
+    color: #fff;
+    margin-right: 10px;
+}
+
+.speed-control input {
+    width: 100px;
 }
 
 @media (max-width: 768px) {
@@ -132,6 +131,13 @@ body {
         font-size: 0.9rem;
         padding: 0.5rem 1rem;
     }
+
+    .speed-control {
+        top: auto;
+        bottom: 8rem;
+        right: 50%;
+        transform: translateX(50%);
+    }
 }
 
 @keyframes glow {
@@ -149,6 +155,11 @@ body {
 <div id="scene-container"></div>
 
 <div class="iteration-counter">Iteration: <span id="iterationCount">0</span></div>
+
+<div class="speed-control">
+    <label for="speedControl">Animation Speed:</label>
+    <input type="range" id="speedControl" min="500" max="3000" value="1500" step="100">
+</div>
 
 <div class="controls">
     <button class="button" id="playBtn">Play</button>
@@ -174,10 +185,29 @@ body {
 <script>
 let scene, camera, renderer, snowflakes = [];
 let iteration = 0;
-const maxIterations = 7;
+const maxIterations = 20;
 let isPlaying = false;
 let autoPlayInterval;
 let autoPlaySpeed = 1500;
+
+// Add orbit controls for better viewing angles
+let controls;
+
+document.getElementById('speedControl').addEventListener('input', function(e) {
+    autoPlaySpeed = parseInt(e.target.value);
+    if (isPlaying) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = setInterval(() => {
+            if (iteration < maxIterations) {
+                iteration++;
+                document.getElementById('iterationCount').textContent = iteration;
+                createKochSnowflake();
+            } else {
+                togglePlay();
+            }
+        }, autoPlaySpeed);
+    }
+});
 
 function init() {
     scene = new THREE.Scene();
@@ -196,6 +226,7 @@ function init() {
     light.position.set(1, 1, 1);
     scene.add(light);
     
+    // Add multiple rotating snowflakes in different orientations
     createKochSnowflake();
     animate();
     setupEventListeners();
@@ -212,8 +243,16 @@ function createKochSnowflake() {
     snowflakes.forEach(s => scene.remove(s));
     snowflakes = [];
     
-    const layers = 3; // Number of 3D layers
-    for(let layer = 0; layer < layers; layer++) {
+    // Create multiple snowflakes in different orientations
+    const orientations = [
+        { rx: 0, ry: 0, rz: 0 }, // Front
+        { rx: Math.PI/2, ry: 0, rz: 0 }, // Top
+        { rx: 0, ry: Math.PI/2, rz: 0 }, // Side
+        { rx: Math.PI/4, ry: Math.PI/4, rz: 0 }, // Diagonal
+        { rx: -Math.PI/4, ry: -Math.PI/4, rz: Math.PI/4 } // Another diagonal
+    ];
+    
+    orientations.forEach((orientation, index) => {
         const points = generateKochPoints(iteration);
         const geometry = new THREE.BufferGeometry();
         
@@ -226,7 +265,13 @@ function createKochSnowflake() {
         });
         
         const snowflake = new THREE.LineLoop(geometry, material);
-        snowflake.position.z = layer * 0.5; // Stack the layers
+        
+        // Set initial rotation
+        snowflake.rotation.x = orientation.rx;
+        snowflake.rotation.y = orientation.ry;
+        snowflake.rotation.z = orientation.rz;
+        
+        // Add dynamic rotation properties
         snowflake.userData = {
             rotationSpeed: 0.001 + (Math.random() * 0.002),
             rotationAxis: new THREE.Vector3(
@@ -236,9 +281,15 @@ function createKochSnowflake() {
             ).normalize()
         };
         
+        snowflake.position.set(
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4
+        );
+        
         snowflakes.push(snowflake);
         scene.add(snowflake);
-    }
+    });
 }
 
 function generateKochPoints(iteration) {
@@ -284,11 +335,18 @@ function generateKochPoints(iteration) {
 
 function animate() {
     requestAnimationFrame(animate);
+    
+    // Rotate each snowflake around its own axis
     snowflakes.forEach(snowflake => {
         const axis = snowflake.userData.rotationAxis;
         const speed = snowflake.userData.rotationSpeed;
         snowflake.rotateOnAxis(axis, speed);
     });
+    
+    // Slowly rotate the entire scene
+    scene.rotation.y += 0.001;
+    scene.rotation.x += 0.0005;
+    
     renderer.render(scene, camera);
 }
 
