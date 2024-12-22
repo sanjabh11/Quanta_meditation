@@ -1,0 +1,373 @@
+<html><head><base href="https://html-gen">
+<title>Ramanujan's Partition Function Visualization</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background: #1a1a1a;
+        color: #fff;
+    }
+
+    #canvas-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #1a1a1a;
+    }
+
+    .controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 90%;
+        max-width: 600px;
+    }
+
+    button {
+        padding: 12px 24px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .explanation {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 10px;
+        max-width: 400px;
+        z-index: 100;
+        transform: translateX(-120%);
+        transition: transform 0.5s ease;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .explanation.visible {
+        transform: translateX(0);
+    }
+
+    .explanation h2 {
+        margin-bottom: 15px;
+        color: #4CAF50;
+    }
+
+    .explanation p {
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+
+    .value-display {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 10px;
+        z-index: 100;
+        font-size: 18px;
+        line-height: 1.5;
+    }
+
+    #autoplaySpeed {
+        width: 200px;
+        margin: 10px 0;
+    }
+
+    .speed-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
+    }
+
+    .highlight {
+        color: #4CAF50;
+        font-weight: bold;
+    }
+
+    #formula {
+        margin: 20px 0;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+    }
+</style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="controls">
+        <button id="prevBtn">Previous</button>
+        <button id="playPauseBtn">Play</button>
+        <button id="nextBtn">Next</button>
+        <button id="resetBtn">Reset</button>
+        <button id="toggleRotation">Toggle Rotation</button>
+        <button id="toggleTrace">Toggle Trace</button>
+        <button id="toggleExplanation">Show Explanation</button>
+        <div class="speed-control">
+            <label for="autoplaySpeed">Speed:</label>
+            <input type="range" id="autoplaySpeed" min="1" max="10" value="5">
+        </div>
+    </div>
+
+    <div class="explanation" id="explanation">
+        <h2>Ramanujan's Partition Function</h2>
+        <p>The partition function p(n) counts the number of ways to write n as a sum of positive integers. For example:</p>
+        <p>p(4) = 5 because 4 can be written as:</p>
+        <ul>
+            <li>4</li>
+            <li>3 + 1</li>
+            <li>2 + 2</li>
+            <li>2 + 1 + 1</li>
+            <li>1 + 1 + 1 + 1</li>
+        </ul>
+        <div id="formula">
+            <p>Ramanujan's asymptotic formula for large values of n:</p>
+            \[p(n) \sim \frac{1}{4n\sqrt{3}} e^{\pi\sqrt{\frac{2n}{3}}}\]
+        </div>
+        <p>This visualization shows how rapidly p(n) grows with n. Each point represents p(n) for a given n, with:</p>
+        <ul>
+            <li>X-axis: value of n</li>
+            <li>Y-axis: logarithm of p(n)</li>
+            <li>Colors: rainbow gradient to show progression</li>
+        </ul>
+        <p>The 3D rotation helps visualize the exponential growth pattern.</p>
+        <p class="highlight">Interactive Features:</p>
+        <ul>
+            <li>Use Previous/Next to change n</li>
+            <li>Play/Pause for automatic progression</li>
+            <li>Adjust speed with the slider</li>
+            <li>Mouse drag to rotate view</li>
+            <li>Mouse wheel to zoom</li>
+        </ul>
+    </div>
+
+    <div class="value-display" id="valueDisplay">
+        <div>n = <span id="nValue" class="highlight">1</span></div>
+        <div>p(n) = <span id="pValue" class="highlight">1</span></div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, points, controls;
+        let n = 1;
+        const maxN = 100;
+        let isPlaying = false;
+        let autoplaySpeed = 5;
+        let lastAutoplayTime = 0;
+        let isRotating = true;
+        let isTracing = false;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 30;
+            camera.position.y = 10;
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
+
+            // Initialize OrbitControls with the correct THREE.OrbitControls constructor
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Add grid for reference
+            const gridHelper = new THREE.GridHelper(50, 50, 0x444444, 0x222222);
+            scene.add(gridHelper);
+
+            createPoints();
+            animate();
+            setupEventListeners();
+        }
+
+        function p(n) {
+            return Math.floor((1 / (4 * n * Math.sqrt(3))) * Math.exp(Math.PI * Math.sqrt((2 * n) / 3)));
+        }
+
+        function createPoints() {
+            if (points) scene.remove(points);
+
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+            const sizes = [];
+
+            for (let i = 1; i <= n; i++) {
+                const value = p(i);
+                const x = (i - n/2) * 0.5;
+                const y = Math.log(value) / Math.log(10);
+                const z = 0;
+
+                positions.push(x, y, z);
+
+                const hue = i / n;
+                const color = new THREE.Color().setHSL(hue, 1, 0.5);
+                colors.push(color.r, color.g, color.b);
+                
+                sizes.push(1);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+
+            points = new THREE.Points(geometry, material);
+            scene.add(points);
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('nValue').textContent = n;
+            document.getElementById('pValue').textContent = p(n);
+            
+            // Update button states
+            document.getElementById('prevBtn').disabled = n <= 1;
+            document.getElementById('nextBtn').disabled = n >= maxN;
+        }
+
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+            
+            if (points && isRotating) {
+                points.rotation.y += 0.005;
+            }
+
+            if (isPlaying && currentTime - lastAutoplayTime > (1000 / autoplaySpeed)) {
+                if (n < maxN) {
+                    n++;
+                    createPoints();
+                } else {
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                }
+                lastAutoplayTime = currentTime;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                if (n < maxN) {
+                    n++;
+                    createPoints();
+                }
+            });
+
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                if (n > 1) {
+                    n--;
+                    createPoints();
+                }
+            });
+
+            document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
+
+            document.getElementById('toggleExplanation').addEventListener('click', () => {
+                const explanation = document.getElementById('explanation');
+                explanation.classList.toggle('visible');
+                const btn = document.getElementById('toggleExplanation');
+                btn.textContent = explanation.classList.contains('visible') ? 'Hide Explanation' : 'Show Explanation';
+            });
+
+            document.getElementById('autoplaySpeed').addEventListener('input', (e) => {
+                autoplaySpeed = e.target.value;
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                n = 1;
+                createPoints();
+                updateDisplay();
+            });
+
+            document.getElementById('toggleRotation').addEventListener('click', () => {
+                isRotating = !isRotating;
+                const btn = document.getElementById('toggleRotation');
+                btn.textContent = isRotating ? 'Toggle Rotation' : 'Rotation Off';
+            });
+
+            document.getElementById('toggleTrace').addEventListener('click', () => {
+                isTracing = !isTracing;
+                const btn = document.getElementById('toggleTrace');
+                btn.textContent = isTracing ? 'Toggle Trace' : 'Trace Off';
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            updatePlayPauseButton();
+        }
+
+        function updatePlayPauseButton() {
+            const btn = document.getElementById('playPauseBtn');
+            btn.textContent = isPlaying ? 'Pause' : 'Play';
+        }
+
+        init();
+    </script>
+</body>
+</html>
