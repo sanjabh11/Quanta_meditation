@@ -1,0 +1,305 @@
+<html><head><base href="/">
+<title>Spiral of Theodorus Interactive</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1a1a, #301934, #1a1a1a);
+  color: #fff;
+}
+
+#container {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+#explanationBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+  border-top: 2px solid #4CAF50;
+  box-shadow: 0 -5px 15px rgba(76, 175, 80, 0.3);
+  z-index: 1000;
+}
+
+#explanationBar.visible {
+  transform: translateY(0);
+}
+
+.control-button {
+  padding: 12px 24px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(255,255,255,0.2);
+  z-index: 1000;
+}
+
+.control-button:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 0 25px rgba(255,255,255,0.4);
+}
+
+#toggleExplanation {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+}
+
+#nextButton {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: linear-gradient(45deg, #2196F3, #1976D2);
+}
+
+#playButton {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(45deg, #FF4081, #C2185B);
+}
+
+.label {
+  color: white;
+  font-size: 16px;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.8);
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.3);
+  text-shadow: 0 0 5px rgba(255,255,255,0.5);
+}
+
+@keyframes pulseButton {
+  0% { transform: scale(1) translateX(-50%); }
+  50% { transform: scale(1.1) translateX(-45%); }
+  100% { transform: scale(1) translateX(-50%); }
+}
+
+.pulse {
+  animation: pulseButton 2s infinite;
+}
+
+#explanationText {
+  animation: glowText 3s infinite;
+  line-height: 1.6;
+  font-size: 18px;
+}
+
+@keyframes glowText {
+  0% { text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+  50% { text-shadow: 0 0 20px rgba(255,255,255,0.8); }
+  100% { text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+}
+
+#stats {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.info-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.7);
+  padding: 15px;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  max-width: 200px;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+</head>
+<body>
+<div id="container">
+  <button id="toggleExplanation" class="control-button">Toggle Info</button>
+  <button id="nextButton" class="control-button">Next Step</button>
+  <button id="playButton" class="control-button">▶ Play</button>
+  <div id="stats">Triangles: 0</div>
+  <div class="info-panel">
+    Click and drag to rotate<br>
+    Scroll to zoom<br>
+    Space to pause/play
+  </div>
+  <div id="explanationBar">
+    <p id="explanationText">The Spiral of Theodorus starts with a right triangle where each new triangle builds upon the previous...</p>
+  </div>
+</div>
+
+<script>
+let scene, camera, renderer, currentScene = 0;
+let isPlaying = false;
+const triangles = [];
+let spiral = new THREE.Group();
+let animationFrame;
+
+const colors = [
+  0xff1744, 0xf50057, 0xd500f9, 0x651fff,
+  0x3d5afe, 0x2979ff, 0x00b0ff, 0x00e5ff,
+  0x1de9b6, 0x00e676, 0x76ff03, 0xc6ff00,
+  0xffea00, 0xffc400, 0xff9100, 0xff3d00
+];
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
+  document.getElementById('container').appendChild(renderer.domElement);
+  
+  camera.position.z = 5;
+  scene.add(spiral);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
+  
+  const pointLight = new THREE.PointLight(0xffffff, 1);
+  pointLight.position.set(10, 10, 10);
+  scene.add(pointLight);
+
+  createInitialTriangle();
+  animate();
+
+  document.getElementById('toggleExplanation').addEventListener('click', toggleExplanation);
+  document.getElementById('nextButton').addEventListener('click', nextTriangle);
+  document.getElementById('playButton').addEventListener('click', togglePlay);
+  window.addEventListener('resize', onWindowResize, false);
+  
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+}
+
+function createInitialTriangle() {
+  const geometry = new THREE.BufferGeometry();
+  const vertices = new Float32Array([
+    0, 0, 0,
+    1, 0, 0,
+    0, 1, 0
+  ]);
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  
+  const material = new THREE.LineBasicMaterial({
+    color: colors[0],
+    linewidth: 2,
+    transparent: true,
+    opacity: 0.8
+  });
+  
+  const triangle = new THREE.Line(geometry, material);
+  spiral.add(triangle);
+  triangles.push(triangle);
+  
+  updateStats();
+}
+
+function nextTriangle() {
+  const index = triangles.length;
+  const angle = index * Math.PI / 4;
+  const radius = Math.sqrt(index + 1);
+  
+  const geometry = new THREE.BufferGeometry();
+  const vertices = new Float32Array([
+    0, 0, 0,
+    Math.cos(angle) * radius, Math.sin(angle) * radius, 0,
+    Math.cos(angle + Math.PI/4) * radius, Math.sin(angle + Math.PI/4) * radius, 0
+  ]);
+  
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  
+  const material = new THREE.LineBasicMaterial({
+    color: colors[index % colors.length],
+    linewidth: 2,
+    transparent: true,
+    opacity: 0.8
+  });
+  
+  const triangle = new THREE.Line(geometry, material);
+  spiral.add(triangle);
+  triangles.push(triangle);
+  
+  gsap.from(triangle.scale, {
+    x: 0,
+    y: 0,
+    z: 0,
+    duration: 1,
+    ease: "elastic.out(1, 0.5)"
+  });
+  
+  updateStats();
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  const playButton = document.getElementById('playButton');
+  playButton.textContent = isPlaying ? '❚❚ Pause' : '▶ Play';
+  playButton.classList.toggle('pulse');
+  
+  if (isPlaying) {
+    autoPlay();
+  }
+}
+
+function autoPlay() {
+  if (isPlaying) {
+    nextTriangle();
+    setTimeout(autoPlay, 1000);
+  }
+}
+
+function toggleExplanation() {
+  document.getElementById('explanationBar').classList.toggle('visible');
+}
+
+function updateStats() {
+  document.getElementById('stats').textContent = `Triangles: ${triangles.length}`;
+}
+
+function animate() {
+  animationFrame = requestAnimationFrame(animate);
+  
+  spiral.rotation.z += 0.001;
+  
+  triangles.forEach((triangle, index) => {
+    const time = Date.now() * 0.001;
+    triangle.material.opacity = 0.5 + Math.sin(time + index) * 0.3;
+  });
+  
+  renderer.render(scene, camera);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+init();
+</script>
+</body>
+</html>
