@@ -8,40 +8,61 @@ body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
   left: 10px;
   color: white;
   background: rgba(0,0,0,0.7);
-  padding: 10px;
-  border-radius: 5px;
-  max-width: 300px;
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 250px;
+  font-size: 0.9em;
 }
 .controls {
   position: absolute;
   right: 10px;
   top: 10px;
-  background: rgba(0,0,0,0.7);
-  padding: 10px;
-  border-radius: 5px;
+  background: rgba(0,0,0,0.8);
+  padding: 15px;
+  border-radius: 8px;
   color: white;
+  font-size: 0.9em;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+.controls.visible {
+  transform: translateX(0);
+}
+.toggle-controls {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 1002;
+  font-size: 0.9em;
 }
 .explanation {
   display: none;
   position: absolute;
-  bottom: 20px;
+  bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.9);
   color: white;
   padding: 15px;
   border-radius: 8px;
-  max-width: 80%;
-  max-height: 30vh;
+  max-width: 90%;
+  max-height: 35vh;
   overflow-y: auto;
   z-index: 1000;
+  font-size: 0.85em;
 }
 .toggle-btn {
   position: absolute;
-  bottom: 20px;
+  bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.8);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -49,23 +70,20 @@ body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 1001;
-}
-.toggle-btn:hover {
-  background: rgba(0,0,0,0.9);
-  transform: translateX(-50%) scale(1.05);
+  font-size: 0.9em;
 }
 input[type="range"] {
   width: 200px;
   margin: 10px 0;
   -webkit-appearance: none;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.3);
   border-radius: 10px;
-  height: 5px;
+  height: 6px;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   background: white;
   border-radius: 50%;
   cursor: pointer;
@@ -73,53 +91,58 @@ input[type="range"]::-webkit-slider-thumb {
 @media (max-width: 768px) {
   #info { 
     max-width: 200px;
-    font-size: 0.9em;
+    font-size: 0.8em;
+    padding: 10px;
   }
   .controls {
-    font-size: 0.9em;
+    font-size: 0.8em;
+    padding: 10px;
   }
   input[type="range"] {
     width: 150px;
   }
   .explanation {
-    font-size: 0.9em;
-    max-width: 90%;
+    font-size: 0.8em;
+    padding: 10px;
+  }
+  .toggle-btn {
+    font-size: 0.8em;
+    padding: 6px 12px;
   }
 }
 </style>
 </head>
 <body>
 <div id="info">
-  <h2>Quantum Complexity Visualization</h2>
-  <p>Visualizing quantum operations and saturation regimes</p>
-  <p>Energy density is shown through sphere colors (blue→red)</p>
+  <h3>Quantum Complexity</h3>
+  <p>Energy density shown via sphere colors</p>
 </div>
-<div class="controls">
+
+<button class="toggle-controls" onclick="toggleControls()">Controls</button>
+<div class="controls visible" id="controls">
   <div>
-    <label>Number of Qudits: </label>
+    <label>Qudits: </label>
     <input type="range" id="quditSlider" min="5" max="50" value="20">
   </div>
   <div>
-    <label>Energy Density: </label>
+    <label>Energy: </label>
     <input type="range" id="energySlider" min="1" max="100" value="50">
   </div>
   <div>
-    <label>Entropy Scale: </label>
+    <label>Entropy: </label>
     <input type="range" id="entropySlider" min="1" max="100" value="50">
   </div>
 </div>
 
-<button class="toggle-btn" onclick="toggleExplanation()">Show/Hide Explanation</button>
+<button class="toggle-btn" onclick="toggleExplanation()">Info</button>
 <div id="explanation" class="explanation">
-  <h3>Quantum Complexity and Saturation Regimes</h3>
-  <p>This visualization demonstrates key quantum physics concepts:</p>
+  <h3>Quantum System Overview</h3>
   <ul>
-    <li><strong>Quantum Complexity:</strong> Represented by interacting spheres (qudits) showing how quantum systems evolve over time.</li>
-    <li><strong>Energy Density:</strong> Shown through color transitions from blue (low energy) to red (high energy).</li>
-    <li><strong>Saturation Regime:</strong> Occurs when the system reaches an energy density plateau, visualized through the stabilization of colors and movements.</li>
-    <li><strong>Entropy Scaling:</strong> Demonstrated by the collective behavior and connections between qudits, showing how complexity grows with system size.</li>
+    <li>Qudits show quantum evolution</li>
+    <li>Colors indicate energy levels</li>
+    <li>Connections show quantum entanglement</li>
+    <li>System demonstrates entropy scaling</li>
   </ul>
-  <p>Adjust the sliders to explore different quantum states and behaviors!</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -145,7 +168,7 @@ function init() {
     const sphereMaterial = new THREE.MeshBasicMaterial({
         color: 0x444444,
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.5,
         wireframe: true
     });
     boundingSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
@@ -163,6 +186,11 @@ function init() {
         camera.position.z = Math.sin(angle) * 30;
         camera.lookAt(scene.position);
     }, 50);
+}
+
+function toggleControls() {
+    const controls = document.getElementById('controls');
+    controls.classList.toggle('visible');
 }
 
 function toggleExplanation() {
