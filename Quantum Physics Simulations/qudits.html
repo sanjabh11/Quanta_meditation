@@ -1,0 +1,307 @@
+<html><head><base href="https://example.com" />
+<title>Enhanced Quantum Complexity Visualization</title>
+<style>
+body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+#info {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 5px;
+  max-width: 300px;
+}
+.controls {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 5px;
+  color: white;
+}
+.explanation {
+  display: none;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 80%;
+  max-height: 30vh;
+  overflow-y: auto;
+  z-index: 1000;
+}
+.toggle-btn {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+.toggle-btn:hover {
+  background: rgba(0,0,0,0.9);
+  transform: translateX(-50%) scale(1.05);
+}
+input[type="range"] {
+  width: 200px;
+  margin: 10px 0;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  height: 5px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+@media (max-width: 768px) {
+  #info { 
+    max-width: 200px;
+    font-size: 0.9em;
+  }
+  .controls {
+    font-size: 0.9em;
+  }
+  input[type="range"] {
+    width: 150px;
+  }
+  .explanation {
+    font-size: 0.9em;
+    max-width: 90%;
+  }
+}
+</style>
+</head>
+<body>
+<div id="info">
+  <h2>Quantum Complexity Visualization</h2>
+  <p>Visualizing quantum operations and saturation regimes</p>
+  <p>Energy density is shown through sphere colors (blue→red)</p>
+</div>
+<div class="controls">
+  <div>
+    <label>Number of Qudits: </label>
+    <input type="range" id="quditSlider" min="5" max="50" value="20">
+  </div>
+  <div>
+    <label>Energy Density: </label>
+    <input type="range" id="energySlider" min="1" max="100" value="50">
+  </div>
+  <div>
+    <label>Entropy Scale: </label>
+    <input type="range" id="entropySlider" min="1" max="100" value="50">
+  </div>
+</div>
+
+<button class="toggle-btn" onclick="toggleExplanation()">Show/Hide Explanation</button>
+<div id="explanation" class="explanation">
+  <h3>Quantum Complexity and Saturation Regimes</h3>
+  <p>This visualization demonstrates key quantum physics concepts:</p>
+  <ul>
+    <li><strong>Quantum Complexity:</strong> Represented by interacting spheres (qudits) showing how quantum systems evolve over time.</li>
+    <li><strong>Energy Density:</strong> Shown through color transitions from blue (low energy) to red (high energy).</li>
+    <li><strong>Saturation Regime:</strong> Occurs when the system reaches an energy density plateau, visualized through the stabilization of colors and movements.</li>
+    <li><strong>Entropy Scaling:</strong> Demonstrated by the collective behavior and connections between qudits, showing how complexity grows with system size.</li>
+  </ul>
+  <p>Adjust the sliders to explore different quantum states and behaviors!</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene, camera, renderer, qudits = [], lines = [], boundingSphere;
+
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000);
+    document.body.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+
+    const sphereGeometry = new THREE.SphereGeometry(10, 32, 32);
+    const sphereMaterial = new THREE.MeshBasicMaterial({
+        color: 0x444444,
+        transparent: true,
+        opacity: 0.3,
+        wireframe: true
+    });
+    boundingSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    scene.add(boundingSphere);
+
+    camera.position.z = 30;
+
+    createQuantumSystem();
+    animate();
+
+    let angle = 0;
+    setInterval(() => {
+        angle += 0.01; 
+        camera.position.x = Math.cos(angle) * 30;
+        camera.position.z = Math.sin(angle) * 30;
+        camera.lookAt(scene.position);
+    }, 50);
+}
+
+function toggleExplanation() {
+    const explanation = document.getElementById('explanation');
+    explanation.style.display = explanation.style.display === 'none' ? 'block' : 'none';
+}
+
+function getEnergyColor(energy) {
+    const hue = (1 - energy) * 240;
+    return new THREE.Color(`hsl(${hue}, 100%, 50%)`);
+}
+
+function createQuantumSystem() {
+    const numQudits = document.getElementById('quditSlider').value;
+    
+    qudits.forEach(qudit => scene.remove(qudit));
+    lines.forEach(line => scene.remove(line));
+    qudits = [];
+    lines = [];
+
+    for(let i = 0; i < numQudits; i++) {
+        const geometry = new THREE.SphereGeometry(0.3); 
+        const energy = Math.random();
+        const material = new THREE.MeshPhongMaterial({
+            color: getEnergyColor(energy),
+            shininess: 100,
+            emissive: getEnergyColor(energy/2),
+            emissiveIntensity: 0.5
+        });
+        const qudit = new THREE.Mesh(geometry, material);
+        
+        const phi = Math.acos(-1 + (2 * Math.random()));
+        const theta = 2 * Math.PI * Math.random();
+        const radius = 8 * Math.random();
+
+        qudit.position.x = radius * Math.sin(phi) * Math.cos(theta);
+        qudit.position.y = radius * Math.sin(phi) * Math.sin(theta);
+        qudit.position.z = radius * Math.cos(phi);
+        
+        qudit.userData = {
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.05, 
+                (Math.random() - 0.5) * 0.05,
+                (Math.random() - 0.5) * 0.05
+            ),
+            energy: energy,
+            originalPos: qudit.position.clone()
+        };
+        
+        scene.add(qudit);
+        qudits.push(qudit);
+    }
+
+    createQuantumConnections();
+}
+
+function createQuantumConnections() {
+    for(let i = 0; i < qudits.length; i++) {
+        for(let j = i + 1; j < qudits.length; j++) {
+            if(Math.random() > 0.7) continue;
+            
+            const material = new THREE.LineBasicMaterial({ 
+                color: new THREE.Color(0.5, 1, 0.5),
+                transparent: true,
+                opacity: 0.2 
+            });
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints([
+                qudits[i].position,
+                qudits[j].position
+            ]);
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            lines.push({line, i, j});
+        }
+    }
+}
+
+function updateQuantumSystem() {
+    const energyDensity = document.getElementById('energySlider').value / 100; 
+    const entropyScale = document.getElementById('entropySlider').value / 100;
+
+    qudits.forEach((qudit, index) => {
+        const attraction = qudit.userData.originalPos.clone()
+            .sub(qudit.position)
+            .multiplyScalar(0.01); 
+        qudit.userData.velocity.add(attraction);
+        
+        qudit.position.add(qudit.userData.velocity.multiplyScalar(energyDensity * 1.5));
+        
+        if (qudit.position.length() > 9) {
+            qudit.position.normalize().multiplyScalar(9);
+            qudit.userData.velocity.multiplyScalar(-0.9); 
+        }
+
+        qudit.userData.energy += (Math.sin(Date.now() * 0.001 + index) * 0.01 * entropyScale); 
+        qudit.userData.energy = Math.max(0, Math.min(1, qudit.userData.energy));
+        qudit.material.color = getEnergyColor(qudit.userData.energy);
+        qudit.material.emissive = getEnergyColor(qudit.userData.energy/2);
+        
+        qudit.rotation.x += 0.01 * entropyScale; 
+        qudit.rotation.y += 0.01 * entropyScale;
+    });
+
+    lines.forEach(({line, i, j}) => {
+        const positions = line.geometry.attributes.position.array;
+        
+        positions[0] = qudits[i].position.x;
+        positions[1] = qudits[i].position.y;
+        positions[2] = qudits[i].position.z;
+        positions[3] = qudits[j].position.x;
+        positions[4] = qudits[j].position.y;
+        positions[5] = qudits[j].position.z;
+        
+        line.geometry.attributes.position.needsUpdate = true;
+        
+        const avgEnergy = (qudits[i].userData.energy + qudits[j].userData.energy) / 2;
+        line.material.color = getEnergyColor(avgEnergy);
+    });
+
+    boundingSphere.rotation.x += 0.001; 
+    boundingSphere.rotation.y += 0.001;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    updateQuantumSystem();
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+document.getElementById('quditSlider').addEventListener('change', createQuantumSystem);
+
+init();
+</script>
+</body>
+</html>
