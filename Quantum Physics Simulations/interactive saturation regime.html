@@ -1,5 +1,5 @@
 <html><head><base href="https://example.com" />
-<title>Quantum Complexity Visualization</title>
+<title>Enhanced Quantum Complexity Visualization</title>
 <style>
 body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
 #info {
@@ -34,6 +34,7 @@ body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
   max-width: 80%;
   max-height: 30vh;
   overflow-y: auto;
+  z-index: 1000;
 }
 .toggle-btn {
   position: absolute;
@@ -46,14 +47,28 @@ body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s ease;
+  z-index: 1001;
 }
 .toggle-btn:hover {
   background: rgba(0,0,0,0.9);
+  transform: translateX(-50%) scale(1.05);
 }
 input[type="range"] {
   width: 200px;
   margin: 10px 0;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  height: 5px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
 }
 @media (max-width: 768px) {
   #info { 
@@ -126,12 +141,11 @@ function init() {
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
-    // Add bounding sphere visualization
     const sphereGeometry = new THREE.SphereGeometry(10, 32, 32);
     const sphereMaterial = new THREE.MeshBasicMaterial({
-        color: 0x333333,
+        color: 0x444444,
         transparent: true,
-        opacity: 0.1,
+        opacity: 0.3,
         wireframe: true
     });
     boundingSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
@@ -142,10 +156,9 @@ function init() {
     createQuantumSystem();
     animate();
 
-    // Add orbital rotation
     let angle = 0;
     setInterval(() => {
-        angle += 0.01;
+        angle += 0.01; 
         camera.position.x = Math.cos(angle) * 30;
         camera.position.z = Math.sin(angle) * 30;
         camera.lookAt(scene.position);
@@ -158,8 +171,7 @@ function toggleExplanation() {
 }
 
 function getEnergyColor(energy) {
-    // Enhanced color spectrum
-    const hue = (1 - energy) * 240; // Blue to Red
+    const hue = (1 - energy) * 240;
     return new THREE.Color(`hsl(${hue}, 100%, 50%)`);
 }
 
@@ -172,7 +184,7 @@ function createQuantumSystem() {
     lines = [];
 
     for(let i = 0; i < numQudits; i++) {
-        const geometry = new THREE.SphereGeometry(0.5);
+        const geometry = new THREE.SphereGeometry(0.3); 
         const energy = Math.random();
         const material = new THREE.MeshPhongMaterial({
             color: getEnergyColor(energy),
@@ -182,10 +194,9 @@ function createQuantumSystem() {
         });
         const qudit = new THREE.Mesh(geometry, material);
         
-        // Position within sphere
         const phi = Math.acos(-1 + (2 * Math.random()));
         const theta = 2 * Math.PI * Math.random();
-        const radius = 8 * Math.random(); // Reduced radius to keep within bounding sphere
+        const radius = 8 * Math.random();
 
         qudit.position.x = radius * Math.sin(phi) * Math.cos(theta);
         qudit.position.y = radius * Math.sin(phi) * Math.sin(theta);
@@ -193,9 +204,9 @@ function createQuantumSystem() {
         
         qudit.userData = {
             velocity: new THREE.Vector3(
-                (Math.random() - 0.5) * 0.1,
-                (Math.random() - 0.5) * 0.1,
-                (Math.random() - 0.5) * 0.1
+                (Math.random() - 0.5) * 0.05, 
+                (Math.random() - 0.5) * 0.05,
+                (Math.random() - 0.5) * 0.05
             ),
             energy: energy,
             originalPos: qudit.position.clone()
@@ -216,7 +227,7 @@ function createQuantumConnections() {
             const material = new THREE.LineBasicMaterial({ 
                 color: new THREE.Color(0.5, 1, 0.5),
                 transparent: true,
-                opacity: 0.3
+                opacity: 0.2 
             });
             
             const geometry = new THREE.BufferGeometry().setFromPoints([
@@ -231,28 +242,28 @@ function createQuantumConnections() {
 }
 
 function updateQuantumSystem() {
-    const energyDensity = document.getElementById('energySlider').value / 50;
-    const entropyScale = document.getElementById('entropySlider').value / 50;
+    const energyDensity = document.getElementById('energySlider').value / 100; 
+    const entropyScale = document.getElementById('entropySlider').value / 100;
 
     qudits.forEach((qudit, index) => {
-        // Add attraction to original position
-        const attraction = qudit.userData.originalPos.clone().sub(qudit.position).multiplyScalar(0.01);
+        const attraction = qudit.userData.originalPos.clone()
+            .sub(qudit.position)
+            .multiplyScalar(0.01); 
         qudit.userData.velocity.add(attraction);
         
-        qudit.position.add(qudit.userData.velocity.multiplyScalar(energyDensity));
+        qudit.position.add(qudit.userData.velocity.multiplyScalar(energyDensity * 1.5));
         
-        // Keep within bounding sphere
         if (qudit.position.length() > 9) {
             qudit.position.normalize().multiplyScalar(9);
-            qudit.userData.velocity.multiplyScalar(-0.8); // Bounce with energy loss
+            qudit.userData.velocity.multiplyScalar(-0.9); 
         }
 
-        qudit.userData.energy += (Math.sin(Date.now() * 0.001 + index) * 0.01 * entropyScale);
+        qudit.userData.energy += (Math.sin(Date.now() * 0.001 + index) * 0.01 * entropyScale); 
         qudit.userData.energy = Math.max(0, Math.min(1, qudit.userData.energy));
         qudit.material.color = getEnergyColor(qudit.userData.energy);
         qudit.material.emissive = getEnergyColor(qudit.userData.energy/2);
         
-        qudit.rotation.x += 0.01 * entropyScale;
+        qudit.rotation.x += 0.01 * entropyScale; 
         qudit.rotation.y += 0.01 * entropyScale;
     });
 
@@ -272,8 +283,7 @@ function updateQuantumSystem() {
         line.material.color = getEnergyColor(avgEnergy);
     });
 
-    // Rotate bounding sphere
-    boundingSphere.rotation.x += 0.001;
+    boundingSphere.rotation.x += 0.001; 
     boundingSphere.rotation.y += 0.001;
 }
 
