@@ -1,0 +1,168 @@
+<html><head><base href="http://example.com" /><title>Interactive 3D Apollonian Gasket</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #000; }
+canvas { width: 100vw; height: 100vh; }
+.controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  color: white;
+  font-family: monospace;
+  background: rgba(0,0,0,0.7);
+  padding: 15px;
+  border-radius: 8px;
+}
+</style>
+</head>
+<body>
+<div class="controls">
+  <label>Recursion Depth: <input type="range" min="1" max="5" value="3" id="depth"></label><br>
+  <label>Rotation Speed: <input type="range" min="0" max="100" value="50" id="speed"></label>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Create enhanced base sphere
+const sphereGeometry = new THREE.SphereGeometry(5, 64, 64);
+const sphereMaterial = new THREE.MeshPhysicalMaterial({
+  color: 0x88aaff,
+  wireframe: false,
+  transparent: true,
+  opacity: 0.3,
+  metalness: 0.9,
+  roughness: 0.1,
+  envMapIntensity: 1.0,
+  clearcoat: 1.0,
+  clearcoatRoughness: 0.1
+});
+const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+scene.add(sphere);
+
+// Enhanced lighting setup
+const light1 = new THREE.PointLight(0xff0000, 2);
+light1.position.set(10, 10, 10);
+scene.add(light1);
+
+const light2 = new THREE.PointLight(0x00ff00, 2);
+light2.position.set(-10, -10, 10);
+scene.add(light2);
+
+const light3 = new THREE.PointLight(0x0000ff, 2);
+light3.position.set(0, 0, -10);
+scene.add(light3);
+
+scene.add(new THREE.AmbientLight(0x404040));
+
+camera.position.z = 15;
+
+// Generate enhanced Apollonian circles
+function generateApollonianGasket(depth, radius, center) {
+  if (depth <= 0) return;
+
+  const torusGeometry = new THREE.TorusGeometry(radius, 0.08, 32, 100);
+  const torusMaterial = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color().setHSL(depth/5, 1, 0.5),
+    metalness: 0.9,
+    roughness: 0.1,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.1,
+    emissive: new THREE.Color().setHSL(depth/5, 1, 0.2),
+    emissiveIntensity: 0.5
+  });
+  
+  const circle = new THREE.Mesh(torusGeometry, torusMaterial);
+  circle.position.copy(center);
+  scene.add(circle);
+
+  // Generate child circles
+  const childRadius = radius * 0.5;
+  const childCount = 3;
+  for (let i = 0; i < childCount; i++) {
+    const angle = (i * Math.PI * 2) / childCount;
+    const x = center.x + Math.cos(angle) * radius;
+    const y = center.y + Math.sin(angle) * radius;
+    const z = center.z;
+    generateApollonianGasket(
+      depth - 1, 
+      childRadius,
+      new THREE.Vector3(x, y, z)
+    );
+  }
+}
+
+function clearGasket() {
+  while(scene.children.length > 0){ 
+    scene.remove(scene.children[0]); 
+  }
+  scene.add(light1);
+  scene.add(light2);
+  scene.add(light3);
+  scene.add(sphere);
+}
+
+function regenerateGasket() {
+  clearGasket();
+  const depth = parseInt(document.getElementById('depth').value);
+  generateApollonianGasket(depth, 2, new THREE.Vector3(0,0,0));
+}
+
+// Enhanced animation with moving lights
+let time = 0;
+let rotationSpeed = 0.01;
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.01;
+  
+  rotationSpeed = document.getElementById('speed').value / 5000;
+  sphere.rotation.x += rotationSpeed;
+  sphere.rotation.y += rotationSpeed;
+  
+  // Animate lights in circular patterns
+  light1.position.x = Math.sin(time) * 10;
+  light1.position.z = Math.cos(time) * 10;
+  
+  light2.position.x = Math.sin(time + Math.PI * 2/3) * 10;
+  light2.position.z = Math.cos(time + Math.PI * 2/3) * 10;
+  
+  light3.position.x = Math.sin(time + Math.PI * 4/3) * 10;
+  light3.position.z = Math.cos(time + Math.PI * 4/3) * 10;
+  
+  scene.traverse((obj) => {
+    if (obj.isMesh && obj !== sphere) {
+      obj.rotation.x += rotationSpeed;
+      obj.rotation.y += rotationSpeed;
+      
+      // Add subtle pulsing effect to the torus rings
+      if (obj.material.emissiveIntensity) {
+        obj.material.emissiveIntensity = 0.5 + Math.sin(time * 2) * 0.2;
+      }
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+
+// Event listeners
+document.getElementById('depth').addEventListener('input', regenerateGasket);
+document.getElementById('speed').addEventListener('input', (e) => {
+  rotationSpeed = e.target.value / 5000;
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initialize
+regenerateGasket();
+animate();
+</script>
+</body></html>
