@@ -1,0 +1,318 @@
+<html><head><base href="." />
+<title>Mathematical Expression 3D Visualization</title>
+<style>
+* {margin: 0; padding: 0; box-sizing: border-box;}
+body {overflow: hidden; background: #000;}
+#info {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  color: white;
+  font-family: monospace;
+  pointer-events: none;
+  z-index: 100;
+}
+#numberDisplay {
+  position: fixed;
+  top: 40px;
+  left: 10px;
+  color: white;
+  font-family: monospace;
+  font-size: 18px;
+  pointer-events: none;
+  z-index: 100;
+}
+#controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 10px;
+  color: white;
+  z-index: 100;
+}
+.slider {width: 200px;}
+#explanation {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 10px;
+  color: white;
+  font-family: monospace;
+  display: none;
+  z-index: 100;
+  max-width: 80%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.line {
+  stroke: white;
+  stroke-width: 2;
+  stroke-dasharray: 5;
+  opacity: 0.5;
+}
+</style>
+</head>
+<body>
+<div id="info">
+  (π×π) × ((e×π)^φ) × (φ + φ + π) + φ ≈ 2024.96
+</div>
+<div id="numberDisplay"></div>
+<div id="controls">
+  <input type="range" min="0" max="100" value="50" class="slider" id="speedSlider">
+  <label>Animation Speed</label>
+  <br>
+  <input type="range" min="5" max="30" value="15" class="slider" id="zoomSlider">
+  <label>Camera Distance</label>
+</div>
+<div id="explanation">
+  <h3>Expression Breakdown:</h3>
+  <p>(π×π) = 9.8696... [Green Cube]</p>
+  <p>• Represents pi squared, visualized as a rotating cube</p>
+  <br>
+  <p>(e×π)^φ = 37.9083... [Orange Sphere]</p>
+  <p>• e (Euler's number) times pi, raised to the power of phi</p>
+  <br>
+  <p>(φ + φ + π) = 6.3776... [Blue Spheres]</p>
+  <p>• Sum of golden ratio (twice) plus pi</p>
+  <br>
+  <p>Final Result = 2024.96 [Yellow Pulsing Sphere]</p>
+  <p>• The complete expression evaluates to nearly 2025</p>
+  <br>
+  <p><small>Click anywhere to close</small></p>
+  <p><small>Use mouse wheel to zoom, drag to rotate view</small></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const phi = 1.6180339887;
+const pi = Math.PI;
+const e = Math.E;
+
+let scene, camera, renderer;
+let piCube, ePiSphere, phiSum, resultSphere;
+let animationSpeed = 0.5;
+let explanationVisible = false;
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+let currentStep = 0;
+let lines = [];
+
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  
+  renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
+  
+  const pointLight = new THREE.PointLight(0xffffff, 1);
+  pointLight.position.set(10, 10, 10);
+  scene.add(pointLight);
+
+  createObjects();
+  createConnectingLines();
+
+  camera.position.z = 15;
+  setupEventListeners();
+  animate();
+}
+
+function createObjects() {
+  // Pi Cube
+  const cubeGeom = new THREE.BoxGeometry(2, 2, 2);
+  const cubeMat = new THREE.MeshPhongMaterial({color: 0x00ff88});
+  piCube = new THREE.Mesh(cubeGeom, cubeMat);
+  piCube.position.set(-5, 0, 0);
+  piCube.scale.set(0, 0, 0);
+  scene.add(piCube);
+
+  // e*pi^phi Sphere
+  const sphereGeom = new THREE.SphereGeometry(1, 32, 32);
+  const sphereMat = new THREE.MeshPhongMaterial({color: 0xff4400});
+  ePiSphere = new THREE.Mesh(sphereGeom, sphereMat);
+  ePiSphere.scale.set(0, 0, 0);
+  scene.add(ePiSphere);
+
+  // Phi Sum Group
+  phiSum = new THREE.Group();
+  const smallSphereGeom = new THREE.SphereGeometry(0.5, 16, 16);
+  const smallSphereMat = new THREE.MeshPhongMaterial({color: 0x4488ff});
+  
+  for(let i = 0; i < 3; i++) {
+    const sphere = new THREE.Mesh(smallSphereGeom, smallSphereMat);
+    sphere.position.x = i * 1.2;
+    sphere.scale.set(0, 0, 0);
+    phiSum.add(sphere);
+  }
+  phiSum.position.set(5, 0, 0);
+  scene.add(phiSum);
+
+  // Result Sphere
+  const resultGeom = new THREE.SphereGeometry(1, 32, 32);
+  const resultMat = new THREE.MeshPhongMaterial({color: 0xffdd00});
+  resultSphere = new THREE.Mesh(resultGeom, resultMat);
+  resultSphere.position.set(0, -3, 0);
+  resultSphere.scale.set(0, 0, 0);
+  scene.add(resultSphere);
+}
+
+function createConnectingLines() {
+  const lineMaterial = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    opacity: 0.5,
+    transparent: true
+  });
+
+  // Create connecting lines between objects
+  const lineGeometries = [
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-5, 0, 0),
+      new THREE.Vector3(0, 0, 0)
+    ]),
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(5, 0, 0)
+    ]),
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(5, 0, 0),
+      new THREE.Vector3(0, -3, 0)
+    ])
+  ];
+
+  lineGeometries.forEach(geometry => {
+    const line = new THREE.Line(geometry, lineMaterial);
+    line.visible = false;
+    lines.push(line);
+    scene.add(line);
+  });
+}
+
+function setupEventListeners() {
+  document.getElementById('speedSlider').addEventListener('input', (e) => {
+    animationSpeed = e.target.value / 50;
+  });
+
+  document.getElementById('zoomSlider').addEventListener('input', (e) => {
+    camera.position.z = e.target.value;
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!isDragging) {
+      toggleExplanation();
+    }
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    isDragging = false;
+    previousMousePosition = {
+      x: e.clientX,
+      y: e.clientY
+    };
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (e.buttons) {
+      isDragging = true;
+      const deltaMove = {
+        x: e.clientX - previousMousePosition.x,
+        y: e.clientY - previousMousePosition.y
+      };
+
+      camera.position.x += deltaMove.x * 0.01;
+      camera.position.y -= deltaMove.y * 0.01;
+      camera.lookAt(scene.position);
+
+      previousMousePosition = {
+        x: e.clientX,
+        y: e.clientY
+      };
+    }
+  });
+
+  document.addEventListener('wheel', (e) => {
+    camera.position.z += e.deltaY * 0.01;
+    camera.position.z = Math.max(5, Math.min(30, camera.position.z));
+    document.getElementById('zoomSlider').value = camera.position.z;
+  });
+}
+
+function updateNumberDisplay() {
+  const piSquared = pi * pi;
+  const ePiPhi = Math.pow(e * pi, phi);
+  const phiSumValue = phi + phi + pi;
+  const finalResult = piSquared * ePiPhi * phiSumValue + phi;
+  
+  let display = '';
+  if (currentStep >= 1) display += `π×π = ${piSquared.toFixed(4)}\n`;
+  if (currentStep >= 2) display += `(e×π)^φ = ${ePiPhi.toFixed(4)}\n`;
+  if (currentStep >= 3) display += `φ+φ+π = ${phiSumValue.toFixed(4)}\n`;
+  if (currentStep >= 4) display += `Final = ${finalResult.toFixed(4)}`;
+  
+  document.getElementById('numberDisplay').innerHTML = display.replace(/\n/g, '<br>');
+}
+
+function toggleExplanation() {
+  explanationVisible = !explanationVisible;
+  document.getElementById('explanation').style.display = explanationVisible ? 'block' : 'none';
+}
+
+let lastStepTime = 0;
+function animate(time) {
+  requestAnimationFrame(animate);
+
+  // Progression timing
+  if (time - lastStepTime > 2000 && currentStep < 4) {
+    currentStep++;
+    lastStepTime = time;
+  }
+
+  // Animate objects based on current step
+  if (currentStep >= 1) {
+    piCube.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+    piCube.rotation.x += 0.01 * animationSpeed;
+    piCube.rotation.y += 0.01 * animationSpeed;
+    lines[0].visible = true;
+  }
+
+  if (currentStep >= 2) {
+    ePiSphere.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+    ePiSphere.rotation.y += 0.02 * animationSpeed;
+    lines[1].visible = true;
+  }
+
+  if (currentStep >= 3) {
+    phiSum.children.forEach(sphere => {
+      sphere.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+    });
+    phiSum.rotation.z += 0.01 * animationSpeed;
+    lines[2].visible = true;
+  }
+
+  if (currentStep >= 4) {
+    resultSphere.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+    const pulseTime = Date.now() * 0.001;
+    resultSphere.scale.addScalar(Math.sin(pulseTime) * 0.1);
+  }
+
+  updateNumberDisplay();
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+init();
+</script>
+</body></html>
