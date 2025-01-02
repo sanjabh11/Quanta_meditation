@@ -12,6 +12,49 @@ canvas { width: 100vw; height: 100vh; }
   background: rgba(0,0,0,0.7);
   padding: 15px;
   border-radius: 8px;
+  z-index: 100;
+}
+.info-panel {
+  position: fixed;
+  left: 20px;
+  top: 20px;
+  color: white;
+  font-family: Arial, sans-serif;
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 300px;
+  transform: translateX(-400px);
+  transition: transform 0.3s ease;
+  z-index: 100;
+}
+.info-panel.visible {
+  transform: translateX(0);
+}
+.toggle-info {
+  position: fixed;
+  left: 20px;
+  top: 20px;
+  padding: 10px 15px;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 101;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.toggle-info:hover {
+  background: rgba(255,255,255,0.3);
+}
+.toggle-info .icon {
+  transition: transform 0.3s ease;
+}
+.toggle-info.active .icon {
+  transform: rotate(180deg);
 }
 </style>
 </head>
@@ -21,7 +64,28 @@ canvas { width: 100vw; height: 100vh; }
   <label>Rotation Speed: <input type="range" min="0" max="100" value="50" id="speed"></label>
 </div>
 
+<button class="toggle-info">
+  <span class="icon">👁️</span> 
+  <span class="text">Show/Hide Info</span>
+</button>
+<div class="info-panel">
+  <h2>Spherical Apollonian Gasket</h2>
+  <p>This is a 3D visualization of an Apollonian Gasket mapped onto a sphere. The structure exhibits:</p>
+  <ul>
+    <li>Self-similarity at different scales</li>
+    <li>Fractal properties with non-integer dimensionality</li>
+    <li>Infinite recursive patterns</li>
+  </ul>
+  <p>Controls:</p>
+  <ul>
+    <li>Mouse wheel to zoom</li>
+    <li>Left click + drag to rotate</li>
+    <li>Right click + drag to pan</li>
+  </ul>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -29,13 +93,21 @@ const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Add orbit controls
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.screenSpacePanning = false;
+controls.minDistance = 5;
+controls.maxDistance = 50;
+
 // Create enhanced base sphere
 const sphereGeometry = new THREE.SphereGeometry(5, 64, 64);
 const sphereMaterial = new THREE.MeshPhysicalMaterial({
   color: 0x88aaff,
   wireframe: false,
   transparent: true,
-  opacity: 0.3,
+  opacity: 0.5,
   metalness: 0.9,
   roughness: 0.1,
   envMapIntensity: 1.0,
@@ -62,7 +134,6 @@ scene.add(new THREE.AmbientLight(0x404040));
 
 camera.position.z = 15;
 
-// Generate enhanced Apollonian circles
 function generateApollonianGasket(depth, radius, center) {
   if (depth <= 0) return;
 
@@ -81,7 +152,6 @@ function generateApollonianGasket(depth, radius, center) {
   circle.position.copy(center);
   scene.add(circle);
 
-  // Generate child circles
   const childRadius = radius * 0.5;
   const childCount = 3;
   for (let i = 0; i < childCount; i++) {
@@ -113,7 +183,6 @@ function regenerateGasket() {
   generateApollonianGasket(depth, 2, new THREE.Vector3(0,0,0));
 }
 
-// Enhanced animation with moving lights
 let time = 0;
 let rotationSpeed = 0.01;
 function animate() {
@@ -124,7 +193,6 @@ function animate() {
   sphere.rotation.x += rotationSpeed;
   sphere.rotation.y += rotationSpeed;
   
-  // Animate lights in circular patterns
   light1.position.x = Math.sin(time) * 10;
   light1.position.z = Math.cos(time) * 10;
   
@@ -139,17 +207,16 @@ function animate() {
       obj.rotation.x += rotationSpeed;
       obj.rotation.y += rotationSpeed;
       
-      // Add subtle pulsing effect to the torus rings
       if (obj.material.emissiveIntensity) {
         obj.material.emissiveIntensity = 0.5 + Math.sin(time * 2) * 0.2;
       }
     }
   });
 
+  controls.update();
   renderer.render(scene, camera);
 }
 
-// Event listeners
 document.getElementById('depth').addEventListener('input', regenerateGasket);
 document.getElementById('speed').addEventListener('input', (e) => {
   rotationSpeed = e.target.value / 5000;
@@ -161,7 +228,20 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Initialize
+// Enhanced info panel toggle with visual feedback
+const toggleBtn = document.querySelector('.toggle-info');
+const infoPanel = document.querySelector('.info-panel');
+
+toggleBtn.addEventListener('click', () => {
+  infoPanel.classList.toggle('visible');
+  toggleBtn.classList.toggle('active');
+  if (infoPanel.classList.contains('visible')) {
+    toggleBtn.querySelector('.text').textContent = 'Hide Info';
+  } else {
+    toggleBtn.querySelector('.text').textContent = 'Show Info';
+  }
+});
+
 regenerateGasket();
 animate();
 </script>
