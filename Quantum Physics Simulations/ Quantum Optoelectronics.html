@@ -1,0 +1,223 @@
+<html><head><base href="https://imaginary-internet-domain.com/"><style>
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: sans-serif;
+}
+canvas {
+  position: fixed;
+}
+.panel {
+  position: fixed;
+  z-index: 10;
+  padding: 20px;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid #333;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+.panel.hidden {
+  transform: translateX(-100%);
+}
+.toggle-btn {
+  position: fixed;
+  z-index: 11;
+  padding: 10px;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+.reset-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  padding: 10px 20px;
+  background: rgba(255,0,0,0.8);
+  border: 1px solid #500;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+}
+.controls-toggle {
+  top: 20px;
+  left: 20px;
+}
+.info-toggle {
+  top: 20px;
+  right: 20px;
+}
+.controls-panel {
+  top: 60px;
+  left: 20px;
+  width: 300px;
+}
+.info-panel {
+  top: 60px;
+  right: 20px;
+  width: 300px;
+  transform: translateX(100%);
+}
+.info-panel.hidden {
+  transform: translateX(100%);
+}
+</style></head><body>
+
+<button class="toggle-btn controls-toggle">Toggle Controls</button>
+<button class="toggle-btn info-toggle">Toggle Info</button>
+<button class="reset-btn">Reset All</button>
+
+<div class="panel controls-panel">
+  <h2>Quantum Optoelectronics Controls</h2>
+  <div style="margin:20px 0">
+    <label>Orbital Angular Momentum (OAM)</label><br>
+    <input type="range" id="oam" min="-10" max="10" value="0" step="0.1">
+  </div>
+  <div style="margin:20px 0">  
+    <label>Photon Bunching</label><br>
+    <input type="range" id="bunching" min="0" max="1" value="0.5" step="0.1">
+  </div>
+  <div style="margin:20px 0">
+    <label>Interference Strength</label><br> 
+    <input type="range" id="interference" min="0" max="1" value="0.5" step="0.1">
+  </div>
+</div>
+
+<div class="panel info-panel">
+  <h2>Quantum Phenomena Explained</h2>
+  <p><strong>Orbital Angular Momentum (OAM):</strong> A property of light where photons carry angular momentum due to their helical wavefront structure.</p>
+  <p><strong>Photon Bunching:</strong> A quantum effect where photons tend to be detected in groups rather than randomly distributed.</p>
+  <p><strong>Interference:</strong> The interaction between multiple photons creating patterns of constructive and destructive interference.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene, camera, renderer, particles, points;
+
+function initScene() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Initialize particles
+  particles = new THREE.BufferGeometry();
+  const particleCount = 1000;
+  const positions = new Float32Array(particleCount * 3);
+  const colors = new Float32Array(particleCount * 3);
+
+  for(let i = 0; i < particleCount; i++) {
+    positions[i*3] = (Math.random() - 0.5) * 10;
+    positions[i*3+1] = (Math.random() - 0.5) * 10; 
+    positions[i*3+2] = (Math.random() - 0.5) * 10;
+
+    colors[i*3] = Math.random();
+    colors[i*3+1] = Math.random();
+    colors[i*3+2] = Math.random();
+  }
+
+  particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: 0.1,
+    vertexColors: true,
+    blending: THREE.AdditiveBlending,
+    transparent: true
+  });
+
+  points = new THREE.Points(particles, material);
+  scene.add(points);
+
+  camera.position.z = 15;
+}
+
+// Panel toggle functionality
+document.querySelector('.controls-toggle').addEventListener('click', () => {
+  document.querySelector('.controls-panel').classList.toggle('hidden');
+});
+
+document.querySelector('.info-toggle').addEventListener('click', () => {
+  document.querySelector('.info-panel').classList.toggle('hidden');
+});
+
+// Reset functionality
+document.querySelector('.reset-btn').addEventListener('click', () => {
+  // Reset controls
+  document.getElementById('oam').value = 0;
+  document.getElementById('bunching').value = 0.5;
+  document.getElementById('interference').value = 0.5;
+  oam = 0;
+  bunching = 0.5;
+  interference = 0.5;
+  
+  // Reset scene
+  scene.remove(points);
+  initScene();
+});
+
+// Initialize scene
+initScene();
+
+// Controls
+let oam = 0;
+let bunching = 0.5;
+let interference = 0.5;
+
+document.getElementById('oam').addEventListener('input', e => oam = e.target.value);
+document.getElementById('bunching').addEventListener('input', e => bunching = e.target.value);
+document.getElementById('interference').addEventListener('input', e => interference = e.target.value);
+
+// Animation loop
+function animate() {
+  requestAnimationFrame(animate);
+  
+  const positions = particles.attributes.position.array;
+  
+  for(let i = 0; i < 1000; i++) {
+    // Apply OAM rotation
+    const x = positions[i*3];
+    const y = positions[i*3+1];
+    const z = positions[i*3+2];
+    
+    const r = Math.sqrt(x*x + y*y);
+    const theta = Math.atan2(y, x) + oam * 0.01;
+    
+    positions[i*3] = r * Math.cos(theta);
+    positions[i*3+1] = r * Math.sin(theta);
+    
+    // Apply bunching
+    const center = new THREE.Vector3(0,0,0);
+    const pos = new THREE.Vector3(x,y,z);
+    const dir = center.sub(pos).normalize();
+    
+    positions[i*3] += dir.x * bunching * 0.01;
+    positions[i*3+1] += dir.y * bunching * 0.01;
+    positions[i*3+2] += dir.z * bunching * 0.01;
+    
+    // Apply interference pattern
+    positions[i*3] += Math.sin(z*interference + Date.now()*0.001) * 0.01;
+    positions[i*3+1] += Math.cos(x*interference + Date.now()*0.001) * 0.01;
+  }
+  
+  particles.attributes.position.needsUpdate = true;
+  
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// Handle resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body></html>
