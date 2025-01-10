@@ -11,7 +11,7 @@
     background: #0a0a1f;
     font-family: Arial, sans-serif;
     color: #fff;
-    min-height: 200vh; /* Allow for scrolling */
+    min-height: 200vh;
   }
   
   .container {
@@ -48,7 +48,7 @@
 
   label {
     font-weight: bold;
-    color: #8f8fff;
+    color: #fff3bf;
   }
 
   input[type="range"] {
@@ -62,7 +62,7 @@
     -webkit-appearance: none;
     width: 20px;
     height: 20px;
-    background: #8f8fff;
+    background: #fff3bf;
     border-radius: 50%;
     cursor: pointer;
   }
@@ -111,7 +111,6 @@ let zAmp = 0.5;
 let rotationSpeed = 0.005;
 
 function init() {
-  // Scene setup
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(75, 600/600, 0.1, 1000);
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -119,26 +118,22 @@ function init() {
   renderer.setClearColor(0x0a0a1f);
   document.getElementById('lissajous-3d').appendChild(renderer.domElement);
 
-  // Camera position
   camera.position.z = 5;
 
-  // Add lights
   const ambientLight = new THREE.AmbientLight(0x404040);
   scene.add(ambientLight);
   
-  const pointLight = new THREE.PointLight(0xffffff, 1);
+  const pointLight = new THREE.PointLight(0xfff3bf, 1);
   pointLight.position.set(5, 5, 5);
   scene.add(pointLight);
 
-  // Create grid
-  const gridHelper = new THREE.GridHelper(10, 20, 0x8f8fff, 0x444444);
+  const gridHelper = new THREE.GridHelper(10, 20, 0xfff3bf, 0x444444);
   scene.add(gridHelper);
 
   createCurve();
   createD3Visualization();
   animate();
 
-  // Add scroll interaction
   window.addEventListener('scroll', () => {
     const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
     rotationSpeed = 0.005 + scrollPercent * 0.02;
@@ -147,7 +142,6 @@ function init() {
     }
   });
 
-  // Add mouse interaction for rotation
   let isDragging = false;
   let previousMousePosition = { x: 0, y: 0 };
 
@@ -178,7 +172,6 @@ function init() {
     isDragging = false;
   });
 
-  // Event listeners for sliders
   document.getElementById('xFreq').addEventListener('input', (e) => {
     xFreq = parseFloat(e.target.value);
     document.getElementById('xFreqVal').textContent = xFreq.toFixed(2);
@@ -226,7 +219,7 @@ function createCurve() {
 
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
   const material = new THREE.LineBasicMaterial({ 
-    color: 0x8f8fff,
+    color: 0xfff3bf,
     linewidth: 2
   });
 
@@ -246,7 +239,6 @@ function createD3Visualization() {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Add axes
   const x = d3.scaleLinear().range([0, width]);
   const y = d3.scaleLinear().range([height, 0]);
 
@@ -294,7 +286,6 @@ function updateD3Visualization() {
   svg.select(".y-axis")
     .call(d3.axisLeft(y));
 
-  // Update the path
   const path = svg.selectAll(".line").data([data]);
 
   path.enter()
@@ -303,7 +294,7 @@ function updateD3Visualization() {
     .merge(path)
     .attr("d", line)
     .attr("fill", "none")
-    .attr("stroke", "#8f8fff")
+    .attr("stroke", "#fff3bf")
     .attr("stroke-width", 2);
 }
 
@@ -317,7 +308,6 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-// Initialize the scene
 init();
 </script>
 </body></html>
