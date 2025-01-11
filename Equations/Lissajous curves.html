@@ -4,7 +4,7 @@
 <style>
   body {
     margin: 0;
-    padding: 20px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -21,13 +21,14 @@
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    width: 95%;
     max-width: 800px;
     backdrop-filter: blur(10px);
   }
 
   #lissajous-3d {
-    width: 600px;
-    height: 600px;
+    width: 100%;
+    height: 60vh;
     border-radius: 10px;
     margin: 20px 0;
   }
@@ -37,6 +38,7 @@
     gap: 20px;
     margin: 20px 0;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   .slider-group {
@@ -44,11 +46,19 @@
     flex-direction: column;
     gap: 10px;
     min-width: 200px;
+    flex: 1 1 200px;
+    max-width: 300px;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    text-align: center;
+    color: #add8e6;
   }
 
   label {
     font-weight: bold;
-    color: #fff3bf;
+    color: #add8e6;
   }
 
   input[type="range"] {
@@ -62,15 +72,34 @@
     -webkit-appearance: none;
     width: 20px;
     height: 20px;
-    background: #fff3bf;
+    background: #add8e6;
     border-radius: 50%;
     cursor: pointer;
   }
 
   #data-visualization {
-    width: 600px;
+    width: 100%;
     height: 200px;
     margin-top: 20px;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 10px;
+    }
+    
+    .slider-group {
+      min-width: 100%;
+    }
+    
+    #lissajous-3d {
+      height: 50vh;
+    }
+    
+    #data-visualization {
+      height: 150px;
+    }
   }
 </style>
 </head>
@@ -112,22 +141,35 @@ let rotationSpeed = 0.005;
 
 function init() {
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, 600/600, 0.1, 1000);
+  
+  // Make renderer responsive
+  function updateRenderer() {
+    const container = document.getElementById('lissajous-3d');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
+    camera = new THREE.PerspectiveCamera(75, width/height, 0.1, 1000);
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+
   renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(600, 600);
-  renderer.setClearColor(0x0a0a1f);
   document.getElementById('lissajous-3d').appendChild(renderer.domElement);
+  updateRenderer();
+  
+  window.addEventListener('resize', updateRenderer);
 
   camera.position.z = 5;
 
   const ambientLight = new THREE.AmbientLight(0x404040);
   scene.add(ambientLight);
   
-  const pointLight = new THREE.PointLight(0xfff3bf, 1);
+  const pointLight = new THREE.PointLight(0xadd8e6, 1);
   pointLight.position.set(5, 5, 5);
   scene.add(pointLight);
 
-  const gridHelper = new THREE.GridHelper(10, 20, 0xfff3bf, 0x444444);
+  const gridHelper = new THREE.GridHelper(10, 20, 0xadd8e6, 0x444444);
   scene.add(gridHelper);
 
   createCurve();
@@ -169,6 +211,38 @@ function init() {
   });
 
   renderer.domElement.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  // Touch events for mobile
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    isDragging = true;
+    previousMousePosition = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  });
+
+  renderer.domElement.addEventListener('touchmove', (e) => {
+    if (isDragging) {
+      const deltaMove = {
+        x: e.touches[0].clientX - previousMousePosition.x,
+        y: e.touches[0].clientY - previousMousePosition.y
+      };
+
+      if (curveObject) {
+        curveObject.rotation.y += deltaMove.x * 0.01;
+        curveObject.rotation.x += deltaMove.y * 0.01;
+      }
+
+      previousMousePosition = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY
+      };
+    }
+  });
+
+  renderer.domElement.addEventListener('touchend', () => {
     isDragging = false;
   });
 
@@ -219,7 +293,7 @@ function createCurve() {
 
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
   const material = new THREE.LineBasicMaterial({ 
-    color: 0xfff3bf,
+    color: 0xadd8e6,
     linewidth: 2
   });
 
@@ -229,8 +303,9 @@ function createCurve() {
 
 function createD3Visualization() {
   const margin = {top: 20, right: 20, bottom: 30, left: 40};
-  const width = 600 - margin.left - margin.right;
-  const height = 200 - margin.top - margin.bottom;
+  const container = document.getElementById('data-visualization');
+  const width = container.clientWidth - margin.left - margin.right;
+  const height = container.clientHeight - margin.top - margin.bottom;
 
   const svg = d3.select("#data-visualization")
     .append("svg")
@@ -238,9 +313,6 @@ function createD3Visualization() {
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const x = d3.scaleLinear().range([0, width]);
-  const y = d3.scaleLinear().range([height, 0]);
 
   svg.append("g")
     .attr("transform", `translate(0,${height})`)
@@ -253,8 +325,9 @@ function createD3Visualization() {
 }
 
 function updateD3Visualization() {
-  const width = 600 - 60;
-  const height = 200 - 50;
+  const container = document.getElementById('data-visualization');
+  const width = container.clientWidth - 60;
+  const height = container.clientHeight - 50;
   const data = [];
 
   for(let i = 0; i < 100; i++) {
@@ -266,7 +339,10 @@ function updateD3Visualization() {
     });
   }
 
-  const svg = d3.select("#data-visualization svg g");
+  const svg = d3.select("#data-visualization svg")
+    .attr("width", width + 60)
+    .attr("height", height + 50)
+    .select("g");
   
   const x = d3.scaleLinear()
     .domain([0, Math.PI * 2])
@@ -281,6 +357,7 @@ function updateD3Visualization() {
     .y(d => y(d.x));
 
   svg.select(".x-axis")
+    .attr("transform", `translate(0,${height})`)
     .call(d3.axisBottom(x));
 
   svg.select(".y-axis")
@@ -294,7 +371,7 @@ function updateD3Visualization() {
     .merge(path)
     .attr("d", line)
     .attr("fill", "none")
-    .attr("stroke", "#fff3bf")
+    .attr("stroke", "#add8e6")
     .attr("stroke-width", 2);
 }
 
