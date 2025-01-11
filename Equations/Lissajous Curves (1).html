@@ -1,0 +1,390 @@
+<html><head><base href="." target="_blank">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  body {
+    margin: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #0a0a1f;
+    font-family: Arial, sans-serif;
+    color: #fff;
+    min-height: 200vh;
+  }
+  
+  .container {
+    position: sticky;
+    top: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    width: 95%;
+    max-width: 800px;
+    backdrop-filter: blur(10px);
+  }
+
+  #lissajous-3d {
+    width: 100%;
+    height: 60vh;
+    border-radius: 10px;
+    margin: 20px 0;
+  }
+
+  .controls {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 200px;
+    flex: 1 1 200px;
+    max-width: 300px;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    text-align: center;
+    color: #add8e6;
+  }
+
+  label {
+    font-weight: bold;
+    color: #add8e6;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    -webkit-appearance: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #add8e6;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  #data-visualization {
+    width: 100%;
+    height: 200px;
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 600px) {
+    .container {
+      padding: 10px;
+    }
+    
+    .slider-group {
+      min-width: 100%;
+    }
+    
+    #lissajous-3d {
+      height: 50vh;
+    }
+    
+    #data-visualization {
+      height: 150px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>3D Lissajous Curve Explorer</h1>
+  <div id="lissajous-3d"></div>
+  
+  <div class="controls">
+    <div class="slider-group">
+      <label>X Frequency: <span id="xFreqVal">-5.00</span></label>
+      <input type="range" id="xFreq" min="-10" max="10" step="0.1" value="-5">
+    </div>
+    <div class="slider-group">
+      <label>Y Frequency: <span id="yFreqVal">-0.50</span></label>
+      <input type="range" id="yFreq" min="-10" max="10" step="0.1" value="-0.5">
+    </div>
+    <div class="slider-group">
+      <label>Phase Shift: <span id="phaseVal">0.00</span></label>
+      <input type="range" id="phase" min="-3.14" max="3.14" step="0.1" value="0">
+    </div>
+    <div class="slider-group">
+      <label>Z Amplitude: <span id="zAmpVal">0.50</span></label>
+      <input type="range" id="zAmp" min="0" max="2" step="0.1" value="0.5">
+    </div>
+  </div>
+
+  <div id="data-visualization"></div>
+</div>
+
+<script>
+let scene, camera, renderer;
+let curve, curveObject;
+let xFreq = -5.0;
+let yFreq = -0.5;
+let phase = 0.0;
+let zAmp = 0.5;
+let rotationSpeed = 0.005;
+
+function init() {
+  scene = new THREE.Scene();
+  
+  // Make renderer responsive
+  function updateRenderer() {
+    const container = document.getElementById('lissajous-3d');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
+    camera = new THREE.PerspectiveCamera(75, width/height, 0.1, 1000);
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  document.getElementById('lissajous-3d').appendChild(renderer.domElement);
+  updateRenderer();
+  
+  window.addEventListener('resize', updateRenderer);
+
+  camera.position.z = 5;
+
+  const ambientLight = new THREE.AmbientLight(0x404040);
+  scene.add(ambientLight);
+  
+  const pointLight = new THREE.PointLight(0xadd8e6, 1);
+  pointLight.position.set(5, 5, 5);
+  scene.add(pointLight);
+
+  const gridHelper = new THREE.GridHelper(10, 20, 0xadd8e6, 0x444444);
+  scene.add(gridHelper);
+
+  createCurve();
+  createD3Visualization();
+  animate();
+
+  window.addEventListener('scroll', () => {
+    const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+    rotationSpeed = 0.005 + scrollPercent * 0.02;
+    if (curveObject) {
+      curveObject.rotation.x = scrollPercent * Math.PI;
+    }
+  });
+
+  let isDragging = false;
+  let previousMousePosition = { x: 0, y: 0 };
+
+  renderer.domElement.addEventListener('mousedown', (e) => {
+    isDragging = true;
+  });
+
+  renderer.domElement.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      const deltaMove = {
+        x: e.offsetX - previousMousePosition.x,
+        y: e.offsetY - previousMousePosition.y
+      };
+
+      if (curveObject) {
+        curveObject.rotation.y += deltaMove.x * 0.01;
+        curveObject.rotation.x += deltaMove.y * 0.01;
+      }
+    }
+
+    previousMousePosition = {
+      x: e.offsetX,
+      y: e.offsetY
+    };
+  });
+
+  renderer.domElement.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  // Touch events for mobile
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    isDragging = true;
+    previousMousePosition = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  });
+
+  renderer.domElement.addEventListener('touchmove', (e) => {
+    if (isDragging) {
+      const deltaMove = {
+        x: e.touches[0].clientX - previousMousePosition.x,
+        y: e.touches[0].clientY - previousMousePosition.y
+      };
+
+      if (curveObject) {
+        curveObject.rotation.y += deltaMove.x * 0.01;
+        curveObject.rotation.x += deltaMove.y * 0.01;
+      }
+
+      previousMousePosition = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY
+      };
+    }
+  });
+
+  renderer.domElement.addEventListener('touchend', () => {
+    isDragging = false;
+  });
+
+  document.getElementById('xFreq').addEventListener('input', (e) => {
+    xFreq = parseFloat(e.target.value);
+    document.getElementById('xFreqVal').textContent = xFreq.toFixed(2);
+    createCurve();
+    updateD3Visualization();
+  });
+
+  document.getElementById('yFreq').addEventListener('input', (e) => {
+    yFreq = parseFloat(e.target.value);
+    document.getElementById('yFreqVal').textContent = yFreq.toFixed(2);
+    createCurve();
+    updateD3Visualization();
+  });
+
+  document.getElementById('phase').addEventListener('input', (e) => {
+    phase = parseFloat(e.target.value);
+    document.getElementById('phaseVal').textContent = phase.toFixed(2);
+    createCurve();
+    updateD3Visualization();
+  });
+
+  document.getElementById('zAmp').addEventListener('input', (e) => {
+    zAmp = parseFloat(e.target.value);
+    document.getElementById('zAmpVal').textContent = zAmp.toFixed(2);
+    createCurve();
+    updateD3Visualization();
+  });
+}
+
+function createCurve() {
+  if (curveObject) {
+    scene.remove(curveObject);
+  }
+
+  const points = [];
+  const numPoints = 1000;
+  
+  for(let i = 0; i < numPoints; i++) {
+    const t = (i / numPoints) * Math.PI * 20;
+    const x = Math.sin(xFreq * t + phase);
+    const y = Math.sin(yFreq * t);
+    const z = Math.sin(t * zAmp);
+    points.push(new THREE.Vector3(x, y, z));
+  }
+
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({ 
+    color: 0xadd8e6,
+    linewidth: 2
+  });
+
+  curveObject = new THREE.Line(geometry, material);
+  scene.add(curveObject);
+}
+
+function createD3Visualization() {
+  const margin = {top: 20, right: 20, bottom: 30, left: 40};
+  const container = document.getElementById('data-visualization');
+  const width = container.clientWidth - margin.left - margin.right;
+  const height = container.clientHeight - margin.top - margin.bottom;
+
+  const svg = d3.select("#data-visualization")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  svg.append("g")
+    .attr("transform", `translate(0,${height})`)
+    .attr("class", "x-axis");
+
+  svg.append("g")
+    .attr("class", "y-axis");
+
+  updateD3Visualization();
+}
+
+function updateD3Visualization() {
+  const container = document.getElementById('data-visualization');
+  const width = container.clientWidth - 60;
+  const height = container.clientHeight - 50;
+  const data = [];
+
+  for(let i = 0; i < 100; i++) {
+    const t = (i / 100) * Math.PI * 2;
+    data.push({
+      t: t,
+      x: Math.sin(xFreq * t + phase),
+      y: Math.sin(yFreq * t)
+    });
+  }
+
+  const svg = d3.select("#data-visualization svg")
+    .attr("width", width + 60)
+    .attr("height", height + 50)
+    .select("g");
+  
+  const x = d3.scaleLinear()
+    .domain([0, Math.PI * 2])
+    .range([0, width]);
+
+  const y = d3.scaleLinear()
+    .domain([-1, 1])
+    .range([height, 0]);
+
+  const line = d3.line()
+    .x(d => x(d.t))
+    .y(d => y(d.x));
+
+  svg.select(".x-axis")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x));
+
+  svg.select(".y-axis")
+    .call(d3.axisLeft(y));
+
+  const path = svg.selectAll(".line").data([data]);
+
+  path.enter()
+    .append("path")
+    .attr("class", "line")
+    .merge(path)
+    .attr("d", line)
+    .attr("fill", "none")
+    .attr("stroke", "#add8e6")
+    .attr("stroke-width", 2);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  
+  if (curveObject) {
+    curveObject.rotation.y += rotationSpeed;
+  }
+  
+  renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body></html>
