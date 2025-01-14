@@ -1,0 +1,451 @@
+<html><head><base href="."><meta content="https://xriss.github.io/fun64/data/">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
+#container { width: 100vw; height: 100vh; }
+
+.panel {
+  position: fixed;
+  background: rgba(0,0,0,0.85);
+  padding: 15px;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+  box-shadow: 0 0 20px rgba(0,128,255,0.3);
+  border: 1px solid rgba(0,128,255,0.2);
+}
+
+.controls {
+  top: 20px;
+  left: -250px;
+  width: 250px;
+}
+
+.controls.active {
+  transform: translateX(270px);
+}
+
+.explanation {
+  top: 20px;
+  right: -300px;
+  width: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.explanation.active {
+  transform: translateX(-320px);
+}
+
+.toggle-btn {
+  position: absolute;
+  top: 50%;
+  padding: 10px;
+  background: rgba(0,128,255,0.3);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.toggle-btn:hover {
+  background: rgba(0,128,255,0.5);
+}
+
+.controls .toggle-btn {
+  right: -40px;
+}
+
+.explanation .toggle-btn {
+  left: -40px;
+}
+
+.slider-container {
+  margin: 15px 0;
+}
+
+input[type="range"] {
+  width: 100%;
+  margin: 8px 0;
+  background: rgba(0,128,255,0.2);
+}
+
+.quantum-field {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  height: 200px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.graph-container {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  width: 300px;
+  height: 200px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 8px;
+  padding: 10px;
+  transform: translateY(-50%);
+}
+
+.time-flow {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 10px rgba(0,128,255,0.2); }
+  to { box-shadow: 0 0 20px rgba(0,128,255,0.5); }
+}
+
+#timeDisplay {
+  font-size: 1.2em;
+  margin: 10px 0;
+}
+
+.instructions {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.zoom-controls {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.zoom-btn {
+  background: rgba(0,128,255,0.3);
+  border: none;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.zoom-btn:hover {
+  background: rgba(0,128,255,0.5);
+}
+
+@media (max-width: 768px) {
+  .explanation {
+    width: 100%;
+    max-width: 300px;
+    right: -100%;
+  }
+
+  .explanation.active {
+    right: 0;
+    transform: none; 
+  }
+
+  .explanation .toggle-btn {
+    left: 10px;
+    top: 10px;
+  }
+}
+</style>
+</head>
+<body>
+<div id="container"></div>
+
+<div class="panel controls">
+  <button class="toggle-btn">&#x2261;</button>
+  <h3>Universe Controls</h3>
+  <div class="slider-container">
+    <label>Universe Rotation (radians)</label><br>
+    <input type="range" id="rotationSpeed" min="0" max="2" step="0.01" value="0.5">
+  </div>
+  <div class="slider-container">
+    <label>Mass (1/m)</label><br>
+    <input type="range" id="mass" min="0.1" max="2" step="0.1" value="1">
+  </div>
+  <div class="slider-container">
+    <label>Size (2&#x3c0; radians)</label><br>
+    <input type="range" id="size" min="0.1" max="2" step="0.1" value="1">
+  </div>
+</div>
+
+<div class="panel explanation">
+  <button class="toggle-btn">?</button>
+  <h3>Theory Explanation</h3>
+  <p>The Rotating Universe Theory suggests that all dimensions are affected by cosmic rotation, unified by the equation G(c&#xb2;/r).</p>
+  <p>&#x2022; Strong Force: Rotation &gt; 1 radian</p>
+  <p>&#x2022; Weak Force: Rotation &lt; 1 radian</p>
+  <p>&#x2022; Gravity: Inverse of time</p>
+  <p>&#x2022; Electromagnetic Force: Time flow in radians</p>
+  <p>Scroll to zoom in/out and explore the universe&apos;s rotation effects on spacetime.</p>
+</div>
+
+<div class="graph-container">
+  <canvas id="forceGraph"></canvas>
+</div>
+
+<div class="quantum-field">
+  <canvas id="quantumField"></canvas>
+</div>
+
+<div class="time-flow">
+  <div id="timeDisplay">Time Flow: 0 radians</div>
+  <div id="timeSpeed">Time Speed: 1x</div>
+</div>
+
+<div class="instructions">
+  Scroll to Zoom &#x2022; Drag to Rotate
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" id="zoomIn">+</button>
+  <button class="zoom-btn" id="zoomOut">-</button>
+</div>
+
+<script>let scene, camera, renderer, universe;
+let forces = {
+  strong: null,
+  weak: null,
+  gravity: null,
+  electromagnetic: null
+};
+let quantumParticles = [];
+let timeFlow = 0;
+let chart;
+function init() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById('container').appendChild(renderer.domElement);
+  camera.position.z = 5;
+  createUniverse();
+  createForces();
+  initQuantumField();
+  initForceGraph();
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambientLight);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(5, 5, 5);
+  scene.add(directionalLight);
+  window.addEventListener('resize', onWindowResize, false);
+  window.addEventListener('scroll', updateOnScroll, false);
+  addControlListeners();
+  animate();
+  document.querySelector('.explanation').classList.remove('active');
+}
+function createUniverse() {
+  const geometry = new THREE.SphereGeometry(1, 64, 64);
+  const material = new THREE.MeshPhongMaterial({
+    color: 0x4444ff,
+    wireframe: true,
+    emissive: 0x112244,
+    transparent: true,
+    opacity: 0.8,
+    shininess: 100
+  });
+  universe = new THREE.Mesh(geometry, material);
+  const glowGeometry = new THREE.SphereGeometry(1.2, 32, 32);
+  const glowMaterial = new THREE.MeshPhongMaterial({
+    color: 0x0088ff,
+    transparent: true,
+    opacity: 0.1,
+    side: THREE.BackSide
+  });
+  const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+  universe.add(glow);
+  scene.add(universe);
+}
+function initQuantumField() {
+  const canvas = document.getElementById('quantumField');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 300;
+  canvas.height = 200;
+  for (let i = 0; i < 100; i++) {
+    quantumParticles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 3,
+      speed: Math.random() * 2
+    });
+  }
+}
+function initForceGraph() {
+  const ctx = document.getElementById('forceGraph').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'G(c²/r)',
+        data: [],
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+function updateForceGraph(r) {
+  const G = 6.67430e-11;
+  const c = 299792458;
+  const force = G * (c * c) / r;
+  chart.data.labels.push(r.toFixed(2));
+  chart.data.datasets[0].data.push(force);
+  if (chart.data.labels.length > 20) {
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
+  }
+  chart.update();
+}
+function updateQuantumField() {
+  const canvas = document.getElementById('quantumField');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+  quantumParticles.forEach(particle => {
+    particle.y += particle.speed;
+    if (particle.y > canvas.height) particle.y = 0;
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+function updateTimeFlow() {
+  timeFlow += 0.01;
+  document.getElementById('timeDisplay').textContent = `Time Flow: ${timeFlow.toFixed(2)} radians`;
+  document.getElementById('timeSpeed').textContent = `Time Speed: ${(universe.rotation.y + 1).toFixed(2)}x`;
+}
+function updateOnScroll() {
+  const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+  camera.position.z = 5 + scrollPercent * 10;
+  universe.rotation.x = scrollPercent * Math.PI * 2;
+}
+function createForces() {
+  const forceGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1, 8);
+  forceGeometry.translate(0, 0.5, 0);
+  forces.strong = new THREE.Mesh(forceGeometry, new THREE.MeshPhongMaterial({
+    color: 0xff0000
+  }));
+  forces.weak = new THREE.Mesh(forceGeometry, new THREE.MeshPhongMaterial({
+    color: 0x00ff00
+  }));
+  forces.gravity = new THREE.Mesh(forceGeometry, new THREE.MeshPhongMaterial({
+    color: 0x0000ff
+  }));
+  forces.electromagnetic = new THREE.Mesh(forceGeometry, new THREE.MeshPhongMaterial({
+    color: 0xffff00
+  }));
+  Object.values(forces).forEach(force => {
+    scene.add(force);
+  });
+  updateForcePositions();
+}
+function updateForcePositions() {
+  forces.strong.rotation.z = Math.PI / 2;
+  forces.weak.rotation.z = -Math.PI / 2;
+  forces.gravity.rotation.x = Math.PI / 2;
+  forces.electromagnetic.rotation.x = -Math.PI / 2;
+}
+function addControlListeners() {
+  document.getElementById('rotationSpeed').addEventListener('input', e => {
+    const speed = parseFloat(e.target.value);
+    universe.rotation.y = speed * Math.PI;
+  });
+  document.getElementById('mass').addEventListener('input', e => {
+    const mass = parseFloat(e.target.value);
+    universe.scale.set(mass, mass, mass);
+    updateForceGraph(mass);
+  });
+  document.getElementById('size').addEventListener('input', e => {
+    const size = parseFloat(e.target.value);
+    Object.values(forces).forEach(force => {
+      force.scale.y = size;
+    });
+  });
+}
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  const explanation = document.querySelector('.explanation');
+  const isMobile = window.innerWidth <= 768;
+  if (!explanation.classList.contains('active')) {
+    explanation.style.transform = isMobile ? 'none' : 'translateX(-320px)';
+    if (isMobile) {
+      explanation.style.right = '-100%';
+    }
+  }
+}
+function animate() {
+  requestAnimationFrame(animate);
+  const time = Date.now() * 0.001;
+  universe.rotation.y += 0.005;
+  Object.values(forces).forEach((force, index) => {
+    force.position.x = Math.cos(time + index * Math.PI / 2) * 2;
+    force.position.z = Math.sin(time + index * Math.PI / 2) * 2;
+  });
+  updateTimeFlow();
+  updateQuantumField();
+  renderer.render(scene, camera);
+}
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.classList.toggle('active');
+    if (btn.parentElement.classList.contains('explanation')) {
+      const isMobile = window.innerWidth <= 768;
+      if (!btn.parentElement.classList.contains('active')) {
+        btn.parentElement.style.transform = isMobile ? 'none' : 'translateX(-320px)';
+        if (isMobile) {
+          btn.parentElement.style.right = '-100%';
+        }
+      } else {
+        btn.parentElement.style.transform = 'translateX(0)';
+        if (isMobile) {
+          btn.parentElement.style.right = '0';
+        }
+      }
+    }
+  });
+});
+document.getElementById('zoomIn').addEventListener('click', () => {
+  camera.position.z = Math.max(2, camera.position.z - 0.5);
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  camera.position.z = Math.min(10, camera.position.z + 0.5);
+});
+setTimeout(() => {
+  document.querySelector('.instructions').style.opacity = '0';
+}, 5000);
+init();</script>
+</body></html>
